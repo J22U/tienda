@@ -166,4 +166,13 @@ app.delete('/productos/:id', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
+const path = require('path');
+
+// Esto sirve tus archivos HTML, CSS y JS automáticamente
+app.use(express.static(__dirname)); 
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 app.listen(3000, () => console.log("Servidor listo en puerto 3000"));

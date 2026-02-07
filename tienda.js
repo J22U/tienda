@@ -4,7 +4,7 @@ let productosData = [];
 // 1. CARGAR PRODUCTOS DESDE EL BACKEND
 async function cargarProductos() {
     try {
-        const res = await fetch('http://localhost:3000/productos');
+        const res = await fetch('https://tienda-1vps.onrender.com/productos');
         productosData = await res.json();
         const contenedor = document.getElementById('contenedor-productos');
         
