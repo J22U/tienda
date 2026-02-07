@@ -13,12 +13,12 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // --- CONFIGURACIÓN DE DB ---
 const config = {
-    user: 'sa',
-    password: 'Agro1234*',
-    server: 'localhost',
-    database: 'AgroTienda',
+    user: process.env.DB_USER || 'sa', // Usa la variable de Render o 'sa' por defecto
+    password: process.env.DB_PASSWORD || 'Agro1234*', 
+    server: process.env.DB_SERVER || 'localhost', 
+    database: process.env.DB_NAME || 'AgroTienda',
     options: {
-        encrypt: false,
+        encrypt: false, 
         trustServerCertificate: true
     }
 };
