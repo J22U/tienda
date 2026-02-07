@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agro-Ferretería | Equipos de Alta Gama</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        :root {
+            --primary-green: #2d5a27;
+            --accent-orange: #e67e22;
+            --earth-brown: #4b3621;
+            --dark-footer: #1a2e18;
+            --soft-bg: #f0f7f0; 
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8fdf8;
+            color: #333;
+        }
+
+        /* --- TOP BAR --- */
+        .top-bar {
+            background-color: var(--dark-footer);
+            color: white;
+            font-size: 0.95rem;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .top-bar a { color: white; text-decoration: none; margin-left: 20px; transition: 0.3s; }
+        .top-bar a:hover { color: var(--accent-orange); }
+
+        /* --- NAVBAR --- */
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-green) 0%, #1e3d1a 100%);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 1.2rem 0;
+        }
+        .navbar-brand { font-size: 1.5rem; letter-spacing: 1px; }
+
+        /* --- HERO --- */
+        .hero-section {
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=1400&q=80');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 120px 0;
+            margin-bottom: 0; 
+            border-radius: 0 0 60px 60px;
+        }
+
+        /* --- SECCIONES POR COLORES --- */
+        .section-white { background-color: #ffffff; padding: 80px 0; }
+        .section-soft { background-color: var(--soft-bg); padding: 80px 0; border-top: 1px solid #e1eee1; }
+
+        /* --- CARDS DE SERVICIO --- */
+        .service-card {
+            background: white;
+            border-radius: 25px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            transition: 0.3s;
+            border-bottom: 4px solid var(--accent-orange);
+            height: 100%;
+        }
+        .service-card:hover { transform: translateY(-10px); }
+        .service-card i { font-size: 3rem; color: var(--primary-green); margin-bottom: 20px; display: block; }
+
+        /* --- PRODUCTOS --- */
+        .product-card {
+            border: none;
+            border-radius: 25px;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            height: 100%;
+        }
+        .product-card:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .img-container {
+            height: 250px;
+            padding: 25px;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer; 
+        }
+        .product-card img { max-height: 100%; max-width: 100%; object-fit: contain; }
+        .price-tag { font-size: 1.5rem; font-weight: 700; color: var(--primary-green); }
+
+        /* --- BUSCADOR --- */
+        .search-container .input-group {
+            border-radius: 50px;
+            overflow: hidden;
+            border: 2px solid var(--primary-green);
+            background: white;
+        }
+        .search-container input:focus {
+            box-shadow: none;
+            border: none;
+        }
+
+        /* --- FOOTER XL --- */
+        footer {
+            background-color: var(--dark-footer);
+            color: #e0e0e0;
+            padding: 80px 0 40px;
+            border-top: 8px solid var(--primary-green);
+        }
+        footer h5 { color: white; font-weight: 700; font-size: 1.7rem; margin-bottom: 35px; position: relative; }
+        footer h5::after { content: ''; position: absolute; left: 0; bottom: -10px; width: 50px; height: 3px; background-color: var(--accent-orange); }
+        .footer-link { color: #e0e0e0; text-decoration: none; display: block; margin-bottom: 18px; font-size: 1.2rem; transition: 0.3s; }
+        .footer-link:hover { color: var(--accent-orange); padding-left: 10px; }
+        .social-icons a { font-size: 2.2rem; color: white; margin-right: 30px; transition: 0.3s; display: inline-block; }
+        .social-icons a:hover { color: var(--accent-orange); transform: scale(1.2); }
+        .contact-info p { font-size: 1.1rem; margin-bottom: 25px; display: flex; align-items: center; }
+        .contact-info i { color: var(--accent-orange); margin-right: 18px; font-size: 1.4rem; }
+        .copy-text { font-size: 1.05rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 40px; margin-top: 50px; }
+
+        .cart-modal-header { background: var(--primary-green); color: white; }
+        .login-input { background-color: #f1f1f1 !important; border: none !important; padding: 12px 15px !important; border-radius: 12px !important; }
+    </style>
+</head>
+<body>
+
+<div class="top-bar d-none d-md-block">
+    <div class="container d-flex justify-content-between align-items-center">
+        <div><i class="bi bi-geo-alt-fill text-warning me-2"></i> El Peñol, Antioquia</div>
+        <div>
+            <a href="tel:+573001234567"><i class="bi bi-telephone-fill me-1"></i> (+57) 300 123 4567</a>
+            <a href="https://wa.me/573001234567" target="_blank"><i class="bi bi-whatsapp me-1"></i> WhatsApp Corporativo</a>
+        </div>
+    </div>
+</div>
+
+<nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="#">
+            <i class="bi bi-tractor-fill me-2"></i>AGRO-FERRETERÍA
+        </a>
+        <button class="btn btn-warning fw-bold d-flex align-items-center position-relative px-4 rounded-pill" data-bs-toggle="modal" data-bs-target="#modalCarrito">
+            <i class="bi bi-cart3 me-2 fs-5"></i> MI PEDIDO
+            <span id="cont-carrito" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
+        </button>
+    </div>
+</nav>
+
+<header class="hero-section shadow-lg text-center">
+    <div class="container">
+        <h1 class="display-3 fw-bold mb-3">Herramientas Profesionales</h1>
+        <p class="lead fs-3">Potenciando el campo colombiano con tecnología de punta.</p>
+        <a href="#productos" class="btn btn-warning btn-lg fw-bold rounded-pill px-5 mt-4">VER CATÁLOGO</a>
+    </div>
+</header>
+
+<section class="section-white">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold display-5">¿Por qué elegirnos?</h2>
+            <p class="lead text-muted">Soluciones integrales para el campo y la construcción.</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="service-card">
+                    <i class="bi bi-shield-check"></i>
+                    <h4 class="fw-bold">Garantía Real</h4>
+                    <p class="text-muted">Todos nuestros equipos cuentan con respaldo directo de marca y servicio post-venta.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="service-card">
+                    <i class="bi bi-truck"></i>
+                    <h4 class="fw-bold">Entregas a Veredas</h4>
+                    <p class="text-muted">Despachamos tus pedidos directamente a tu finca en El Peñol y alrededores.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="service-card">
+                    <i class="bi bi-tools"></i>
+                    <h4 class="fw-bold">Repuestos</h4>
+                    <p class="text-muted">Amplio stock de repuestos originales para que tu trabajo nunca se detenga.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section-soft" id="productos">
+    <div class="container">
+        <div class="row mb-5 align-items-center">
+            <div class="col-md-4">
+                <h2 class="fw-bold display-5 mb-0">Nuestro Catálogo</h2>
+                <div style="width: 80px; height: 5px; background: var(--accent-orange); margin-top: 15px;"></div>
+            </div>
+            <div class="col-md-5 mt-4 mt-md-0 search-container">
+                <div class="input-group shadow-sm">
+                    <span class="input-group-text bg-white border-0 ps-4"><i class="bi bi-search text-success"></i></span>
+                    <input type="text" id="buscador" class="form-control border-0 py-3" placeholder="¿Qué herramienta buscas?">
+                </div>
+            </div>
+            <div class="col-md-3 text-md-end mt-3 mt-md-0">
+                <p class="text-muted mb-0 small">Equipos de alta gama para el agro.</p>
+            </div>
+        </div>
+        <div class="row g-4" id="contenedor-productos">
+            </div>
+    </div>
+</section>
+
+<section class="section-white">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <img src="https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=800&q=80" class="img-fluid rounded-5 shadow-lg" alt="Taller">
+            </div>
+            <div class="col-lg-6 ps-lg-5">
+                <h2 class="fw-bold display-5 mb-4">Taller Especializado</h2>
+                <p class="fs-5 text-muted mb-4">Somos expertos en mantenimiento de motores a 2 y 4 tiempos. Realizamos limpieza, ajuste de carburación y cambio de piezas.</p>
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-check-circle-fill text-success fs-4 me-3"></i>
+                    <span class="fw-bold">Mantenimiento de Guadañas y Motosierras</span>
+                </div>
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-check-circle-fill text-success fs-4 me-3"></i>
+                    <span class="fw-bold">Afilado técnico de cadenas</span>
+                </div>
+                <div class="d-flex align-items-center mb-4">
+                    <i class="bi bi-check-circle-fill text-success fs-4 me-3"></i>
+                    <span class="fw-bold">Diagnóstico de potencia gratuito</span>
+                </div>
+                <a href="https://wa.me/573001234567" class="btn btn-success btn-lg px-4 rounded-pill fw-bold">SOLICITAR CITA</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="modal fade" id="modalDetalleProducto" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 25px;">
+            <div class="modal-body p-0">
+                <div class="row g-0">
+                    <div class="col-md-6 bg-white d-flex align-items-center justify-content-center p-4" id="contenedor-foto-modal">
+                        <img id="detalle-img" src="" class="img-fluid" style="max-height: 400px; object-fit: contain;">
+                    </div>
+                    <div class="col-md-6 p-4 d-flex flex-column justify-content-center">
+                        <button type="button" class="btn-close float-end mb-3" data-bs-dismiss="modal"></button>
+                        <h2 id="detalle-nombre" class="fw-bold"></h2>
+                        <h3 id="detalle-precio" class="text-success fw-bold mb-4"></h3>
+                        <div class="mb-4">
+                            <h6 class="fw-bold text-muted border-bottom pb-2">ESPECIFICACIONES</h6>
+                            <p id="detalle-caracteristicas" class="text-muted" style="white-space: pre-wrap;"></p>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label fw-bold small text-muted mb-0">CANTIDAD</label>
+                                <span class="badge bg-light text-dark border">Stock: <span id="detalle-stock-numero">0</span></span>
+                            </div>
+                            <input type="number" id="detalle-cantidad" class="form-control" value="1" min="1" style="width: 100px; border-radius: 10px;">
+                        </div>
+
+                        <button id="detalle-btn-agregar" class="btn btn-warning fw-bold btn-lg rounded-pill">AÑADIR AL PEDIDO</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalCarrito" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius: 25px;">
+            <div class="modal-header cart-modal-header p-4">
+                <h5 class="modal-title fw-bold fs-4"><i class="bi bi-basket2-fill me-2"></i>Resumen de tu Pedido</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row">
+                    <div class="col-md-5 border-end">
+                        <h6 class="fw-bold mb-3">Productos Seleccionados</h6>
+                        <ul id="lista-compra" class="list-group list-group-flush mb-3"></ul>
+                        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                            <span class="h5">Total:</span>
+                            <span id="total-compra" class="h3 fw-bold text-success">$0</span>
+                        </div>
+                    </div>
+                    <div class="col-md-7 ps-4">
+                        <h6 class="fw-bold mb-3">Información de Envío</h6>
+                        <form id="form-factura">
+                            <div class="mb-3"><input type="text" id="fac-nombre" class="form-control" placeholder="Nombre completo" required></div>
+                            <div class="mb-3"><input type="email" id="fac-correo" class="form-control" placeholder="Correo electrónico" required></div>
+                            <div class="row mb-3">
+                                <div class="col-6"><input type="tel" id="fac-tel" class="form-control" placeholder="Teléfono" required></div>
+                                <div class="col-6"><input type="text" id="fac-doc" class="form-control" placeholder="Cédula/NIT"></div>
+                            </div>
+                            <div class="mb-0">
+                                <textarea id="fac-dir" class="form-control" rows="2" placeholder="Vereda / Dirección exacta" required></textarea>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-4 pt-0">
+                <button type="button" class="btn btn-light btn-lg px-4" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-success btn-lg flex-grow-1 fw-bold" onclick="procesarPago()">CONFIRMAR COMPRA</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalLogin" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 25px;">
+            <div class="modal-header border-0 p-4 pb-0">
+                <h3 class="fw-bold">Acceso Admin</h3>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="form-login-admin">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small">CORREO ELECTRÓNICO</label>
+                        <input type="email" id="admin-email" class="form-control login-input" placeholder="ejemplo@correo.com" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small">CONTRASEÑA</label>
+                        <input type="password" id="admin-password" class="form-control login-input" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="btn btn-dark w-100 py-3 fw-bold rounded-pill">
+                        INGRESAR AL SISTEMA
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <div class="container">
+        <div class="row g-5">
+            <div class="col-lg-4">
+                <h5>Agro-Ferretería</h5>
+                <p>Somos el aliado estratégico del agricultor antioqueño. Proveemos herramientas y asesoría técnica especializada para que su cosecha nunca se detenga.</p>
+                <div class="social-icons mt-4">
+                    <a href="#"><i class="bi bi-facebook"></i></a>
+                    <a href="#"><i class="bi bi-instagram"></i></a>
+                    <a href="#"><i class="bi bi-tiktok"></i></a>
+                </div>
+            </div>
+            <div class="col-lg-3 offset-lg-1">
+                <h5>Explorar</h5>
+                <a href="#" class="footer-link">Inicio</a>
+                <a href="#productos" class="footer-link">Catálogo</a>
+                <a href="#" class="footer-link">Mantenimiento</a>
+                <a href="#" class="footer-link" data-bs-toggle="modal" data-bs-target="#modalLogin">
+                    <i class="bi bi-person-lock me-2 text-warning"></i> Admin
+                </a>
+            </div>
+            <div class="col-lg-4 contact-info">
+                <h5>Atención</h5>
+                <p><i class="bi bi-geo-alt-fill"></i> El Peñol, Antioquia</p>
+                <p><i class="bi bi-whatsapp"></i> +57 300 123 4567</p>
+                <p><i class="bi bi-clock-fill"></i> Lun - Sáb: 7am - 6pm</p>
+            </div>
+        </div>
+        <div class="row copy-text">
+            <div class="col-md-6 text-center text-md-start">
+                <p class="mb-0">&copy; 2026 Agro-Ferretería Profesional.</p>
+            </div>
+            <div class="col-md-6 text-center text-md-end">
+                <p class="mb-0">Desde El Peñol <i class="bi bi-heart-fill text-danger ms-1"></i></p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="tienda.js"></script>
+
+<script>
+  document.getElementById('form-login-admin').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const email = document.getElementById('admin-email').value;
+      const pass = document.getElementById('admin-password').value;
+
+      if (email === "admin@agro.com" && pass === "123456") {
+          Swal.fire({
+              title: '¡Acceso Permitido!',
+              text: 'Bienvenido al panel de control.',
+              icon: 'success',
+              timer: 1500,
+              showConfirmButton: false,
+              willClose: () => {
+                  window.location.href = 'admin.html';
+              }
+          });
+      } else {
+          Swal.fire({
+              title: 'Acceso Denegado',
+              text: 'Correo o contraseña incorrectos.',
+              icon: 'error',
+              confirmButtonColor: '#e67e22',
+              confirmButtonText: 'Reintentar'
+          });
+      }
+  });
+</script>
+
+</body>
+</html>
