@@ -1,22 +1,26 @@
 let carrito = [];
 let productosData = [];
+const BASE_URL = 'https://tienda-1vps.onrender.com'; // URL Única para todo el script
 
 // 1. CARGAR PRODUCTOS DESDE EL BACKEND
 async function cargarProductos() {
     try {
-        const BASE_URL = 'https://tienda-1vps.onrender.com'; // Definimos la URL base
         const res = await fetch(`${BASE_URL}/productos`);
         productosData = await res.json();
         const contenedor = document.getElementById('contenedor-productos');
         
+        if (!contenedor) return;
+
         contenedor.innerHTML = productosData.map(p => {
             let fotos = [];
             try {
-                // Limpiamos y procesamos las URLs de las imágenes
-                fotos = p.ImagenURL.startsWith('[') ? JSON.parse(p.ImagenURL) : p.ImagenURL.split(',');
+                const imgStr = p.ImagenURL || '';
+                fotos = imgStr.startsWith('[') ? JSON.parse(imgStr) : imgStr.split(',');
             } catch(e) { fotos = [p.ImagenURL]; }
             
             const fotoPrincipal = fotos[0] ? fotos[0].trim() : '';
+            // Verificamos si la foto ya es una URL completa o si necesita el prefijo
+            const srcFinal = fotoPrincipal.startsWith('http') ? fotoPrincipal : `${BASE_URL}${fotoPrincipal}`;
 
             const stockColor = p.Stock > 0 ? 'text-success' : 'text-danger';
             const stockTexto = p.Stock > 0 ? `${p.Stock} disponibles` : 'Agotado';
@@ -25,7 +29,7 @@ async function cargarProductos() {
                 <div class="col-md-4 col-lg-3">
                     <div class="product-card">
                         <div class="img-container" onclick="verDetalle(${p.ProductoID})">
-                            <img src="${BASE_URL}${fotoPrincipal}" onerror="this.src='https://via.placeholder.com/250?text=Agro+Ferretería'">
+                            <img src="${srcFinal}" onerror="this.src='https://via.placeholder.com/250?text=Agro+Ferretería'">
                         </div>
                         <div class="p-4 text-center">
                             <small class="text-uppercase fw-bold text-muted">${p.Marca}</small>
@@ -53,10 +57,10 @@ function verDetalle(id) {
     const p = productosData.find(item => item.ProductoID === id);
     if (!p) return;
 
-    const BASE_URL = 'https://tienda-1vps.onrender.com';
     let fotos = [];
     try {
-        fotos = p.ImagenURL.startsWith('[') ? JSON.parse(p.ImagenURL) : p.ImagenURL.split(',');
+        const imgStr = p.ImagenURL || '';
+        fotos = imgStr.startsWith('[') ? JSON.parse(imgStr) : imgStr.split(',');
     } catch(e) { fotos = [p.ImagenURL]; }
 
     const contenedorImagen = document.getElementById('contenedor-foto-modal');
@@ -66,11 +70,13 @@ function verDetalle(id) {
         contenedorImagen.innerHTML = `
             <div id="carouselDetalle" class="carousel slide carousel-dark w-100" data-bs-ride="false">
                 <div class="carousel-inner">
-                    ${fotos.map((f, i) => `
+                    ${fotos.map((f, i) => {
+                        const srcFull = f.trim().startsWith('http') ? f.trim() : `${BASE_URL}${f.trim()}`;
+                        return `
                         <div class="carousel-item ${i === 0 ? 'active' : ''}">
-                            <img src="${BASE_URL}${f.trim()}" class="d-block w-100" style="height: 350px; object-fit: contain;">
-                        </div>
-                    `).join('')}
+                            <img src="${srcFull}" class="d-block w-100" style="height: 350px; object-fit: contain;">
+                        </div>`;
+                    }).join('')}
                 </div>
                 <button class="carousel-control-prev" type="button" data-bs-target="#carouselDetalle" data-bs-slide="prev">
                     <span class="carousel-control-prev-icon"></span>
@@ -80,30 +86,24 @@ function verDetalle(id) {
                 </button>
             </div>`;
     } else {
-        // CAMBIO AQUÍ: Usamos BASE_URL
-        contenedorImagen.innerHTML = `<img src="${BASE_URL}${fotos[0].trim()}" class="img-fluid" style="max-height: 350px; object-fit: contain;">`;
+        const singleSrc = fotos[0].trim().startsWith('http') ? fotos[0].trim() : `${BASE_URL}${fotos[0].trim()}`;
+        contenedorImagen.innerHTML = `<img src="${singleSrc}" class="img-fluid" style="max-height: 350px; object-fit: contain;">`;
     }
-    
-    // ... resto de tu código para abrir el modal ...
-}
 
-    // Actualizar Textos
+    // Actualizar Textos del Modal
     document.getElementById('detalle-nombre').innerText = p.Nombre;
     document.getElementById('detalle-precio').innerText = `$${Number(p.Precio).toLocaleString()}`;
-    document.getElementById('detalle-caracteristicas').innerText = p.Caracteristicas;
+    document.getElementById('detalle-caracteristicas').innerText = p.Caracteristicas || 'Sin descripción';
     
-    // ACTUALIZAR NÚMERO DE STOCK EN EL MODAL
     const stockLabel = document.getElementById('detalle-stock-numero');
     stockLabel.innerText = p.Stock;
     stockLabel.className = p.Stock > 0 ? "fw-bold text-success" : "fw-bold text-danger";
 
-    // Configurar Input de Cantidad
     const inputCant = document.getElementById('detalle-cantidad');
     inputCant.value = 1;
     inputCant.max = p.Stock;
     inputCant.disabled = p.Stock <= 0;
 
-    // Configurar Botón de agregar
     const btn = document.getElementById('detalle-btn-agregar');
     btn.disabled = p.Stock <= 0;
     btn.onclick = () => agregarAlPedido(p);
@@ -111,7 +111,7 @@ function verDetalle(id) {
     bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDetalleProducto')).show();
 }
 
-// 3. AGREGAR AL CARRITO CON VALIDACIÓN DE STOCK
+// 3. AGREGAR AL CARRITO
 function agregarAlPedido(producto) {
     const cantidad = parseInt(document.getElementById('detalle-cantidad').value);
     
@@ -136,39 +136,21 @@ function agregarAlPedido(producto) {
     Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Agregado al pedido', showConfirmButton: false, timer: 1500 });
 }
 
-// --- LÓGICA DE BÚSQUEDA ---
-// Asegúrate de que esta función esté disponible después de cargar tus productos
-
+// 4. BÚSQUEDA
 const buscador = document.getElementById('buscador');
+if(buscador) {
+    buscador.addEventListener('input', (e) => {
+        const termino = e.target.value.toLowerCase();
+        const productosCards = document.querySelectorAll('#contenedor-productos .col-md-4, #contenedor-productos .col-lg-3');
 
-buscador.addEventListener('input', (e) => {
-    const termino = e.target.value.toLowerCase();
-    const productosCards = document.querySelectorAll('#contenedor-productos .col-md-4, #contenedor-productos .col-lg-3');
-
-    productosCards.forEach(card => {
-        // Obtenemos el nombre del producto dentro de la card
-        const nombreProducto = card.querySelector('h5').textContent.toLowerCase();
-        
-        // Si el nombre incluye el término buscado, se muestra, si no, se oculta
-        if (nombreProducto.includes(termino)) {
-            card.style.display = 'block';
-            // Opcional: añadir una pequeña animación de entrada
-            card.style.animation = 'fadeIn 0.3s';
-        } else {
-            card.style.display = 'none';
-        }
+        productosCards.forEach(card => {
+            const nombreProducto = card.querySelector('h5').textContent.toLowerCase();
+            card.style.display = nombreProducto.includes(termino) ? 'block' : 'none';
+        });
     });
-});
-
-// --- OPCIONAL: Estilo para la animación de búsqueda ---
-// Puedes agregar esto a tu etiqueta <style> en el HTML
-/*
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
 }
-*/
 
+// 5. UI CARRITO
 function actualizarCarritoUI() {
     const lista = document.getElementById('lista-compra');
     const totalLabel = document.getElementById('total-compra');
