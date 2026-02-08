@@ -241,6 +241,7 @@
     
     <script>
         let editando = false;
+        const BASE_URL = 'https://tienda-1vps.onrender.com';
 
         document.getElementById('marca').addEventListener('input', (e) => {
             if (!editando) {
@@ -251,35 +252,39 @@
         });
 
         async function cargarInventario() {
-            const res = await fetch('https://tienda-1vps.onrender.com/productos');
-            const data = await res.json();
-            document.getElementById('total-count').innerText = `${data.length} Productos`;
-            
-            const lista = document.getElementById('lista-productos');
-            lista.innerHTML = data.map(p => `
-                <div class="product-row shadow-sm">
-                    <div class="img-box">
-                        <img src="https://tienda-1vps.onrender.com${p.ImagenURL}""this.src='https://via.placeholder.com/150?text=Agro'">
-                    </div>
-                    <div class="flex-grow-1 product-info pe-3">
-                        <h5 class="mb-0 fw-bold">${p.Nombre}</h5>
-                        <p class="text-muted small fw-bold mb-0">${p.Marca.toUpperCase()} • SKU: ${p.CodigoSKU}</p>
-                        <p class="product-desc-list mb-0">${p.Caracteristicas || 'Sin descripción'}</p>
-                    </div>
-                    <div class="text-end px-3">
-                        <div class="price-badge">$${Number(p.Precio).toLocaleString()}</div>
-                        <span class="stock-pill ${p.Stock < 5 ? 'low' : 'ok'}">${p.Stock} unds</span>
-                    </div>
-                    <div class="d-flex">
-                        <button class="action-btn btn-edit" onclick='prepararEdicion(${JSON.stringify(p)})'>
-                            <i class="bi bi-pencil-fill"></i>
-                        </button>
-                        <button class="action-btn btn-delete" onclick="eliminarProducto(${p.ProductoID})">
-                            <i class="bi bi-trash-fill"></i>
-                        </button>
-                    </div>
-                </div>
-            `).join('');
+            try {
+                const res = await fetch(`${BASE_URL}/productos`);
+                const data = await res.json();
+                document.getElementById('total-count').innerText = `${data.length} Productos`;
+                
+                const lista = document.getElementById('lista-productos');
+                lista.innerHTML = data.map(p => {
+                    const prodJson = JSON.stringify(p).replace(/'/g, "&apos;");
+                    return `
+                    <div class="product-row shadow-sm">
+                        <div class="img-box">
+                            <img src="${BASE_URL}${p.ImagenURL}" onerror="this.src='https://via.placeholder.com/150?text=Agro'">
+                        </div>
+                        <div class="flex-grow-1 product-info pe-3">
+                            <h5 class="mb-0 fw-bold">${p.Nombre}</h5>
+                            <p class="text-muted small fw-bold mb-0">${p.Marca.toUpperCase()} • SKU: ${p.CodigoSKU}</p>
+                            <p class="product-desc-list mb-0">${p.Caracteristicas || 'Sin descripción'}</p>
+                        </div>
+                        <div class="text-end px-3">
+                            <div class="price-badge">$${Number(p.Precio).toLocaleString()}</div>
+                            <span class="stock-pill ${p.Stock < 5 ? 'low' : 'ok'}">${p.Stock} unds</span>
+                        </div>
+                        <div class="d-flex">
+                            <button class="action-btn btn-edit" onclick='prepararEdicion(${prodJson})'>
+                                <i class="bi bi-pencil-fill"></i>
+                            </button>
+                            <button class="action-btn btn-delete" onclick="eliminarProducto(${p.ProductoID})">
+                                <i class="bi bi-trash-fill"></i>
+                            </button>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch (err) { console.error(err); }
         }
 
         document.getElementById('form-producto').addEventListener('submit', async (e) => {
@@ -299,22 +304,24 @@
                 formData.append('imagenes', inputImagenes.files[i]);
             }
 
-            const url = editando ? `https://tienda-1vps.onrender.com` : 'https://tienda-1vps.onrender.com';
+            // CORRECCIÓN: Si edita, la URL debe incluir el ID /productos/ID
+            const url = editando ? `${BASE_URL}/productos/${id}` : `${BASE_URL}/productos`;
             const method = editando ? 'PUT' : 'POST';
 
             try {
                 const res = await fetch(url, { method, body: formData });
                 if(res.ok) {
-                    // MODAL CONFIGURADO PARA MOSTRAR ACTUALIZACIÓN O GUARDADO
                     Swal.fire({ 
                         title: editando ? '¡Actualizado!' : '¡Guardado!', 
-                        text: editando ? 'El producto se ha modificado correctamente.' : 'Producto añadido al inventario.',
                         icon: 'success', 
                         confirmButtonColor: '#6c5ce7',
                         timer: 2000
                     });
                     limpiarForm();
                     cargarInventario();
+                } else {
+                    const error = await res.json();
+                    Swal.fire('Error', error.message || 'No se pudo procesar', 'error');
                 }
             } catch (error) {
                 Swal.fire('Error', 'No se pudo conectar con el servidor', 'error');
@@ -349,17 +356,21 @@
         }
 
         async function eliminarProducto(id) {
-            const res = await Swal.fire({
+            const confirm = await Swal.fire({
                 title: '¿Borrar producto?',
+                text: "Esta acción no se puede deshacer",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#ff7675',
                 confirmButtonText: 'Sí, borrar'
             });
             
-            if(res.isConfirmed) {
-                await fetch(`https://tienda-1vps.onrender.com`, { method: 'DELETE' });
-                cargarInventario();
+            if(confirm.isConfirmed) {
+                const res = await fetch(`${BASE_URL}/productos/${id}`, { method: 'DELETE' });
+                if(res.ok) {
+                    Swal.fire('Eliminado', 'Producto fuera del sistema', 'success');
+                    cargarInventario();
+                }
             }
         }
 
