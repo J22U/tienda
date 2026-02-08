@@ -2,21 +2,23 @@ const express = require('express');
 const sql = require('mssql');
 const cors = require('cors');
 const multer = require('multer');
-const path = require('path');
+const path = require('path'); // Solo una declaración aquí arriba
 const fs = require('fs');
 const app = express();
 
 app.use(express.json());
 app.use(cors());
-// IMPORTANTE: Asegúrate de usar path.join para que las rutas de imágenes no fallen
+
+// Servir archivos estáticos y la carpeta de subidas
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(express.static(__dirname));
 
 // --- CONFIGURACIÓN DE DB ---
 const config = {
-    user: process.env.DB_USER || 'sa', // Usa la variable de Render o 'sa' por defecto
-    password: process.env.DB_PASSWORD || 'Agro1234*', 
-    server: process.env.DB_SERVER || 'localhost', 
-    database: process.env.DB_NAME || 'AgroTienda',
+    user: process.env.DB_USER, 
+    password: process.env.DB_PASSWORD, 
+    server: process.env.DB_SERVER, 
+    database: process.env.DB_NAME,
     options: {
         encrypt: false, 
         trustServerCertificate: true
@@ -26,7 +28,7 @@ const config = {
 const poolPromise = new sql.ConnectionPool(config)
     .connect()
     .then(async pool => {
-        console.log('¡Conectado a SQL Server!');
+        console.log('¡Conectado a SQL Server en Somee!');
         return pool;
     })
     .catch(err => console.error('Error al conectar:', err));
@@ -41,19 +43,18 @@ const upload = multer({ storage: storage });
 
 // --- RUTAS ---
 
-// OBTENER PRODUCTOS (MODIFICADO PARA TRAER LA GALERÍA)
+// OBTENER PRODUCTOS (Trae la galería de fotos)
 app.get('/productos', async (req, res) => {
     try {
         const pool = await poolPromise;
-        // Esta consulta usa FOR JSON PATH para meter todas las fotos de 'ProductoImagenes' en un solo campo llamado 'Galeria'
+        // Quitamos [AgroTienda] y usamos [dbo] para evitar errores de permisos en Somee
         const result = await pool.request().query(`
             SELECT p.*, 
-            (SELECT ImagenURL FROM [AgroTienda].[dbo].[ProductoImagenes] 
+            (SELECT ImagenURL FROM [dbo].[ProductoImagenes] 
              WHERE ProductoID = p.ProductoID FOR JSON PATH) AS Galeria
-            FROM [AgroTienda].[dbo].[Productos] p
+            FROM [dbo].[Productos] p
         `);
         
-        // Formateamos el resultado: SQL devuelve la Galeria como un string, la convertimos a JSON real
         const productos = result.recordset.map(prod => ({
             ...prod,
             Galeria: prod.Galeria ? JSON.parse(prod.Galeria) : []
@@ -66,16 +67,14 @@ app.get('/productos', async (req, res) => {
     }
 });
 
-// EDITAR PRODUCTO (Ruta blindada)
+// EDITAR PRODUCTO
 app.put('/productos/:id', upload.array('imagenes', 10), async (req, res) => {
     try {
         const { nombre, marca, precio, stock, caracteristicas, sku } = req.body;
         const id = req.params.id;
         const pool = await poolPromise;
-
-        if (isNaN(id)) return res.status(400).json({ error: "ID no válido" });
-
         const request = pool.request();
+
         request.input('id', sql.Int, id);
         request.input('n', sql.NVarChar, nombre);
         request.input('m', sql.NVarChar, marca);
@@ -84,11 +83,7 @@ app.put('/productos/:id', upload.array('imagenes', 10), async (req, res) => {
         request.input('c', sql.NVarChar, caracteristicas || '');
         request.input('sku', sql.NVarChar, sku);
 
-        let query = `
-            UPDATE [AgroTienda].[dbo].[Productos] 
-            SET Nombre = @n, Marca = @m, Precio = @p, Stock = @s, 
-                Caracteristicas = @c, CodigoSKU = @sku
-        `;
+        let query = `UPDATE [dbo].[Productos] SET Nombre = @n, Marca = @m, Precio = @p, Stock = @s, Caracteristicas = @c, CodigoSKU = @sku`;
 
         if (req.files && req.files.length > 0) {
             const pathImagen = `/uploads/${req.files[0].filename}`;
@@ -99,25 +94,17 @@ app.put('/productos/:id', upload.array('imagenes', 10), async (req, res) => {
         query += ` WHERE ProductoID = @id`;
         await request.query(query);
 
-        // Galería: Borramos las anteriores y metemos las nuevas (las 2 o más que subas)
         if (req.files && req.files.length > 0) {
-            await pool.request()
-                .input('id', sql.Int, id)
-                .query('DELETE FROM [AgroTienda].[dbo].[ProductoImagenes] WHERE ProductoID = @id');
-
+            await pool.request().input('id', sql.Int, id).query('DELETE FROM [dbo].[ProductoImagenes] WHERE ProductoID = @id');
             for (const file of req.files) {
                 await pool.request()
                     .input('id', sql.Int, id)
                     .input('url', sql.NVarChar, `/uploads/${file.filename}`)
-                    .query('INSERT INTO [AgroTienda].[dbo].[ProductoImagenes] (ProductoID, ImagenURL) VALUES (@id, @url)');
+                    .query('INSERT INTO [dbo].[ProductoImagenes] (ProductoID, ImagenURL) VALUES (@id, @url)');
             }
         }
-
-        res.json({ success: true, message: "Producto actualizado correctamente" });
-    } catch (err) {
-        console.error("--- ERROR EN ACTUALIZACIÓN ---", err.message);
-        res.status(500).json({ success: false, error: err.message });
-    }
+        res.json({ success: true, message: "Producto actualizado" });
+    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
 // CREAR PRODUCTO
@@ -135,44 +122,37 @@ app.post('/productos', upload.array('imagenes', 10), async (req, res) => {
             .input('i', sql.NVarChar, imgPrincipal)
             .input('sku', sql.NVarChar, sku)
             .input('c', sql.NVarChar, caracteristicas)
-            .query(`
-                INSERT INTO [AgroTienda].[dbo].[Productos] (Nombre, Marca, Precio, Stock, ImagenURL, CodigoSKU, Caracteristicas) 
-                OUTPUT INSERTED.ProductoID 
-                VALUES (@n, @m, @p, @s, @i, @sku, @c)
-            `);
+            .query(`INSERT INTO [dbo].[Productos] (Nombre, Marca, Precio, Stock, ImagenURL, CodigoSKU, Caracteristicas) 
+                    OUTPUT INSERTED.ProductoID VALUES (@n, @m, @p, @s, @i, @sku, @c)`);
 
         const newId = result.recordset[0].ProductoID;
 
-        // Guardamos todas las fotos en la tabla de imágenes
-        if (req.files && req.files.length > 0) {
+        if (req.files) {
             for (const file of req.files) {
-                await pool.request()
-                    .input('pId', sql.Int, newId)
-                    .input('url', sql.NVarChar, `/uploads/${file.filename}`)
-                    .query('INSERT INTO [AgroTienda].[dbo].[ProductoImagenes] (ProductoID, ImagenURL) VALUES (@pId, @url)');
+                await pool.request().input('pId', sql.Int, newId).input('url', sql.NVarChar, `/uploads/${file.filename}`)
+                    .query('INSERT INTO [dbo].[ProductoImagenes] (ProductoID, ImagenURL) VALUES (@pId, @url)');
             }
         }
-        res.json({ success: true, message: "Producto creado con éxito" });
+        res.json({ success: true });
     } catch (err) { res.status(500).send(err.message); }
 });
 
-// ELIMINAR
+// ELIMINAR PRODUCTO
 app.delete('/productos/:id', async (req, res) => {
     try {
         const pool = await poolPromise;
-        await pool.request().input('id', sql.Int, req.params.id).query('DELETE FROM [AgroTienda].[dbo].[ProductoImagenes] WHERE ProductoID=@id');
-        await pool.request().input('id', sql.Int, req.params.id).query('DELETE FROM [AgroTienda].[dbo].[Productos] WHERE ProductoID=@id');
-        res.json({ success: true, message: "Eliminado" });
+        await pool.request().input('id', sql.Int, req.params.id).query('DELETE FROM [dbo].[ProductoImagenes] WHERE ProductoID=@id');
+        await pool.request().input('id', sql.Int, req.params.id).query('DELETE FROM [dbo].[Productos] WHERE ProductoID=@id');
+        res.json({ success: true });
     } catch (err) { res.status(500).send(err.message); }
 });
 
-const path = require('path');
-
-// Esto sirve tus archivos HTML, CSS y JS automáticamente
-app.use(express.static(__dirname)); 
-
+// RUTA INICIAL
 app.get('/', (req, res) => {
+    // Cambia 'index.html' por 'tienda.html' si ese es tu archivo principal
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(3000, () => console.log("Servidor listo en puerto 3000"));
+// PUERTO DINÁMICO PARA RENDER
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Servidor corriendo en el puerto ${PORT}`));
