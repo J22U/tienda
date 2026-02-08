@@ -58,12 +58,12 @@ async function guardarProducto(event) {
     event.preventDefault();
     
     const formData = new FormData();
-    formData.append('sku', document.getElementById('codigo').value); // Coincidir con app.js
-    formData.append('nombre', document.getElementById('nombre').value);
-    formData.append('marca', document.getElementById('marca').value);
-    formData.append('precio', document.getElementById('precio').value);
-    formData.append('stock', document.getElementById('stock').value);
-    formData.append('caracteristicas', ''); // Campo extra requerido en tu app.js
+    formData.append('sku', document.getElementById('Codigo').value); // Coincidir con app.js
+    formData.append('Nombre', document.getElementById('Nombre').value);
+    formData.append('Marca', document.getElementById('Marca').value);
+    formData.append('Precio', document.getElementById('Precio').value);
+    formData.append('Stock', document.getElementById('Stock').value);
+    formData.append('Caracteristicas', ''); // Campo extra requerido en tu app.js
     
     // Si tienes un input de archivos
     const fotoInput = document.getElementById('inputFoto');
