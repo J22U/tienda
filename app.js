@@ -150,7 +150,7 @@ app.delete('/productos/:id', async (req, res) => {
 // RUTA INICIAL
 app.get('/', (req, res) => {
     // Cambia 'index.html' por 'tienda.html' si ese es tu archivo principal
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, 'tienda.html'));
 });
 
 // PUERTO DINÁMICO PARA RENDER
