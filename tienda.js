@@ -4,19 +4,20 @@ let productosData = [];
 // 1. CARGAR PRODUCTOS DESDE EL BACKEND
 async function cargarProductos() {
     try {
-        const res = await fetch('https://tienda-1vps.onrender.com/productos');
+        const BASE_URL = 'https://tienda-1vps.onrender.com'; // Definimos la URL base
+        const res = await fetch(`${BASE_URL}/productos`);
         productosData = await res.json();
         const contenedor = document.getElementById('contenedor-productos');
         
         contenedor.innerHTML = productosData.map(p => {
             let fotos = [];
             try {
+                // Limpiamos y procesamos las URLs de las imágenes
                 fotos = p.ImagenURL.startsWith('[') ? JSON.parse(p.ImagenURL) : p.ImagenURL.split(',');
             } catch(e) { fotos = [p.ImagenURL]; }
             
             const fotoPrincipal = fotos[0] ? fotos[0].trim() : '';
 
-            // --- LÓGICA DE STOCK PARA LA TARJETA ---
             const stockColor = p.Stock > 0 ? 'text-success' : 'text-danger';
             const stockTexto = p.Stock > 0 ? `${p.Stock} disponibles` : 'Agotado';
 
@@ -24,7 +25,7 @@ async function cargarProductos() {
                 <div class="col-md-4 col-lg-3">
                     <div class="product-card">
                         <div class="img-container" onclick="verDetalle(${p.ProductoID})">
-                            <img src="http://localhost:3000${fotoPrincipal}" onerror="this.src='https://via.placeholder.com/250?text=Agro+Ferretería'">
+                            <img src="${BASE_URL}${fotoPrincipal}" onerror="this.src='https://via.placeholder.com/250?text=Agro+Ferretería'">
                         </div>
                         <div class="p-4 text-center">
                             <small class="text-uppercase fw-bold text-muted">${p.Marca}</small>
@@ -52,7 +53,7 @@ function verDetalle(id) {
     const p = productosData.find(item => item.ProductoID === id);
     if (!p) return;
 
-    // Procesar Fotos para el carrusel
+    const BASE_URL = 'https://tienda-1vps.onrender.com';
     let fotos = [];
     try {
         fotos = p.ImagenURL.startsWith('[') ? JSON.parse(p.ImagenURL) : p.ImagenURL.split(',');
@@ -67,7 +68,7 @@ function verDetalle(id) {
                 <div class="carousel-inner">
                     ${fotos.map((f, i) => `
                         <div class="carousel-item ${i === 0 ? 'active' : ''}">
-                            <img src="http://localhost:3000${f.trim()}" class="d-block w-100" style="height: 350px; object-fit: contain;">
+                            <img src="${BASE_URL}${f.trim()}" class="d-block w-100" style="height: 350px; object-fit: contain;">
                         </div>
                     `).join('')}
                 </div>
@@ -79,8 +80,12 @@ function verDetalle(id) {
                 </button>
             </div>`;
     } else {
-        contenedorImagen.innerHTML = `<img src="http://localhost:3000${fotos[0].trim()}" class="img-fluid" style="max-height: 350px; object-fit: contain;">`;
+        // CAMBIO AQUÍ: Usamos BASE_URL
+        contenedorImagen.innerHTML = `<img src="${BASE_URL}${fotos[0].trim()}" class="img-fluid" style="max-height: 350px; object-fit: contain;">`;
     }
+    
+    // ... resto de tu código para abrir el modal ...
+}
 
     // Actualizar Textos
     document.getElementById('detalle-nombre').innerText = p.Nombre;
