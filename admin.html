@@ -251,7 +251,7 @@
         });
 
         async function cargarInventario() {
-            const res = await fetch('http://localhost:3000/productos');
+            const res = await fetch('https://tienda-1vps.onrender.com/productos');
             const data = await res.json();
             document.getElementById('total-count').innerText = `${data.length} Productos`;
             
@@ -259,7 +259,7 @@
             lista.innerHTML = data.map(p => `
                 <div class="product-row shadow-sm">
                     <div class="img-box">
-                        <img src="http://localhost:3000${p.ImagenURL}" onerror="this.src='https://via.placeholder.com/150?text=Agro'">
+                        <img src="https://tienda-1vps.onrender.com${p.ImagenURL}""this.src='https://via.placeholder.com/150?text=Agro'">
                     </div>
                     <div class="flex-grow-1 product-info pe-3">
                         <h5 class="mb-0 fw-bold">${p.Nombre}</h5>
@@ -299,7 +299,7 @@
                 formData.append('imagenes', inputImagenes.files[i]);
             }
 
-            const url = editando ? `http://localhost:3000/productos/${id}` : 'http://localhost:3000/productos';
+            const url = editando ? `https://tienda-1vps.onrender.com` : 'https://tienda-1vps.onrender.com';
             const method = editando ? 'PUT' : 'POST';
 
             try {
@@ -358,7 +358,7 @@
             });
             
             if(res.isConfirmed) {
-                await fetch(`http://localhost:3000/productos/${id}`, { method: 'DELETE' });
+                await fetch(`https://tienda-1vps.onrender.com`, { method: 'DELETE' });
                 cargarInventario();
             }
         }
