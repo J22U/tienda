@@ -274,10 +274,8 @@
     }
 
     // --- LÓGICA DE PEDIDOS (CORREGIDA) ---
-    // Función para cargar pedidos y mostrarlos
 async function cargarPedidos() {
     const lista = document.getElementById('lista-pedidos');
-    // Si el contenedor no existe, detenemos la ejecución para evitar errores
     if (!lista) return;
 
     try {
@@ -285,7 +283,7 @@ async function cargarPedidos() {
         if (!res.ok) throw new Error('Error en la respuesta del servidor');
         
         const pedidos = await res.json();
-        
+
         // Actualizamos el contador en la interfaz
         const contador = document.getElementById('order-count');
         if (contador) contador.innerText = `${pedidos.length} recibidos`;
@@ -298,7 +296,6 @@ async function cargarPedidos() {
         lista.innerHTML = pedidos.map(p => {
             let productos = [];
             try { 
-                // SQL Server a veces envía los datos de forma distinta, manejamos ambos casos
                 productos = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
             } catch (e) { 
                 console.error("Error al leer productos del pedido", p.PedidoID);
@@ -331,12 +328,17 @@ async function cargarPedidos() {
                 <div class="text-end px-3 border-start">
                     <div class="price-badge text-primary">$${Number(p.Total).toLocaleString()}</div>
                     <small class="text-muted d-block">${new Date(p.Fecha).toLocaleDateString()}</small>
-                    ${p.Estado === 'Pendiente' ? 
-                        `<button class="btn btn-sm btn-success mt-2 fw-bold" onclick="completarPedido(${p.PedidoID})">
-                            <i class="bi bi-check-circle"></i> LISTO
-                         </button>` : 
-                        `<span class="text-success d-block mt-2 small fw-bold"><i class="bi bi-check-all"></i> COMPLETADO</span>`
-                    }
+                    <div class="mt-2 d-flex gap-1 justify-content-end">
+                        ${p.Estado === 'Pendiente' ? 
+                            `<button class="btn btn-sm btn-success fw-bold" onclick="completarPedido(${p.PedidoID})">
+                                <i class="bi bi-check-circle"></i>
+                             </button>` : 
+                            `<span class="text-success small fw-bold"><i class="bi bi-check-all"></i></span>`
+                        }
+                        <button class="btn btn-sm btn-outline-danger" onclick="eliminarPedido(${p.PedidoID})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
                 </div>
             </div>`;
         }).join('');
@@ -345,40 +347,51 @@ async function cargarPedidos() {
         console.error("Error al cargar pedidos:", err);
         lista.innerHTML = `
             <div class="text-center p-4">
-                <i class="bi bi-exclamación-triangle text-danger fs-1"></i>
+                <i class="bi bi-exclamation-triangle text-danger fs-1"></i>
                 <p class="text-danger mt-2">No se pudieron cargar los pedidos.</p>
                 <button class="btn btn-sm btn-outline-danger" onclick="cargarPedidos()">Reintentar</button>
             </div>`;
     }
 }
 
-// FUNCIÓN PARA ACTUALIZAR ESTADO SIN REFRESCAR
-async function actualizarEstado(id) {
-    try {
-        const res = await fetch(`https://tienda-1vps.onrender.com/pedidos/${id}/completar`, {
-            method: 'PUT'
-        });
-        const result = await res.json();
-        
-        if (result.success) {
-            // Recarga automática de la lista sin refrescar toda la página
-            cargarPedidos(); 
-            Swal.fire('¡Actualizado!', 'El pedido ha sido marcado como completado.', 'success');
+async function eliminarPedido(id) {
+    const confirmar = await Swal.fire({
+        title: '¿Estás seguro?',
+        text: "Esta acción no se puede deshacer",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, borrar',
+        cancelButtonText: 'Cancelar'
+    });
+
+    if (confirmar.isConfirmed) {
+        try {
+            const res = await fetch(`${BASE_URL}/pedidos/${id}`, {
+                method: 'DELETE'
+            });
+            const result = await res.json();
+
+            if (result.success) {
+                Swal.fire('Eliminado', 'El pedido ha sido borrado.', 'success');
+                cargarPedidos(); 
+            }
+        } catch (error) {
+            Swal.fire('Error', 'No se pudo eliminar el pedido', 'error');
         }
-    } catch (err) {
-        Swal.fire('Error', 'No se pudo actualizar el estado', 'error');
     }
 }
 
-    async function completarPedido(id) {
-        try {
-            const res = await fetch(`${BASE_URL}/pedidos/${id}/completar`, { method: 'PUT' });
-            if (res.ok) {
-                Swal.fire('¡Listo!', 'Pedido marcado como entregado', 'success');
-                cargarPedidos();
-            }
-        } catch (err) { console.error(err); }
-    }
+async function completarPedido(id) {
+    try {
+        const res = await fetch(`${BASE_URL}/pedidos/${id}/completar`, { method: 'PUT' });
+        if (res.ok) {
+            Swal.fire('¡Listo!', 'Pedido marcado como entregado', 'success');
+            cargarPedidos();
+        }
+    } catch (err) { console.error(err); }
+}
 
     // --- GUARDAR PRODUCTO ---
     document.getElementById('form-producto').addEventListener('submit', async (e) => {
@@ -428,13 +441,13 @@ async function actualizarEstado(id) {
         document.getElementById('prod-id').value = "";
     }
 
-    // Actualizar la lista de pedidos automáticamente cada 30 segundos
-setInterval(() => {
-    // Solo si estamos viendo la pestaña de pedidos
-    if (document.getElementById('seccionPedidos').style.display !== 'none') {
-        cargarPedidos();
-    }
-}, 30000);
+    // Actualizar automáticamente cada 30 segundos si la pestaña de pedidos está activa
+    setInterval(() => {
+        const tabPedidos = document.getElementById('tab-pedidos');
+        if (tabPedidos && tabPedidos.classList.contains('active')) {
+            cargarPedidos();
+        }
+    }, 30000);
 
     // Inicio
     cargarInventario();

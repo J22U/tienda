@@ -180,6 +180,31 @@ app.post('/pedidos', async (req, res) => {
     }
 });
 
+// ELIMINAR UN PEDIDO ESPECÍFICO
+app.delete('/pedidos/:id', async (req, res) => {
+    try {
+        const pool = await poolPromise;
+        await pool.request()
+            .input('id', sql.Int, req.params.id)
+            .query('DELETE FROM Pedidos WHERE PedidoID = @id');
+        
+        res.json({ success: true, message: "Pedido eliminado" });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// OPCIONAL: BORRAR TODOS LOS PEDIDOS (Ten cuidado con esta)
+app.delete('/pedidos-limpiar-todo', async (req, res) => {
+    try {
+        const pool = await poolPromise;
+        await pool.request().query('DELETE FROM Pedidos');
+        res.json({ success: true, message: "Historial vaciado" });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 // 3. Marcar pedido como entregado/completado
 app.put('/pedidos/:id/completar', async (req, res) => {
     try {
