@@ -279,7 +279,10 @@
 
         const lista = document.getElementById('lista-pedidos');
         const contador = document.getElementById('order-count');
-        if (!lista) return;
+        if (!lista) {
+            cargandoPedidosFlag = false;
+            return;
+        }
 
         try {
             const res = await fetch(`${BASE_URL}/pedidos`);
@@ -287,76 +290,74 @@
             
             let pedidos = await res.json();
             
-            // LIMPIAR LISTA PARA EVITAR DUPLICADOS
-            lista.innerHTML = "";
-
             // ACTUALIZAR CONTADOR REAL
             if (contador) contador.innerText = `${pedidos.length} recibidos`;
 
             if (pedidos.length === 0) {
                 lista.innerHTML = '<div class="text-center p-5 text-muted">No hay pedidos registrados aún.</div>';
-                return;
+            } else {
+                // Ordenar por ID real (descendente para ver el último arriba)
+                pedidos.sort((a, b) => b.PedidoID - a.PedidoID);
+
+                // CONSTRUIR TODO EL HTML EN UNA VARIABLE ANTES DE ASIGNAR
+                const contenidoFinal = pedidos.map((p, i) => {
+                    let productos = [];
+                    try { 
+                        productos = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
+                    } catch (e) { productos = []; }
+                    
+                    const resumenProd = productos.map(item => `<li>${item.cantidad}x ${item.Nombre}</li>`).join('');
+                    const numeroPedidoVisual = pedidos.length - i;
+
+                    return `
+                    <div class="product-row shadow-sm border-start border-4 ${p.Estado === 'Pendiente' ? 'border-warning' : 'border-success'} mb-3">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="mb-0 fw-bold">Pedido #${numeroPedidoVisual} — ${p.NombreCliente}</h6>
+                                <span class="status-pill ${p.Estado === 'Pendiente' ? 'status-pendiente' : 'status-completado'}">${p.Estado}</span>
+                            </div>
+                            <div class="row small mb-2">
+                                <div class="col-md-6">
+                                    <i class="bi bi-telephone"></i> ${p.Telefono || 'Sin tel.'}<br>
+                                    <i class="bi bi-person-vcard"></i> ${p.Documento || 'Sin doc.'}
+                                </div>
+                                <div class="col-md-6">
+                                    <i class="bi bi-geo-alt"></i> ${p.Direccion || 'Retiro en local'}<br>
+                                    <i class="bi bi-envelope"></i> ${p.Correo || 'Sin correo'}
+                                </div>
+                            </div>
+                            <ul class="text-muted small mb-0 ps-3">
+                                ${resumenProd}
+                            </ul>
+                        </div>
+                        <div class="text-end px-3 border-start">
+                            <div class="price-badge text-primary">$${Number(p.Total).toLocaleString()}</div>
+                            <small class="text-muted d-block">${new Date(p.Fecha).toLocaleDateString()}</small>
+                            <div class="mt-2 d-flex gap-1 justify-content-end">
+                                ${p.Estado === 'Pendiente' ? 
+                                    `<button class="btn btn-sm btn-success fw-bold" onclick="completarPedido(${p.PedidoID})">
+                                        <i class="bi bi-check-circle"></i>
+                                     </button>` : 
+                                    `<span class="text-success small fw-bold"><i class="bi bi-check-all"></i> COMPLETADO</span>`
+                                }
+                                <button class="btn btn-sm btn-outline-danger" onclick="eliminarPedido(${p.PedidoID})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+
+                // ASIGNACIÓN ÚNICA (BORRA LO VIEJO Y PONE LO NUEVO DE UN GOLPE)
+                lista.innerHTML = contenidoFinal;
             }
-
-            // Ordenar por ID real (descendente para ver el último arriba)
-            pedidos.sort((a, b) => b.PedidoID - a.PedidoID);
-
-            // USAR ÍNDICE DEL MAP PARA EL NÚMERO #
-            lista.innerHTML = pedidos.map((p, i) => {
-                let productos = [];
-                try { 
-                    productos = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
-                } catch (e) { productos = []; }
-                
-                const resumenProd = productos.map(item => `<li>${item.cantidad}x ${item.Nombre}</li>`).join('');
-                
-                // Número visual: El primero en la lista (index 0) será el total, bajando hasta 1.
-                const numeroPedidoVisual = pedidos.length - i;
-
-                return `
-                <div class="product-row shadow-sm border-start border-4 ${p.Estado === 'Pendiente' ? 'border-warning' : 'border-success'} mb-3">
-                    <div class="flex-grow-1">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h6 class="mb-0 fw-bold">Pedido #${numeroPedidoVisual} — ${p.NombreCliente}</h6>
-                            <span class="status-pill ${p.Estado === 'Pendiente' ? 'status-pendiente' : 'status-completado'}">${p.Estado}</span>
-                        </div>
-                        <div class="row small mb-2">
-                            <div class="col-md-6">
-                                <i class="bi bi-telephone"></i> ${p.Telefono || 'Sin tel.'}<br>
-                                <i class="bi bi-person-vcard"></i> ${p.Documento || 'Sin doc.'}
-                            </div>
-                            <div class="col-md-6">
-                                <i class="bi bi-geo-alt"></i> ${p.Direccion || 'Retiro en local'}<br>
-                                <i class="bi bi-envelope"></i> ${p.Correo || 'Sin correo'}
-                            </div>
-                        </div>
-                        <ul class="text-muted small mb-0 ps-3">
-                            ${resumenProd}
-                        </ul>
-                    </div>
-                    <div class="text-end px-3 border-start">
-                        <div class="price-badge text-primary">$${Number(p.Total).toLocaleString()}</div>
-                        <small class="text-muted d-block">${new Date(p.Fecha).toLocaleDateString()}</small>
-                        <div class="mt-2 d-flex gap-1 justify-content-end">
-                            ${p.Estado === 'Pendiente' ? 
-                                `<button class="btn btn-sm btn-success fw-bold" onclick="completarPedido(${p.PedidoID})">
-                                    <i class="bi bi-check-circle"></i>
-                                 </button>` : 
-                                `<span class="text-success small fw-bold"><i class="bi bi-check-all"></i> COMPLETADO</span>`
-                            }
-                            <button class="btn btn-sm btn-outline-danger" onclick="eliminarPedido(${p.PedidoID})">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>`;
-            }).join('');
 
         } catch (err) {
             console.error("Error al cargar pedidos:", err);
-            lista.innerHTML = `<div class="text-center p-4"><p class="text-danger">Error al cargar.</p></div>`;
+            lista.innerHTML = `<div class="text-center p-4"><p class="text-danger">Error al conectar con el servidor.</p></div>`;
         } finally {
-            cargandoPedidosFlag = false;
+            // Liberar flag después de un breve delay para evitar rebotes
+            setTimeout(() => { cargandoPedidosFlag = false; }, 300);
         }
     }
 
