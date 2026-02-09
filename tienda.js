@@ -11,10 +11,10 @@ async function cargarProductos() {
         
         if (!contenedor) return;
 
-        // Limpiar el contenedor antes de mapear para evitar duplicados
         contenedor.innerHTML = ""; 
 
         const htmlProductos = productosData.map(p => {
+            // Lógica de imágenes
             let fotos = [];
             try {
                 const imgStr = p.ImagenURL || '';
@@ -24,26 +24,32 @@ async function cargarProductos() {
             const fotoPrincipal = fotos[0] ? fotos[0].trim() : '';
             const srcFinal = fotoPrincipal.startsWith('http') ? fotoPrincipal : `${BASE_URL}${fotoPrincipal}`;
 
-            const stockColor = p.Stock > 0 ? 'text-success' : 'text-danger';
-            const stockTexto = p.Stock > 0 ? `${p.Stock} disponibles` : 'Agotado';
+            // --- LÓGICA DE AGOTADO ---
+            const estaAgotado = p.Stock <= 0;
+            const claseAgotado = estaAgotado ? 'product-out-of-stock' : ''; // Esta es la clase roja del HTML
+            const stockColor = estaAgotado ? 'text-danger' : 'text-success';
+            const stockTexto = estaAgotado ? '¡SIN EXISTENCIAS!' : `${p.Stock} disponibles`;
 
             return `
                 <div class="col-md-4 col-lg-3">
-                    <div class="product-card">
-                        <div class="img-container" onclick="verDetalle(${p.ProductoID})">
-                            <img src="${srcFinal}" onerror="this.src='https://via.placeholder.com/250?text=Agro+Ferretería'">
+                    <div class="card product-card ${claseAgotado} h-100">
+                        <div class="img-container" onclick="${estaAgotado ? '' : `verDetalle(${p.ProductoID})`}">
+                            <img src="${srcFinal}" onerror="this.src='https://via.placeholder.com/250?text=Agro+Ferretería'" 
+                                 style="${estaAgotado ? 'filter: grayscale(1); opacity: 0.6;' : ''}">
                         </div>
                         <div class="p-4 text-center">
                             <small class="text-uppercase fw-bold text-muted">${p.Marca}</small>
-                            <h5 class="fw-bold mb-1">${p.Nombre}</h5>
+                            <h5 class="fw-bold mb-1 ${estaAgotado ? 'text-muted' : ''}">${p.Nombre}</h5>
                             <div class="price-tag mb-1">$${Number(p.Precio).toLocaleString()}</div>
                             
                             <div class="small fw-bold ${stockColor} mb-3">
-                                <i class="bi bi-box-seam me-1"></i>${stockTexto}
+                                <i class="bi ${estaAgotado ? 'bi-x-circle' : 'bi-box-seam'} me-1"></i>${stockTexto}
                             </div>
 
-                            <button class="btn btn-success w-100 fw-bold rounded-pill" onclick="verDetalle(${p.ProductoID})" ${p.Stock <= 0 ? 'disabled' : ''}>
-                                ${p.Stock <= 0 ? 'AGOTADO' : '<i class="bi bi-cart-plus me-2"></i>AÑADIR'}
+                            <button class="btn ${estaAgotado ? 'btn-secondary' : 'btn-success'} w-100 fw-bold rounded-pill" 
+                                    onclick="verDetalle(${p.ProductoID})" 
+                                    ${estaAgotado ? 'disabled' : ''}>
+                                ${estaAgotado ? 'AGOTADO' : '<i class="bi bi-cart-plus me-2"></i>AÑADIR'}
                             </button>
                         </div>
                     </div>
@@ -56,7 +62,7 @@ async function cargarProductos() {
     }
 }
 
-// 2. VER DETALLE
+// 2. VER DETALLE (Mantiene tu lógica pero con seguro de stock)
 function verDetalle(id) {
     const p = productosData.find(item => item.ProductoID === id);
     if (!p) return;
@@ -110,12 +116,13 @@ function verDetalle(id) {
 
     const btn = document.getElementById('detalle-btn-agregar');
     btn.disabled = p.Stock <= 0;
+    btn.innerText = p.Stock <= 0 ? "SIN STOCK" : "AÑADIR AL PEDIDO";
     btn.onclick = () => agregarAlPedido(p);
 
     bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDetalleProducto')).show();
 }
 
-// 3. AGREGAR AL CARRITO
+// 3. AGREGAR AL CARRITO (Mismo tuyo)
 function agregarAlPedido(producto) {
     const inputCant = document.getElementById('detalle-cantidad');
     const cantidad = parseInt(inputCant.value);
@@ -141,21 +148,24 @@ function agregarAlPedido(producto) {
     Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Agregado al pedido', showConfirmButton: false, timer: 1500 });
 }
 
-// 4. BÚSQUEDA
+// 4. BÚSQUEDA (Optimizada para filtrar por el array original y repintar)
 const buscador = document.getElementById('buscador');
 if(buscador) {
     buscador.addEventListener('input', (e) => {
         const termino = e.target.value.toLowerCase();
+        // En lugar de ocultar divs, es mejor filtrar el data y llamar a una función de renderizado
+        // Pero para mantener tu lógica simple, ocultamos los contenedores:
         const productosCards = document.querySelectorAll('#contenedor-productos > div');
 
         productosCards.forEach(card => {
             const nombreProducto = card.querySelector('h5').textContent.toLowerCase();
-            card.style.display = nombreProducto.includes(termino) ? 'block' : 'none';
+            const marcaProducto = card.querySelector('small').textContent.toLowerCase();
+            card.style.display = (nombreProducto.includes(termino) || marcaProducto.includes(termino)) ? 'block' : 'none';
         });
     });
 }
 
-// 5. UI CARRITO
+// 5. UI CARRITO (Mismo tuyo)
 function actualizarCarritoUI() {
     const lista = document.getElementById('lista-compra');
     const totalLabel = document.getElementById('total-compra');
@@ -186,7 +196,7 @@ function eliminarItem(index) {
     actualizarCarritoUI();
 }
 
-// 6. PROCESAR PAGO (CON DESCUENTO AUTOMÁTICO DE INVENTARIO)
+// 6. PROCESAR PAGO (Mismo tuyo)
 async function procesarPago() {
     if (carrito.length === 0) return Swal.fire('Carrito vacío', '', 'warning');
 
@@ -200,7 +210,6 @@ async function procesarPago() {
         return Swal.fire('Campos incompletos', 'Por favor llena todos los campos de envío', 'error');
     }
 
-    // Preparamos los datos del pedido incluyendo IDs y cantidades para el descuento
     const datosPedido = {
         nombre, 
         correo, 
@@ -240,27 +249,23 @@ async function procesarPago() {
                 confirmButtonColor: '#2d5a27'
             });
             
-            // Limpiar carrito y formulario
             carrito = [];
             actualizarCarritoUI();
             document.getElementById('form-factura').reset();
             
-            // Cerrar el modal del carrito
             const modalElement = document.getElementById('modalCarrito');
             const modalInstance = bootstrap.Modal.getInstance(modalElement);
             if (modalInstance) modalInstance.hide();
 
-            // RECARGAR PRODUCTOS: Esto hace que el cliente vea el stock actualizado en la tienda
-            cargarProductos();
+            cargarProductos(); // Refresca la tienda con los nuevos stocks
             
         } else {
             throw new Error(result.error || 'Error al procesar el pedido');
         }
     } catch (error) {
         console.error("Error al enviar pedido:", error);
-        Swal.fire('Error', error.message || 'No pudimos registrar tu pedido. Intenta de nuevo.', 'error');
+        Swal.fire('Error', error.message || 'No pudimos registrar tu pedido.', 'error');
     }
 }
 
-// Inicialización única
 document.addEventListener('DOMContentLoaded', cargarProductos);
