@@ -181,12 +181,52 @@ function eliminarItem(index) {
     actualizarCarritoUI();
 }
 
-function procesarPago() {
+async function procesarPago() {
     if (carrito.length === 0) return Swal.fire('Carrito vacío', '', 'warning');
-    Swal.fire('¡Éxito!', 'Pedido confirmado. Nos contactaremos pronto.', 'success');
-    carrito = [];
-    actualizarCarritoUI();
-    bootstrap.Modal.getInstance(document.getElementById('modalCarrito')).hide();
+
+    // 1. Recopilar datos (ajusta los IDs según tus inputs del formulario de pago)
+    // Si no tienes formulario aún, puedes usar datos de prueba o pedirlos con SweetAlert
+    const datosPedido = {
+        nombre: document.getElementById('nombreCliente')?.value || "Cliente Web",
+        correo: document.getElementById('correoCliente')?.value || "sin@correo.com",
+        telefono: document.getElementById('telCliente')?.value || "000000",
+        direccion: document.getElementById('dirCliente')?.value || "Retiro en tienda",
+        documento: document.getElementById('docCliente')?.value || "000",
+        productos: carrito, // Enviamos el array del carrito
+        total: carrito.reduce((sum, item) => sum + (item.Precio * item.cantidad), 0)
+    };
+
+    try {
+        // Bloquear el botón para evitar doble clic
+        Swal.showLoading();
+
+        // 2. Enviar al servidor
+        const response = await fetch('https://tienda-1vps.onrender.com/pedidos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(datosPedido)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // 3. Si el servidor responde OK, procedemos con la limpieza
+            Swal.fire('¡Éxito!', 'Pedido enviado correctamente. Nos contactaremos pronto.', 'success');
+            
+            carrito = [];
+            actualizarCarritoUI();
+            
+            const modalElement = document.getElementById('modalCarrito');
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if (modalInstance) modalInstance.hide();
+            
+        } else {
+            Swal.fire('Error', 'No se pudo guardar el pedido en la base de datos', 'error');
+        }
+    } catch (error) {
+        console.error("Error al enviar pedido:", error);
+        Swal.fire('Error de conexión', 'No pudimos contactar al servidor', 'error');
+    }
 }
 
 document.addEventListener('DOMContentLoaded', cargarProductos);
