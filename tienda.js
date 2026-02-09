@@ -1,6 +1,6 @@
 let carrito = [];
 let productosData = [];
-const BASE_URL = 'https://tienda-1vps.onrender.com'; // URL Única para todo el script
+const BASE_URL = 'https://tienda-1vps.onrender.com';
 
 // 1. CARGAR PRODUCTOS DESDE EL BACKEND
 async function cargarProductos() {
@@ -11,7 +11,10 @@ async function cargarProductos() {
         
         if (!contenedor) return;
 
-        contenedor.innerHTML = productosData.map(p => {
+        // CORRECCIÓN: Limpiar el contenedor antes de mapear para evitar duplicados
+        contenedor.innerHTML = ""; 
+
+        const htmlProductos = productosData.map(p => {
             let fotos = [];
             try {
                 const imgStr = p.ImagenURL || '';
@@ -19,7 +22,6 @@ async function cargarProductos() {
             } catch(e) { fotos = [p.ImagenURL]; }
             
             const fotoPrincipal = fotos[0] ? fotos[0].trim() : '';
-            // Verificamos si la foto ya es una URL completa o si necesita el prefijo
             const srcFinal = fotoPrincipal.startsWith('http') ? fotoPrincipal : `${BASE_URL}${fotoPrincipal}`;
 
             const stockColor = p.Stock > 0 ? 'text-success' : 'text-danger';
@@ -47,12 +49,14 @@ async function cargarProductos() {
                     </div>
                 </div>`;
         }).join('');
+
+        contenedor.innerHTML = htmlProductos;
     } catch (error) {
         console.error("Error cargando productos:", error);
     }
 }
 
-// 2. VER DETALLE CON CARRUSEL Y STOCK DINÁMICO
+// 2. VER DETALLE
 function verDetalle(id) {
     const p = productosData.find(item => item.ProductoID === id);
     if (!p) return;
@@ -86,11 +90,11 @@ function verDetalle(id) {
                 </button>
             </div>`;
     } else {
-        const singleSrc = fotos[0].trim().startsWith('http') ? fotos[0].trim() : `${BASE_URL}${fotos[0].trim()}`;
+        const fotoURL = fotos[0] ? fotos[0].trim() : '';
+        const singleSrc = fotoURL.startsWith('http') ? fotoURL : `${BASE_URL}${fotoURL}`;
         contenedorImagen.innerHTML = `<img src="${singleSrc}" class="img-fluid" style="max-height: 350px; object-fit: contain;">`;
     }
 
-    // Actualizar Textos del Modal
     document.getElementById('detalle-nombre').innerText = p.Nombre;
     document.getElementById('detalle-precio').innerText = `$${Number(p.Precio).toLocaleString()}`;
     document.getElementById('detalle-caracteristicas').innerText = p.Caracteristicas || 'Sin descripción';
@@ -113,10 +117,11 @@ function verDetalle(id) {
 
 // 3. AGREGAR AL CARRITO
 function agregarAlPedido(producto) {
-    const cantidad = parseInt(document.getElementById('detalle-cantidad').value);
+    const inputCant = document.getElementById('detalle-cantidad');
+    const cantidad = parseInt(inputCant.value);
     
-    if (cantidad > producto.Stock) {
-        Swal.fire('Error', 'No hay suficiente stock disponible', 'error');
+    if (cantidad > producto.Stock || cantidad <= 0) {
+        Swal.fire('Error', 'Cantidad no válida o supera el stock', 'error');
         return;
     }
 
@@ -141,7 +146,7 @@ const buscador = document.getElementById('buscador');
 if(buscador) {
     buscador.addEventListener('input', (e) => {
         const termino = e.target.value.toLowerCase();
-        const productosCards = document.querySelectorAll('#contenedor-productos .col-md-4, #contenedor-productos .col-lg-3');
+        const productosCards = document.querySelectorAll('#contenedor-productos > div');
 
         productosCards.forEach(card => {
             const nombreProducto = card.querySelector('h5').textContent.toLowerCase();
@@ -181,33 +186,29 @@ function eliminarItem(index) {
     actualizarCarritoUI();
 }
 
+// 6. PROCESAR PAGO (CORREGIDO: Sin duplicidad de lógica)
 async function procesarPago() {
     if (carrito.length === 0) return Swal.fire('Carrito vacío', '', 'warning');
 
-    // 1. Recopilar datos usando los IDs REALES de tu HTML (fac-nombre, fac-correo, etc.)
     const nombre = document.getElementById('fac-nombre').value.trim();
     const correo = document.getElementById('fac-correo').value.trim();
     const telefono = document.getElementById('fac-tel').value.trim();
     const documento = document.getElementById('fac-doc').value.trim();
     const direccion = document.getElementById('fac-dir').value.trim();
 
-    // 2. Validación: Si falta algún campo obligatorio
     if (!nombre || !correo || !telefono || !direccion) {
         return Swal.fire('Campos incompletos', 'Por favor llena todos los campos de envío', 'error');
     }
 
     const datosPedido = {
-        nombre: nombre,
-        correo: correo,
-        telefono: telefono,
+        nombre, correo, telefono,
         documento: documento || "No proporcionado",
-        direccion: direccion,
+        direccion,
         productos: carrito,
         total: carrito.reduce((sum, item) => sum + (item.Precio * item.cantidad), 0)
     };
 
     try {
-        // Mostrar cargando
         Swal.fire({
             title: 'Procesando tu pedido...',
             text: 'Por favor espera un momento',
@@ -215,7 +216,6 @@ async function procesarPago() {
             didOpen: () => { Swal.showLoading(); }
         });
 
-        // 3. Enviar al servidor
         const response = await fetch(`${BASE_URL}/pedidos`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -232,54 +232,22 @@ async function procesarPago() {
                 confirmButtonColor: '#2d5a27'
             });
             
-            // 4. Limpiar todo
             carrito = [];
             actualizarCarritoUI();
-            document.getElementById('form-factura').reset(); // Limpia el formulario
+            document.getElementById('form-factura').reset();
             
             const modalElement = document.getElementById('modalCarrito');
             const modalInstance = bootstrap.Modal.getInstance(modalElement);
             if (modalInstance) modalInstance.hide();
             
         } else {
-            throw new Error(result.error || 'Error desconocido');
+            throw new Error(result.error || 'Error al procesar el pedido');
         }
     } catch (error) {
         console.error("Error al enviar pedido:", error);
         Swal.fire('Error', 'No pudimos registrar tu pedido. Intenta de nuevo.', 'error');
     }
-
-    try {
-        // Bloquear el botón para evitar doble clic
-        Swal.showLoading();
-
-        // 2. Enviar al servidor
-        const response = await fetch('https://tienda-1vps.onrender.com/pedidos', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(datosPedido)
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            // 3. Si el servidor responde OK, procedemos con la limpieza
-            Swal.fire('¡Éxito!', 'Pedido enviado correctamente. Nos contactaremos pronto.', 'success');
-            
-            carrito = [];
-            actualizarCarritoUI();
-            
-            const modalElement = document.getElementById('modalCarrito');
-            const modalInstance = bootstrap.Modal.getInstance(modalElement);
-            if (modalInstance) modalInstance.hide();
-            
-        } else {
-            Swal.fire('Error', 'No se pudo guardar el pedido en la base de datos', 'error');
-        }
-    } catch (error) {
-        console.error("Error al enviar pedido:", error);
-        Swal.fire('Error de conexión', 'No pudimos contactar al servidor', 'error');
-    }
 }
 
+// Inicialización única
 document.addEventListener('DOMContentLoaded', cargarProductos);
