@@ -132,9 +132,18 @@
         
         /* --- ESTILO PARA PRODUCTOS AGOTADOS --- */
         .product-out-of-stock {
-            background-color: #fff5f5 !important;
+            background-color: #fff5f5 !important; /* Rojo clarito */
             border: 2px solid #ffcccc !important;
-            opacity: 0.9;
+            opacity: 0.85;
+            filter: grayscale(0.7); /* Imagen y colores más apagados */
+        }
+        
+        .product-out-of-stock .price-tag {
+            color: #888 !important;
+        }
+
+        .product-out-of-stock .img-container {
+            cursor: default;
         }
 
         .text-danger {
