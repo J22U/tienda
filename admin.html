@@ -211,9 +211,7 @@
                                 <h5 class="fw-bold m-0">Historial de Ventas</h5>
                                 <span class="badge bg-primary rounded-pill" id="order-count">0 recibidos</span>
                             </div>
-                            <div id="lista-pedidos">
-                                <p class="text-center text-muted p-4">Cargando pedidos...</p>
-                            </div>
+                            <div id="lista-pedidos"></div>
                         </div>
                     </div>
                 </div>
@@ -225,233 +223,204 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <script>
-    let editando = false;
-    let cargandoPedidosFlag = false; 
-    const BASE_URL = 'https://tienda-1vps.onrender.com';
+    // PREVENIR DUPLICACIÓN DE CARGA DEL SCRIPT
+    if (window.scriptCargado) {
+        console.warn("Script ya cargado anteriormente.");
+    } else {
+        window.scriptCargado = true;
 
-    async function cargarInventario() {
-        try {
-            const res = await fetch(`${BASE_URL}/productos`);
-            const data = await res.json();
-            document.getElementById('total-count').innerText = `${data.length} Items`;
-            const lista = document.getElementById('lista-productos');
-            
-            lista.innerHTML = data.map(p => {
-                const prodJson = JSON.stringify(p).replace(/'/g, "&apos;");
-                return `
-                <div class="product-row shadow-sm">
-                    <div class="img-box"><img src="${BASE_URL}${p.ImagenURL}" onerror="this.src='https://via.placeholder.com/150'"></div>
-                    <div class="flex-grow-1">
-                        <h6 class="mb-0 fw-bold">${p.Nombre}</h6>
-                        <small class="text-muted">SKU: ${p.CodigoSKU}</small>
-                    </div>
-                    <div class="text-end px-3">
-                        <div class="price-badge">$${Number(p.Precio).toLocaleString()}</div>
-                        <small class="fw-bold ${p.Stock < 5 ? 'text-danger' : 'text-success'}">${p.Stock} unds</small>
-                    </div>
-                    <div class="d-flex">
-                        <button class="action-btn btn-edit" onclick='prepararEdicion(${prodJson})'><i class="bi bi-pencil-fill"></i></button>
-                        <button class="action-btn btn-delete" onclick="eliminarProducto(${p.ProductoID})"><i class="bi bi-trash-fill"></i></button>
-                    </div>
-                </div>`;
-            }).join('');
-        } catch (err) { console.error("Error inventario:", err); }
-    }
+        let editando = false;
+        let cargandoPedidosFlag = false; 
+        const BASE_URL = 'https://tienda-1vps.onrender.com';
 
-    function prepararEdicion(p) {
-        editando = true;
-        document.getElementById('titulo-form').innerText = "Editando Producto";
-        document.getElementById('btn-guardar').innerText = "ACTUALIZAR";
-        document.getElementById('btn-guardar').style.background = "#2ecc71";
-        document.getElementById('prod-id').value = p.ProductoID;
-        document.getElementById('nombre').value = p.Nombre;
-        document.getElementById('marca').value = p.Marca;
-        document.getElementById('sku').value = p.CodigoSKU;
-        document.getElementById('precio').value = p.Precio;
-        document.getElementById('stock').value = p.Stock;
-        document.getElementById('caracteristicas').value = p.Caracteristicas || '';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    async function cargarPedidos() {
-        if (cargandoPedidosFlag) return; 
-        cargandoPedidosFlag = true;
-
-        const lista = document.getElementById('lista-pedidos');
-        const contador = document.getElementById('order-count');
-        if (!lista) {
-            cargandoPedidosFlag = false;
-            return;
-        }
-
-        try {
-            const res = await fetch(`${BASE_URL}/pedidos`);
-            if (!res.ok) throw new Error('Error en la respuesta del servidor');
-            
-            let pedidos = await res.json();
-            
-            // ACTUALIZAR CONTADOR REAL
-            if (contador) contador.innerText = `${pedidos.length} recibidos`;
-
-            if (pedidos.length === 0) {
-                lista.innerHTML = '<div class="text-center p-5 text-muted">No hay pedidos registrados aún.</div>';
-            } else {
-                // Ordenar por ID real (descendente para ver el último arriba)
-                pedidos.sort((a, b) => b.PedidoID - a.PedidoID);
-
-                // CONSTRUIR TODO EL HTML EN UNA VARIABLE ANTES DE ASIGNAR
-                const contenidoFinal = pedidos.map((p, i) => {
-                    let productos = [];
-                    try { 
-                        productos = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
-                    } catch (e) { productos = []; }
-                    
-                    const resumenProd = productos.map(item => `<li>${item.cantidad}x ${item.Nombre}</li>`).join('');
-                    const numeroPedidoVisual = pedidos.length - i;
-
+        async function cargarInventario() {
+            try {
+                const res = await fetch(`${BASE_URL}/productos`);
+                const data = await res.json();
+                document.getElementById('total-count').innerText = `${data.length} Items`;
+                const lista = document.getElementById('lista-productos');
+                
+                lista.innerHTML = data.map(p => {
+                    const prodJson = JSON.stringify(p).replace(/'/g, "&apos;");
                     return `
-                    <div class="product-row shadow-sm border-start border-4 ${p.Estado === 'Pendiente' ? 'border-warning' : 'border-success'} mb-3">
+                    <div class="product-row shadow-sm">
+                        <div class="img-box"><img src="${BASE_URL}${p.ImagenURL}" onerror="this.src='https://via.placeholder.com/150'"></div>
                         <div class="flex-grow-1">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h6 class="mb-0 fw-bold">Pedido #${numeroPedidoVisual} — ${p.NombreCliente}</h6>
-                                <span class="status-pill ${p.Estado === 'Pendiente' ? 'status-pendiente' : 'status-completado'}">${p.Estado}</span>
-                            </div>
-                            <div class="row small mb-2">
-                                <div class="col-md-6">
-                                    <i class="bi bi-telephone"></i> ${p.Telefono || 'Sin tel.'}<br>
-                                    <i class="bi bi-person-vcard"></i> ${p.Documento || 'Sin doc.'}
-                                </div>
-                                <div class="col-md-6">
-                                    <i class="bi bi-geo-alt"></i> ${p.Direccion || 'Retiro en local'}<br>
-                                    <i class="bi bi-envelope"></i> ${p.Correo || 'Sin correo'}
-                                </div>
-                            </div>
-                            <ul class="text-muted small mb-0 ps-3">
-                                ${resumenProd}
-                            </ul>
+                            <h6 class="mb-0 fw-bold">${p.Nombre}</h6>
+                            <small class="text-muted">SKU: ${p.CodigoSKU}</small>
                         </div>
-                        <div class="text-end px-3 border-start">
-                            <div class="price-badge text-primary">$${Number(p.Total).toLocaleString()}</div>
-                            <small class="text-muted d-block">${new Date(p.Fecha).toLocaleDateString()}</small>
-                            <div class="mt-2 d-flex gap-1 justify-content-end">
-                                ${p.Estado === 'Pendiente' ? 
-                                    `<button class="btn btn-sm btn-success fw-bold" onclick="completarPedido(${p.PedidoID})">
-                                        <i class="bi bi-check-circle"></i>
-                                     </button>` : 
-                                    `<span class="text-success small fw-bold"><i class="bi bi-check-all"></i> COMPLETADO</span>`
-                                }
-                                <button class="btn btn-sm btn-outline-danger" onclick="eliminarPedido(${p.PedidoID})">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </div>
+                        <div class="text-end px-3">
+                            <div class="price-badge">$${Number(p.Precio).toLocaleString()}</div>
+                            <small class="fw-bold ${p.Stock < 5 ? 'text-danger' : 'text-success'}">${p.Stock} unds</small>
+                        </div>
+                        <div class="d-flex">
+                            <button class="action-btn btn-edit" onclick='prepararEdicion(${prodJson})'><i class="bi bi-pencil-fill"></i></button>
+                            <button class="action-btn btn-delete" onclick="eliminarProducto(${p.ProductoID})"><i class="bi bi-trash-fill"></i></button>
                         </div>
                     </div>`;
                 }).join('');
+            } catch (err) { console.error("Error inventario:", err); }
+        }
 
-                // ASIGNACIÓN ÚNICA (BORRA LO VIEJO Y PONE LO NUEVO DE UN GOLPE, probemos)
-                lista.innerHTML = contenidoFinal;
+        function prepararEdicion(p) {
+            editando = true;
+            document.getElementById('titulo-form').innerText = "Editando Producto";
+            document.getElementById('btn-guardar').innerText = "ACTUALIZAR";
+            document.getElementById('btn-guardar').style.background = "#2ecc71";
+            document.getElementById('prod-id').value = p.ProductoID;
+            document.getElementById('nombre').value = p.Nombre;
+            document.getElementById('marca').value = p.Marca;
+            document.getElementById('sku').value = p.CodigoSKU;
+            document.getElementById('precio').value = p.Precio;
+            document.getElementById('stock').value = p.Stock;
+            document.getElementById('caracteristicas').value = p.Caracteristicas || '';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function cargarPedidos() {
+            if (cargandoPedidosFlag) return; 
+            cargandoPedidosFlag = true;
+
+            const lista = document.getElementById('lista-pedidos');
+            const contador = document.getElementById('order-count');
+            
+            if (!lista) {
+                cargandoPedidosFlag = false;
+                return;
             }
 
-        } catch (err) {
-            console.error("Error al cargar pedidos:", err);
-            lista.innerHTML = `<div class="text-center p-4"><p class="text-danger">Error al conectar con el servidor.</p></div>`;
-        } finally {
-            // Liberar flag después de un breve delay para evitar rebotes
-            setTimeout(() => { cargandoPedidosFlag = false; }, 300);
+            try {
+                const res = await fetch(`${BASE_URL}/pedidos`);
+                if (!res.ok) throw new Error('Error en servidor');
+                
+                const pedidos = await res.json();
+                
+                if (contador) contador.innerText = `${pedidos.length} recibidos`;
+
+                if (pedidos.length === 0) {
+                    lista.innerHTML = '<div class="text-center p-5 text-muted">No hay pedidos registrados.</div>';
+                } else {
+                    pedidos.sort((a, b) => b.PedidoID - a.PedidoID);
+
+                    // Generar string completo y ASIGNAR (reemplaza, no suma)
+                    const htmlFinal = pedidos.map((p, i) => {
+                        let productos = [];
+                        try { 
+                            productos = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
+                        } catch (e) { productos = []; }
+                        
+                        const resumenProd = productos.map(item => `<li>${item.cantidad}x ${item.Nombre}</li>`).join('');
+                        const numeroPedidoVisual = pedidos.length - i;
+
+                        return `
+                        <div class="product-row shadow-sm border-start border-4 ${p.Estado === 'Pendiente' ? 'border-warning' : 'border-success'} mb-3">
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="mb-0 fw-bold">Pedido #${numeroPedidoVisual} — ${p.NombreCliente}</h6>
+                                    <span class="status-pill ${p.Estado === 'Pendiente' ? 'status-pendiente' : 'status-completado'}">${p.Estado}</span>
+                                </div>
+                                <div class="row small mb-2">
+                                    <div class="col-md-6">
+                                        <i class="bi bi-telephone"></i> ${p.Telefono || 'Sin tel.'}<br>
+                                        <i class="bi bi-person-vcard"></i> ${p.Documento || 'Sin doc.'}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <i class="bi bi-geo-alt"></i> ${p.Direccion || 'Retiro local'}<br>
+                                        <i class="bi bi-envelope"></i> ${p.Correo || 'Sin correo'}
+                                    </div>
+                                </div>
+                                <ul class="text-muted small mb-0 ps-3">${resumenProd}</ul>
+                            </div>
+                            <div class="text-end px-3 border-start">
+                                <div class="price-badge text-primary">$${Number(p.Total).toLocaleString()}</div>
+                                <small class="text-muted d-block">${new Date(p.Fecha).toLocaleDateString()}</small>
+                                <div class="mt-2 d-flex gap-1 justify-content-end">
+                                    ${p.Estado === 'Pendiente' ? 
+                                        `<button class="btn btn-sm btn-success" onclick="completarPedido(${p.PedidoID})"><i class="bi bi-check-circle"></i></button>` : 
+                                        `<span class="text-success small fw-bold"><i class="bi bi-check-all"></i> OK</span>`
+                                    }
+                                    <button class="btn btn-sm btn-outline-danger" onclick="eliminarPedido(${p.PedidoID})"><i class="bi bi-trash"></i></button>
+                                </div>
+                            </div>
+                        </div>`;
+                    }).join('');
+
+                    lista.innerHTML = htmlFinal;
+                }
+            } catch (err) {
+                console.error(err);
+                lista.innerHTML = '<p class="text-danger text-center">Error de conexión</p>';
+            } finally {
+                setTimeout(() => { cargandoPedidosFlag = false; }, 500);
+            }
         }
-    }
 
-    async function eliminarPedido(id) {
-        const confirmar = await Swal.fire({
-            title: '¿Estás seguro?',
-            text: "Esta acción no se puede deshacer",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Sí, borrar',
-            cancelButtonText: 'Cancelar'
-        });
-
-        if (confirmar.isConfirmed) {
+        async function eliminarPedido(id) {
+            if (!(await Swal.fire({title:'¿Borrar pedido?', showCancelButton:true, confirmButtonColor:'#d33'}).then(r => r.isConfirmed))) return;
             try {
                 const res = await fetch(`${BASE_URL}/pedidos/${id}`, { method: 'DELETE' });
-                const result = await res.json();
-                if (result.success) {
-                    Swal.fire('Eliminado', 'El pedido ha sido borrado.', 'success');
-                    cargarPedidos(); 
-                }
-            } catch (error) {
-                Swal.fire('Error', 'No se pudo eliminar el pedido', 'error');
-            }
+                if (res.ok) { cargarPedidos(); }
+            } catch (error) { console.error(error); }
         }
-    }
 
-    async function completarPedido(id) {
-        try {
-            const res = await fetch(`${BASE_URL}/pedidos/${id}/completar`, { method: 'PUT' });
-            if (res.ok) {
-                Swal.fire('¡Listo!', 'Pedido marcado como entregado', 'success');
+        async function completarPedido(id) {
+            try {
+                const res = await fetch(`${BASE_URL}/pedidos/${id}/completar`, { method: 'PUT' });
+                if (res.ok) { cargarPedidos(); }
+            } catch (err) { console.error(err); }
+        }
+
+        document.getElementById('form-producto').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('prod-id').value;
+            const producto = {
+                nombre: document.getElementById('nombre').value,
+                marca: document.getElementById('marca').value,
+                sku: document.getElementById('sku').value,
+                precio: parseFloat(document.getElementById('precio').value),
+                stock: parseInt(document.getElementById('stock').value),
+                caracteristicas: document.getElementById('caracteristicas').value
+            };
+
+            const url = editando ? `${BASE_URL}/productos/${id}` : `${BASE_URL}/productos`;
+            try {
+                const res = await fetch(url, {
+                    method: editando ? 'PUT' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(producto)
+                });
+                if (res.ok) { Swal.fire('Éxito','','success'); limpiarForm(); cargarInventario(); }
+            } catch (err) { console.error(err); }
+        });
+
+        async function eliminarProducto(id) {
+            if (!(await Swal.fire({title:'¿Eliminar?', showCancelButton:true}).then(r => r.isConfirmed))) return;
+            try {
+                const res = await fetch(`${BASE_URL}/productos/${id}`, { method: 'DELETE' });
+                if (res.ok) { cargarInventario(); }
+            } catch (err) { console.error(err); }
+        }
+
+        function limpiarForm() {
+            editando = false;
+            document.getElementById('form-producto').reset();
+            document.getElementById('titulo-form').innerText = "Crear Producto";
+            document.getElementById('btn-guardar').innerText = "GUARDAR PRODUCTO";
+            document.getElementById('btn-guardar').style.background = "var(--accent)";
+            document.getElementById('prod-id').value = "";
+        }
+
+        // Ejecutar al cargar la página
+        cargarInventario();
+
+        // Intervalo seguro
+        setInterval(() => {
+            const tabPedidos = document.getElementById('tab-pedidos');
+            if (tabPedidos && tabPedidos.classList.contains('active')) {
                 cargarPedidos();
             }
-        } catch (err) { console.error(err); }
+        }, 15000);
     }
-
-    document.getElementById('form-producto').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const id = document.getElementById('prod-id').value;
-        const producto = {
-            nombre: document.getElementById('nombre').value,
-            marca: document.getElementById('marca').value,
-            sku: document.getElementById('sku').value,
-            precio: parseFloat(document.getElementById('precio').value),
-            stock: parseInt(document.getElementById('stock').value),
-            caracteristicas: document.getElementById('caracteristicas').value
-        };
-
-        const url = editando ? `${BASE_URL}/productos/${id}` : `${BASE_URL}/productos`;
-        const metodo = editando ? 'PUT' : 'POST';
-
-        try {
-            const res = await fetch(url, {
-                method: metodo,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(producto)
-            });
-
-            if (res.ok) {
-                Swal.fire('¡Éxito!', 'Operación realizada', 'success');
-                limpiarForm();
-                cargarInventario();
-            }
-        } catch (err) { console.error(err); }
-    });
-
-    async function eliminarProducto(id) {
-        if (!(await Swal.fire({title:'¿Eliminar?', showCancelButton:true}).then(r => r.isConfirmed))) return;
-        try {
-            const res = await fetch(`${BASE_URL}/productos/${id}`, { method: 'DELETE' });
-            if (res.ok) { cargarInventario(); }
-        } catch (err) { console.error(err); }
-    }
-
-    function limpiarForm() {
-        editando = false;
-        document.getElementById('form-producto').reset();
-        document.getElementById('titulo-form').innerText = "Crear Producto";
-        document.getElementById('btn-guardar').innerText = "GUARDAR PRODUCTO";
-        document.getElementById('btn-guardar').style.background = "var(--accent)";
-        document.getElementById('prod-id').value = "";
-    }
-
-    setInterval(() => {
-        const tabPedidos = document.getElementById('tab-pedidos');
-        if (tabPedidos && tabPedidos.classList.contains('active')) {
-            cargarPedidos();
-        }
-    }, 30000);
-
-    cargarInventario();
     </script>
 </body>
 </html>
