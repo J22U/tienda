@@ -26,6 +26,7 @@
             color: #2d3436;
             min-height: 100vh;
             padding-bottom: 50px;
+            overflow-x: hidden; /* Evita scroll lateral indeseado */
         }
 
         .header-section { padding: 30px 0; }
@@ -45,6 +46,7 @@
             box-shadow: 0 15px 35px rgba(0,0,0,0.05);
             padding: 25px;
             height: 100%;
+            max-width: 100%; /* Asegura que no exceda el ancho */
         }
 
         .form-label { font-weight: 700; font-size: 0.95rem; margin-bottom: 8px; color: #4b4b4b; }
@@ -84,6 +86,8 @@
             border: 1px solid #f1f2f6;
             transition: 0.3s;
             gap: 15px;
+            max-width: 100%;
+            overflow: hidden; /* Protege el contenido interno */
         }
 
         .img-box {
@@ -103,6 +107,7 @@
             border-radius: 8px;
             font-weight: 700;
             font-size: 0.75rem;
+            white-space: nowrap;
         }
         .status-pendiente { background: #fff4e6; color: #fd7e14; }
         .status-completado { background: #ebfbee; color: #40c057; }
@@ -134,9 +139,30 @@
             margin-top: 4px;
         }
 
+        /* AJUSTES RESPONSIVOS CRÍTICOS */
         @media (max-width: 576px) {
             .product-row { padding: 12px; flex-wrap: wrap; }
             .price-badge { font-size: 1rem; }
+            .bento-card { padding: 15px; }
+            
+            /* Ajuste para que los botones de pedido no se salgan */
+            .order-actions {
+                flex-wrap: wrap;
+                width: 100%;
+                gap: 8px !important;
+            }
+            .order-actions button, .order-actions span {
+                flex: 1 1 auto;
+                font-size: 0.8rem !important;
+                padding: 8px !important;
+            }
+            
+            /* Evitar que el título de los pedidos se rompa */
+            .order-header {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 10px;
+            }
         }
     </style>
 </head>
@@ -378,16 +404,13 @@
                 productosArr = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
             } catch (e) { productosArr = []; }
 
-            const primaryColor = [34, 74, 43]; 
-
+            const primaryColor = [34, 74, 43];
             doc.setFillColor(34, 74, 43);
             doc.rect(0, 0, 5, 297, 'F');
-
             doc.setFont("helvetica", "bold");
             doc.setFontSize(28);
             doc.setTextColor(34, 74, 43);
             doc.text("TRÉBOL S.A.S", 20, 25);
-            
             doc.setFontSize(9);
             doc.setTextColor(100);
             doc.setFont("helvetica", "normal");
@@ -395,14 +418,12 @@
             doc.text("NIT: 900.555.123-1", 20, 36);
             doc.text("El Peñol, Antioquia | Cel: 310 123 4567", 20, 41);
             doc.text("trebol@gmail.com", 20, 46);
-
             doc.setFillColor(248, 249, 250);
             doc.roundedRect(130, 15, 65, 35, 3, 3, 'F');
             doc.setDrawColor(230);
             doc.roundedRect(130, 15, 65, 35, 3, 3, 'D');
-
             doc.setFont("helvetica", "bold");
-            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.setTextColor(34, 74, 43);
             doc.setFontSize(10);
             doc.text("ORDEN DE SERVICIO", 135, 25);
             doc.setFontSize(20);
@@ -410,94 +431,45 @@
             doc.setFontSize(9);
             doc.setTextColor(120);
             doc.text(`Fecha: ${new Date(p.Fecha).toLocaleDateString()}`, 135, 43);
-
-            doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.setDrawColor(34, 74, 43);
             doc.setLineWidth(0.5);
             doc.line(20, 55, 195, 55);
-
             doc.setFontSize(10);
-            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.setTextColor(34, 74, 43);
             doc.text("FACTURADO A:", 20, 65);
-            
             doc.setFontSize(12);
             doc.setTextColor(0);
             doc.setFont("helvetica", "bold");
             doc.text(p.NombreCliente.toUpperCase(), 20, 72);
-            
             doc.setFont("helvetica", "normal");
             doc.setFontSize(10);
             doc.setTextColor(80);
             doc.text(`C.C./NIT: ${p.Documento || '---'}`, 20, 78);
             doc.text(`Teléfono: ${p.Telefono}`, 20, 83);
             doc.text(`Dirección: ${p.Direccion || 'Entrega en local'}`, 20, 88);
-
             const rows = productosArr.map(item => [
                 item.cantidad,
-                item.Nombre,
+                { content: item.Nombre, styles: { fontStyle: 'bold' } },
                 `$ ${Number(item.Precio).toLocaleString()}`,
                 `$ ${(item.cantidad * item.Precio).toLocaleString()}`
             ]);
-
             doc.autoTable({
                 startY: 95,
                 head: [['CANT.', 'DESCRIPCIÓN', 'VALOR UNIT.', 'SUBTOTAL']],
                 body: rows,
+                headStyles: { fillColor: primaryColor, textColor: [255, 255, 255], fontSize: 10, halign: 'center' },
                 theme: 'striped',
-                headStyles: { fillColor: primaryColor, textColor: 255, halign: 'center' },
-                styles: { 
-                    fontSize: 9, 
-                    cellPadding: 4, 
-                    overflow: 'linebreak' // ESTA LÍNEA CORRIGE EL DESBORDE
-                },
-                columnStyles: {
-                    0: { halign: 'center', cellWidth: 15 },
-                    1: { cellWidth: 95 }, // DAMOS ANCHO FIJO A LA DESCRIPCIÓN PARA QUE SALTE DE LÍNEA
-                    2: { halign: 'right', cellWidth: 30 },
-                    3: { halign: 'right', cellWidth: 30 }
-                },
                 margin: { left: 20, right: 15 }
             });
-
             const finalY = doc.lastAutoTable.finalY + 10;
-            
-            doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.setFillColor(34, 74, 43);
             doc.rect(130, finalY, 65, 12, 'F');
-            
             doc.setFontSize(11);
             doc.setFont("helvetica", "bold");
             doc.setTextColor(255, 255, 255);
             doc.text("TOTAL NETO:", 135, finalY + 8);
             doc.text(`$ ${Number(p.Total).toLocaleString()}`, 190, finalY + 8, { align: 'right' });
-
-            const notasY = finalY + 25;
-            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-            doc.setFontSize(10);
-            doc.text("MÉTODOS DE PAGO:", 20, notasY);
-            
-            doc.setFontSize(9);
-            doc.setTextColor(100);
-            doc.setFont("helvetica", "normal");
-            doc.text("• Nequi / Bancolombia: 310 123 4567", 20, notasY + 6);
-            doc.text("• Efectivo en local", 20, notasY + 11);
-
-            doc.setFontSize(7);
-            doc.setTextColor(150);
-            doc.text("Esta es una representación gráfica de una cuenta de cobro / orden de venta interna.", 105, 280, { align: 'center' });
-            doc.text("No somos responsables de IVA. Régimen Simplificado. Art. 774 del Código de Comercio.", 105, 284, { align: 'center' });
-            
-            doc.setFontSize(10);
-            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-            doc.setFont("helvetica", "bold");
-            doc.text("¡GRACIAS POR SU COMPRA!", 105, 270, { align: 'center' });
-
             doc.save(`Factura_Trebol_${numeroPedido}.pdf`);
-            
-            Swal.fire({
-                title: 'Factura Generada',
-                text: 'Se ha descargado la factura correctamente.',
-                icon: 'success',
-                confirmButtonColor: '#224a2b'
-            });
         }
 
         async function cargarPedidos() {
@@ -531,7 +503,7 @@
 
                         return `
                         <div class="product-row shadow-sm border-start border-4 ${p.Estado === 'Pendiente' ? 'border-warning' : 'border-success'} mb-4 flex-column align-items-stretch">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-3 order-header">
                                 <div>
                                     <span class="badge bg-secondary mb-1">PEDIDO #${numeroPedido}</span>
                                     <h5 class="mb-0 fw-bold text-uppercase">${p.NombreCliente}</h5>
@@ -542,12 +514,12 @@
                             <div class="row g-3 mb-3 pb-3 border-bottom">
                                 <div class="col-sm-6">
                                     <label class="small text-muted d-block uppercase fw-bold" style="font-size:0.65rem">Contacto</label>
-                                    <div class="fw-medium"><i class="bi bi-telephone text-accent me-2"></i>${p.Telefono || 'No proporcionado'}</div>
-                                    <div class="fw-medium"><i class="bi bi-envelope text-accent me-2"></i>${p.Email || p.Correo || 'Sin correo'}</div>
+                                    <div class="fw-medium text-break"><i class="bi bi-telephone text-accent me-2"></i>${p.Telefono || 'No proporcionado'}</div>
+                                    <div class="fw-medium text-break"><i class="bi bi-envelope text-accent me-2"></i>${p.Email || p.Correo || 'Sin correo'}</div>
                                 </div>
                                 <div class="col-sm-6">
-                                    <label class="small text-muted d-block uppercase fw-bold" style="font-size:0.65rem">Dirección, fecha y hora del pedido</label>
-                                    <div class="fw-medium"><i class="bi bi-geo-alt text-danger me-2"></i>${p.Direccion || 'Recojo en local'}</div>
+                                    <label class="small text-muted d-block uppercase fw-bold" style="font-size:0.65rem">Dirección y Fecha</label>
+                                    <div class="fw-medium text-break"><i class="bi bi-geo-alt text-danger me-2"></i>${p.Direccion || 'Recojo en local'}</div>
                                     <div class="fw-medium text-muted"><i class="bi bi-calendar3 me-2"></i>${new Date(p.Fecha).toLocaleString()}</div>
                                 </div>
                             </div>
@@ -557,22 +529,22 @@
                                 <ul class="list-unstyled small mb-0 bg-light p-3 rounded-3">${resumenProd}</ul>
                             </div>
 
-                            <div class="d-flex justify-content-between align-items-center mt-auto pt-2">
+                            <div class="d-flex justify-content-between align-items-center mt-auto pt-2 flex-wrap gap-3">
                                 <div>
                                     <small class="text-muted d-block">TOTAL A COBRAR</small>
                                     <div class="price-badge text-primary fs-4">$${Number(p.Total).toLocaleString()}</div>
                                 </div>
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-dark fw-bold" onclick='generarFacturaPDF(${pedidoString}, ${numeroPedido})'>
+                                <div class="d-flex gap-2 order-actions flex-grow-1 justify-content-end">
+                                    <button class="btn btn-dark fw-bold btn-sm" onclick='generarFacturaPDF(${pedidoString}, ${numeroPedido})'>
                                         <i class="bi bi-file-earmark-pdf"></i> FACTURA
                                     </button>
                                     ${p.Estado === 'Pendiente' ? 
-                                        `<button class="btn btn-success fw-bold px-3" onclick="completarPedido(${p.PedidoID})">
+                                        `<button class="btn btn-success fw-bold btn-sm" onclick="completarPedido(${p.PedidoID})">
                                             <i class="bi bi-check-lg"></i> COMPLETAR
                                         </button>` : 
-                                        `<span class="badge bg-success py-2 px-3"><i class="bi bi-check-all"></i> ENTREGADO</span>`
+                                        `<span class="badge bg-success py-2 px-3 d-flex align-items-center"><i class="bi bi-check-all me-1"></i> LISTO</span>`
                                     }
-                                    <button class="btn btn-outline-danger" onclick="eliminarPedido(${p.PedidoID})">
+                                    <button class="btn btn-outline-danger btn-sm" onclick="eliminarPedido(${p.PedidoID})">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </div>
@@ -590,18 +562,16 @@
         async function eliminarPedido(id) {
             const confirmar = await Swal.fire({
                 title: '¿Borrar pedido?',
-                text: "Esta acción no se puede deshacer",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
                 cancelButtonText: 'Cancelar'
             });
-
             if (confirmar.isConfirmed) {
                 try {
                     const res = await fetch(`${BASE_URL}/pedidos/${id}`, { method: 'DELETE' });
                     if (res.ok) {
-                        Swal.fire('Eliminado', 'El pedido ha sido borrado', 'success');
+                        Swal.fire('Eliminado', '', 'success');
                         cargarPedidos(); 
                     }
                 } catch (error) { console.error(error); }
@@ -610,12 +580,9 @@
 
         async function completarPedido(id) {
             try {
-                const res = await fetch(`${BASE_URL}/pedidos/${id}/completar`, { 
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' }
-                });
+                const res = await fetch(`${BASE_URL}/pedidos/${id}/completar`, { method: 'PUT' });
                 if (res.ok) { 
-                    Swal.fire('¡Excelente!', 'Pedido marcado como entregado', 'success');
+                    Swal.fire('¡Excelente!', 'Pedido entregado', 'success');
                     cargarPedidos(); 
                 }
             } catch (err) { console.error(err); }
@@ -625,25 +592,21 @@
             e.preventDefault();
             const id = document.getElementById('prod-id').value;
             const formData = new FormData();
-            
             formData.append('nombre', document.getElementById('nombre').value);
             formData.append('marca', document.getElementById('marca').value);
             formData.append('sku', document.getElementById('sku').value);
             formData.append('precio', document.getElementById('precio').value);
             formData.append('stock', document.getElementById('stock').value);
             formData.append('caracteristicas', document.getElementById('caracteristicas').value);
-            
             const fileInput = document.getElementById('imagenes');
             if (fileInput.files[0]) formData.append('imagenes', fileInput.files[0]);
-
             const url = editando ? `${BASE_URL}/productos/${id}` : `${BASE_URL}/productos`;
             const method = editando ? 'PUT' : 'POST';
-
             try {
                 Swal.showLoading();
                 const res = await fetch(url, { method: method, body: formData });
                 if (res.ok) { 
-                    Swal.fire('Éxito', editando ? 'Producto actualizado' : 'Producto creado', 'success'); 
+                    Swal.fire('Éxito', 'Operación completada', 'success'); 
                     limpiarForm(); 
                     cargarInventario();
                     cargarAgotados();
