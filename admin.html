@@ -226,6 +226,7 @@
     
     <script>
     let editando = false;
+    let cargandoPedidos = false; // Bandera para evitar duplicados
     const BASE_URL = 'https://tienda-1vps.onrender.com';
 
     // --- LÓGICA DE INVENTARIO ---
@@ -275,6 +276,9 @@
 
     // --- LÓGICA DE PEDIDOS (CORREGIDA) ---
 async function cargarPedidos() {
+    if (cargandoPedidos) return; // Evita múltiples ejecuciones simultáneas
+    cargandoPedidos = true;
+
     const lista = document.getElementById('lista-pedidos');
     if (!lista) return;
 
@@ -283,8 +287,6 @@ async function cargarPedidos() {
         if (!res.ok) throw new Error('Error en la respuesta del servidor');
         
         const pedidos = await res.json();
-
-        // Actualizamos el contador en la interfaz
         const contador = document.getElementById('order-count');
         if (contador) contador.innerText = `${pedidos.length} recibidos`;
 
@@ -293,7 +295,8 @@ async function cargarPedidos() {
             return;
         }
 
-        lista.innerHTML = pedidos.map(p => {
+        // Se agrega "index" para numeración dinámica que cambia al borrar
+        lista.innerHTML = pedidos.map((p, index) => {
             let productos = [];
             try { 
                 productos = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
@@ -308,7 +311,7 @@ async function cargarPedidos() {
             <div class="product-row shadow-sm border-start border-4 ${p.Estado === 'Pendiente' ? 'border-warning' : 'border-success'} mb-3">
                 <div class="flex-grow-1">
                     <div class="d-flex justify-content-between align-items-start mb-2">
-                        <h6 class="mb-0 fw-bold">Pedido #${p.PedidoID} — ${p.NombreCliente}</h6>
+                        <h6 class="mb-0 fw-bold">Pedido #${index + 1} — ${p.NombreCliente}</h6>
                         <span class="status-pill ${p.Estado === 'Pendiente' ? 'status-pendiente' : 'status-completado'}">${p.Estado}</span>
                     </div>
                     <div class="row small mb-2">
@@ -345,12 +348,9 @@ async function cargarPedidos() {
 
     } catch (err) {
         console.error("Error al cargar pedidos:", err);
-        lista.innerHTML = `
-            <div class="text-center p-4">
-                <i class="bi bi-exclamation-triangle text-danger fs-1"></i>
-                <p class="text-danger mt-2">No se pudieron cargar los pedidos.</p>
-                <button class="btn btn-sm btn-outline-danger" onclick="cargarPedidos()">Reintentar</button>
-            </div>`;
+        lista.innerHTML = `<div class="text-center p-4"><p class="text-danger">Error al cargar.</p></div>`;
+    } finally {
+        cargandoPedidos = false; // Libera la bandera
     }
 }
 
