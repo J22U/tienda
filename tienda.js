@@ -245,7 +245,7 @@ async function procesarPago() {
             Swal.fire({
                 icon: 'success',
                 title: '¡Pedido Confirmado!',
-                text: 'Gracias por tu compra. El inventario ha sido actualizado.',
+                text: 'Gracias por tu compra. Se enviarán la factura al correo registrado.',
                 confirmButtonColor: '#2d5a27'
             });
             
