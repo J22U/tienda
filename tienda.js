@@ -184,17 +184,70 @@ function eliminarItem(index) {
 async function procesarPago() {
     if (carrito.length === 0) return Swal.fire('Carrito vacío', '', 'warning');
 
-    // 1. Recopilar datos (ajusta los IDs según tus inputs del formulario de pago)
-    // Si no tienes formulario aún, puedes usar datos de prueba o pedirlos con SweetAlert
+    // 1. Recopilar datos usando los IDs REALES de tu HTML (fac-nombre, fac-correo, etc.)
+    const nombre = document.getElementById('fac-nombre').value.trim();
+    const correo = document.getElementById('fac-correo').value.trim();
+    const telefono = document.getElementById('fac-tel').value.trim();
+    const documento = document.getElementById('fac-doc').value.trim();
+    const direccion = document.getElementById('fac-dir').value.trim();
+
+    // 2. Validación: Si falta algún campo obligatorio
+    if (!nombre || !correo || !telefono || !direccion) {
+        return Swal.fire('Campos incompletos', 'Por favor llena todos los campos de envío', 'error');
+    }
+
     const datosPedido = {
-        nombre: document.getElementById('nombreCliente')?.value || "Cliente Web",
-        correo: document.getElementById('correoCliente')?.value || "sin@correo.com",
-        telefono: document.getElementById('telCliente')?.value || "000000",
-        direccion: document.getElementById('dirCliente')?.value || "Retiro en tienda",
-        documento: document.getElementById('docCliente')?.value || "000",
-        productos: carrito, // Enviamos el array del carrito
+        nombre: nombre,
+        correo: correo,
+        telefono: telefono,
+        documento: documento || "No proporcionado",
+        direccion: direccion,
+        productos: carrito,
         total: carrito.reduce((sum, item) => sum + (item.Precio * item.cantidad), 0)
     };
+
+    try {
+        // Mostrar cargando
+        Swal.fire({
+            title: 'Procesando tu pedido...',
+            text: 'Por favor espera un momento',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        // 3. Enviar al servidor
+        const response = await fetch(`${BASE_URL}/pedidos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(datosPedido)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Pedido Confirmado!',
+                text: 'Gracias por tu compra. Nos contactaremos pronto.',
+                confirmButtonColor: '#2d5a27'
+            });
+            
+            // 4. Limpiar todo
+            carrito = [];
+            actualizarCarritoUI();
+            document.getElementById('form-factura').reset(); // Limpia el formulario
+            
+            const modalElement = document.getElementById('modalCarrito');
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if (modalInstance) modalInstance.hide();
+            
+        } else {
+            throw new Error(result.error || 'Error desconocido');
+        }
+    } catch (error) {
+        console.error("Error al enviar pedido:", error);
+        Swal.fire('Error', 'No pudimos registrar tu pedido. Intenta de nuevo.', 'error');
+    }
 
     try {
         // Bloquear el botón para evitar doble clic
