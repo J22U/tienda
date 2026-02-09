@@ -44,6 +44,40 @@ const upload = multer({ storage: storage });
 // RUTAS DE PRODUCTOS
 // ==========================================
 
+app.post('/productos', upload.single('imagenes'), async (req, res) => {
+    const { nombre, marca, sku, precio, stock, caracteristicas } = req.body;
+    try {
+        const pool = await poolPromise;
+        
+        // 1. Insertamos el producto y obtenemos su ID
+        const result = await pool.request()
+            .input('n', sql.NVarChar, nombre)
+            .input('m', sql.NVarChar, marca)
+            .input('s', sql.NVarChar, sku)
+            .input('p', sql.Decimal(18, 2), precio)
+            .input('st', sql.Int, stock)
+            .input('c', sql.NVarChar, caracteristicas)
+            .query(`INSERT INTO Productos (Nombre, Marca, CodigoSKU, Precio, Stock, Caracteristicas) 
+                    OUTPUT INSERTED.ProductoID
+                    VALUES (@n, @m, @s, @p, @st, @c)`);
+
+        const nuevoId = result.recordset[0].ProductoID;
+
+        // 2. Si hay imagen, la guardamos en la tabla de imágenes
+        if (req.file) {
+            const url = `/uploads/${req.file.filename}`;
+            await pool.request()
+                .input('id', sql.Int, nuevoId)
+                .input('url', sql.NVarChar, url)
+                .query('INSERT INTO ProductoImagenes (ProductoID, ImagenURL) VALUES (@id, @url)');
+        }
+
+        res.json({ success: true, id: nuevoId });
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+});
+
 app.get('/productos', async (req, res) => {
     try {
         const pool = await poolPromise;
@@ -60,6 +94,82 @@ app.get('/productos', async (req, res) => {
         res.json(productos);
     } catch (err) { 
         res.status(500).send(err.message); 
+    }
+});
+
+// ==========================================
+// RUTA PARA ACTUALIZAR PRODUCTO (PUT)
+// ==========================================
+
+app.put('/productos/:id', upload.single('imagenes'), async (req, res) => {
+    const { id } = req.params;
+    const { nombre, marca, sku, precio, stock, caracteristicas } = req.body;
+    
+    try {
+        const pool = await poolPromise;
+        
+        // 1. Actualizamos los datos básicos del producto
+        await pool.request()
+            .input('id', sql.Int, id)
+            .input('n', sql.NVarChar, nombre)
+            .input('m', sql.NVarChar, marca)
+            .input('s', sql.NVarChar, sku)
+            .input('p', sql.Decimal(18, 2), precio)
+            .input('st', sql.Int, stock)
+            .input('c', sql.NVarChar, caracteristicas)
+            .query(`UPDATE Productos SET 
+                    Nombre = @n, Marca = @m, CodigoSKU = @s, 
+                    Precio = @p, Stock = @st, Caracteristicas = @c 
+                    WHERE ProductoID = @id`);
+
+        // 2. Si el usuario subió una imagen nueva, la actualizamos en ProductoImagenes
+        if (req.file) {
+            const nuevaImagenURL = `/uploads/${req.file.filename}`;
+            
+            // Verificamos si ya tiene una imagen para actualizarla o insertar una nueva
+            const checkImg = await pool.request()
+                .input('id', sql.Int, id)
+                .query('SELECT * FROM ProductoImagenes WHERE ProductoID = @id');
+
+            if (checkImg.recordset.length > 0) {
+                await pool.request()
+                    .input('id', sql.Int, id)
+                    .input('url', sql.NVarChar, nuevaImagenURL)
+                    .query('UPDATE ProductoImagenes SET ImagenURL = @url WHERE ProductoID = @id');
+            } else {
+                await pool.request()
+                    .input('id', sql.Int, id)
+                    .input('url', sql.NVarChar, nuevaImagenURL)
+                    .query('INSERT INTO ProductoImagenes (ProductoID, ImagenURL) VALUES (@id, @url)');
+            }
+        }
+
+        res.json({ success: true, message: "Producto actualizado correctamente" });
+
+    } catch (err) {
+        console.error("Error al actualizar:", err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/productos/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const pool = await poolPromise;
+
+        // 1. Borramos primero las imágenes asociadas (por integridad referencial)
+        await pool.request()
+            .input('id', sql.Int, id)
+            .query('DELETE FROM [dbo].[ProductoImagenes] WHERE ProductoID = @id');
+
+        // 2. Borramos el producto
+        await pool.request()
+            .input('id', sql.Int, id)
+            .query('DELETE FROM [dbo].[Productos] WHERE ProductoID = @id');
+
+        res.json({ success: true, message: "Producto eliminado" });
+    } catch (err) {
+        res.status(500).send(err.message);
     }
 });
 
