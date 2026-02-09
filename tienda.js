@@ -11,7 +11,7 @@ async function cargarProductos() {
         
         if (!contenedor) return;
 
-        // CORRECCIÓN: Limpiar el contenedor antes de mapear para evitar duplicados
+        // Limpiar el contenedor antes de mapear para evitar duplicados
         contenedor.innerHTML = ""; 
 
         const htmlProductos = productosData.map(p => {
@@ -186,7 +186,7 @@ function eliminarItem(index) {
     actualizarCarritoUI();
 }
 
-// 6. PROCESAR PAGO (CORREGIDO: Sin duplicidad de lógica)
+// 6. PROCESAR PAGO (CON DESCUENTO AUTOMÁTICO DE INVENTARIO)
 async function procesarPago() {
     if (carrito.length === 0) return Swal.fire('Carrito vacío', '', 'warning');
 
@@ -200,18 +200,26 @@ async function procesarPago() {
         return Swal.fire('Campos incompletos', 'Por favor llena todos los campos de envío', 'error');
     }
 
+    // Preparamos los datos del pedido incluyendo IDs y cantidades para el descuento
     const datosPedido = {
-        nombre, correo, telefono,
+        nombre, 
+        correo, 
+        telefono,
         documento: documento || "No proporcionado",
         direccion,
-        productos: carrito,
+        productos: carrito.map(item => ({
+            ProductoID: item.ProductoID,
+            cantidad: item.cantidad,
+            Nombre: item.Nombre,
+            Precio: item.Precio
+        })),
         total: carrito.reduce((sum, item) => sum + (item.Precio * item.cantidad), 0)
     };
 
     try {
         Swal.fire({
             title: 'Procesando tu pedido...',
-            text: 'Por favor espera un momento',
+            text: 'Actualizando inventario y registrando compra',
             allowOutsideClick: false,
             didOpen: () => { Swal.showLoading(); }
         });
@@ -228,24 +236,29 @@ async function procesarPago() {
             Swal.fire({
                 icon: 'success',
                 title: '¡Pedido Confirmado!',
-                text: 'Gracias por tu compra. Nos contactaremos pronto.',
+                text: 'Gracias por tu compra. El inventario ha sido actualizado.',
                 confirmButtonColor: '#2d5a27'
             });
             
+            // Limpiar carrito y formulario
             carrito = [];
             actualizarCarritoUI();
             document.getElementById('form-factura').reset();
             
+            // Cerrar el modal del carrito
             const modalElement = document.getElementById('modalCarrito');
             const modalInstance = bootstrap.Modal.getInstance(modalElement);
             if (modalInstance) modalInstance.hide();
+
+            // RECARGAR PRODUCTOS: Esto hace que el cliente vea el stock actualizado en la tienda
+            cargarProductos();
             
         } else {
             throw new Error(result.error || 'Error al procesar el pedido');
         }
     } catch (error) {
         console.error("Error al enviar pedido:", error);
-        Swal.fire('Error', 'No pudimos registrar tu pedido. Intenta de nuevo.', 'error');
+        Swal.fire('Error', error.message || 'No pudimos registrar tu pedido. Intenta de nuevo.', 'error');
     }
 }
 
