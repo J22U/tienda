@@ -278,6 +278,7 @@
         cargandoPedidosFlag = true;
 
         const lista = document.getElementById('lista-pedidos');
+        const contador = document.getElementById('order-count');
         if (!lista) return;
 
         try {
@@ -286,10 +287,10 @@
             
             let pedidos = await res.json();
             
-            // CORRECCIÓN: Limpiar lista antes de renderizar para evitar duplicados
+            // LIMPIAR LISTA PARA EVITAR DUPLICADOS
             lista.innerHTML = "";
 
-            const contador = document.getElementById('order-count');
+            // ACTUALIZAR CONTADOR REAL
             if (contador) contador.innerText = `${pedidos.length} recibidos`;
 
             if (pedidos.length === 0) {
@@ -297,22 +298,26 @@
                 return;
             }
 
-            // Ordenar por ID real (descendente)
+            // Ordenar por ID real (descendente para ver el último arriba)
             pedidos.sort((a, b) => b.PedidoID - a.PedidoID);
 
-            lista.innerHTML = pedidos.map((p) => {
+            // USAR ÍNDICE DEL MAP PARA EL NÚMERO #
+            lista.innerHTML = pedidos.map((p, i) => {
                 let productos = [];
                 try { 
                     productos = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
                 } catch (e) { productos = []; }
                 
                 const resumenProd = productos.map(item => `<li>${item.cantidad}x ${item.Nombre}</li>`).join('');
+                
+                // Número visual: El primero en la lista (index 0) será el total, bajando hasta 1.
+                const numeroPedidoVisual = pedidos.length - i;
 
                 return `
                 <div class="product-row shadow-sm border-start border-4 ${p.Estado === 'Pendiente' ? 'border-warning' : 'border-success'} mb-3">
                     <div class="flex-grow-1">
                         <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h6 class="mb-0 fw-bold">Pedido #${p.PedidoID} — ${p.NombreCliente}</h6>
+                            <h6 class="mb-0 fw-bold">Pedido #${numeroPedidoVisual} — ${p.NombreCliente}</h6>
                             <span class="status-pill ${p.Estado === 'Pendiente' ? 'status-pendiente' : 'status-completado'}">${p.Estado}</span>
                         </div>
                         <div class="row small mb-2">
