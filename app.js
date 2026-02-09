@@ -257,6 +257,25 @@ app.delete('/pedidos/:id', async (req, res) => {
 });
 
 // ==========================================
+// RUTA PARA COMPLETAR PEDIDO (ESTADO)
+// ==========================================
+app.put('/pedidos/:id/completar', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const pool = await poolPromise;
+        
+        await pool.request()
+            .input('id', sql.Int, id)
+            .query("UPDATE Pedidos SET Estado = 'Completado' WHERE PedidoID = @id");
+
+        res.json({ success: true, message: "Pedido marcado como completado" });
+    } catch (err) {
+        console.error("Error al actualizar pedido:", err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ==========================================
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'tienda.html'));

@@ -480,25 +480,29 @@
             }
         }
 
-        async function completarPedido(id) {
-            try {
-                // Se cambió a la ruta estándar de actualización de estado
-                const res = await fetch(`${BASE_URL}/pedidos/${id}/completar`, { 
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                
-                if (res.ok) { 
-                    Swal.fire('¡Excelente!', 'Pedido marcado como completado', 'success');
-                    cargarPedidos(); 
-                } else {
-                    throw new Error('Error en el servidor');
-                }
-            } catch (err) { 
-                console.error(err);
-                Swal.fire('Error', 'No se pudo actualizar el estado', 'error');
+        
+                async function completarPedido(id) {
+    try {
+        // Añadimos headers para asegurar la compatibilidad
+        const res = await fetch(`${BASE_URL}/pedidos/${id}/completar`, { 
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
             }
+        });
+
+        if (res.ok) { 
+            Swal.fire('¡Excelente!', 'Pedido marcado como entregado', 'success');
+            cargarPedidos(); 
+        } else {
+            const errorData = await res.json();
+            Swal.fire('Error', errorData.error || 'No se pudo actualizar', 'error');
         }
+    } catch (err) { 
+        console.error("Error detallado:", err);
+        Swal.fire('Error', 'No hay conexión con el servidor. Verifica que el servidor en Render esté activo.', 'error');
+    }
+}
         // --- FIN DE MODIFICACIONES ---
 
         document.getElementById('form-producto').addEventListener('submit', async (e) => {
