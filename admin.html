@@ -84,8 +84,8 @@
         }
 
         .img-box {
-            width: 70px; 
-            height: 70px;
+            width: 60px; 
+            height: 60px;
             flex-shrink: 0; 
             border-radius: 14px;
             overflow: hidden;
@@ -95,17 +95,14 @@
 
         .price-badge { font-weight: 800; font-size: 1.1rem; color: #2d3436; }
 
-        /* Estilo para la descripción en la lista */
-        .prod-desc-text {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            font-size: 0.85rem;
-            line-height: 1.2;
-            margin-top: 4px;
-            color: #636e72;
+        .status-pill {
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.75rem;
         }
+        .status-pendiente { background: #fff4e6; color: #fd7e14; }
+        .status-completado { background: #ebfbee; color: #40c057; }
 
         .action-btn {
             width: 35px; height: 35px;
@@ -122,6 +119,17 @@
             color: #636e72;
         }
         .nav-pills .nav-link.active { background-color: var(--accent); }
+
+        .desc-text {
+            font-size: 0.82rem;
+            color: #636e72;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.2;
+            margin-top: 4px;
+        }
 
         @media (max-width: 576px) {
             .product-row { padding: 12px; flex-wrap: wrap; }
@@ -222,13 +230,17 @@
 
                         <div class="tab-pane fade" id="tab-agotados">
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="fw-bold m-0 text-danger">Stock Crítico (< 10)</h5>
+                                <h5 class="fw-bold m-0 text-danger">Stock Crítico</h5>
                                 <span class="badge bg-danger rounded-pill" id="agotados-count">0 alertas</span>
                             </div>
                             <div id="lista-agotados"></div>
                         </div>
 
                         <div class="tab-pane fade" id="tab-pedidos">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold m-0">Historial de Ventas</h5>
+                                <span class="badge bg-primary rounded-pill" id="order-count">0 recibidos</span>
+                            </div>
                             <div id="lista-pedidos"></div>
                         </div>
                     </div>
@@ -243,18 +255,20 @@
     <script>
         const BASE_URL = 'https://tienda-1vps.onrender.com';
         let editando = false;
+        let cargandoPedidosFlag = false;
 
+        // Renderizado de productos (AHORA CON DESCRIPCIÓN)
         function renderizarProducto(p) {
             const prodJson = JSON.stringify(p).replace(/'/g, "&apos;");
-            const descripcion = p.Caracteristicas ? p.Caracteristicas : 'Sin descripción.';
-
+            const imgPath = p.ImagenURL.startsWith('http') ? p.ImagenURL : `${BASE_URL}${p.ImagenURL}`;
+            
             return `
             <div class="product-row shadow-sm">
-                <div class="img-box"><img src="${BASE_URL}${p.ImagenURL}" onerror="this.src='https://via.placeholder.com/150'"></div>
+                <div class="img-box"><img src="${imgPath}" onerror="this.src='https://via.placeholder.com/150'"></div>
                 <div class="flex-grow-1">
                     <h6 class="mb-0 fw-bold">${p.Nombre}</h6>
-                    <small class="text-muted d-block" style="font-size: 0.75rem;">SKU: ${p.CodigoSKU || 'N/A'} | Marca: ${p.Marca}</small>
-                    <p class="prod-desc-text mb-0">${descripcion}</p>
+                    <small class="text-muted d-block" style="font-size:0.7rem">SKU: ${p.CodigoSKU || 'S/N'}</small>
+                    <div class="desc-text">${p.Caracteristicas || 'Sin descripción detallada.'}</div>
                 </div>
                 <div class="text-end px-2" style="min-width: 100px;">
                     <div class="price-badge">$${Number(p.Precio).toLocaleString()}</div>
@@ -284,7 +298,7 @@
                 document.getElementById('agotados-count').innerText = `${agotados.length} Alertas`;
                 const lista = document.getElementById('lista-agotados');
                 lista.innerHTML = agotados.length === 0 ? 
-                    '<div class="text-center p-5 text-muted">No hay productos con stock bajo.</div>' : 
+                    '<div class="text-center p-5 text-muted">No hay stock bajo.</div>' : 
                     agotados.map(renderizarProducto).join('');
             } catch (err) { console.error("Error agotados:", err); }
         }
@@ -297,7 +311,7 @@
             document.getElementById('prod-id').value = p.ProductoID;
             document.getElementById('nombre').value = p.Nombre;
             document.getElementById('marca').value = p.Marca;
-            document.getElementById('sku').value = p.CodigoSKU;
+            document.getElementById('sku').value = p.CodigoSKU || '';
             document.getElementById('precio').value = p.Precio;
             document.getElementById('stock').value = p.Stock;
             document.getElementById('caracteristicas').value = p.Caracteristicas || '';
@@ -305,10 +319,23 @@
         }
 
         async function eliminarProducto(id) {
-            if (!(await Swal.fire({title:'¿Eliminar?', text:'Se borrará permanentemente', icon:'warning', showCancelButton:true, confirmButtonColor:'#d33'}).then(r => r.isConfirmed))) return;
+            const result = await Swal.fire({
+                title: '¿Eliminar?',
+                text: 'Se borrará permanentemente',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ff7675',
+                cancelButtonText: 'Cancelar'
+            });
+            if (!result.isConfirmed) return;
+
             try {
                 const res = await fetch(`${BASE_URL}/productos/${id}`, { method: 'DELETE' });
-                if (res.ok) { cargarInventario(); cargarAgotados(); }
+                if (res.ok) { 
+                    cargarInventario(); 
+                    cargarAgotados(); 
+                    Swal.fire('Eliminado', '', 'success');
+                }
             } catch (err) { console.error(err); }
         }
 
@@ -321,10 +348,80 @@
             document.getElementById('prod-id').value = "";
         }
 
+        async function cargarPedidos() {
+            if (cargandoPedidosFlag) return; 
+            cargandoPedidosFlag = true;
+            const lista = document.getElementById('lista-pedidos');
+            try {
+                const res = await fetch(`${BASE_URL}/pedidos`);
+                const pedidos = await res.json();
+                document.getElementById('order-count').innerText = `${pedidos.length} recibidos`;
+                
+                if (pedidos.length === 0) {
+                    lista.innerHTML = '<div class="text-center p-5 text-muted">No hay pedidos registrados.</div>';
+                } else {
+                    pedidos.sort((a, b) => b.PedidoID - a.PedidoID);
+                    lista.innerHTML = pedidos.map((p) => {
+                        let productos = [];
+                        try { productos = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; } catch (e) { productos = []; }
+                        const resumenProd = productos.map(item => `<li>${item.cantidad}x ${item.Nombre}</li>`).join('');
+                        
+                        return `
+                        <div class="product-row shadow-sm border-start border-4 ${p.Estado === 'Pendiente' ? 'border-warning' : 'border-success'} mb-3">
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="mb-0 fw-bold">Pedido #${p.PedidoID} — ${p.NombreCliente}</h6>
+                                    <span class="status-pill ${p.Estado === 'Pendiente' ? 'status-pendiente' : 'status-completado'}">${p.Estado}</span>
+                                </div>
+                                <div class="row small mb-2 text-muted">
+                                    <div class="col-md-8">
+                                        <i class="bi bi-telephone"></i> ${p.Telefono || 'S/N'} | 
+                                        <i class="bi bi-geo-alt"></i> ${p.Direccion || 'Local'}
+                                    </div>
+                                    <div class="col-md-4 text-md-end"><i class="bi bi-calendar"></i> ${new Date(p.Fecha).toLocaleDateString()}</div>
+                                </div>
+                                <ul class="text-muted small mb-0 ps-3">${resumenProd}</ul>
+                            </div>
+                            <div class="text-end px-3 border-start">
+                                <div class="price-badge text-primary">$${Number(p.Total).toLocaleString()}</div>
+                                <div class="mt-2 d-flex gap-1 justify-content-end">
+                                    ${p.Estado === 'Pendiente' ? 
+                                        `<button class="btn btn-sm btn-success" onclick="completarPedido(${p.PedidoID})"><i class="bi bi-check-circle"></i></button>` : 
+                                        `<span class="text-success small fw-bold"><i class="bi bi-check-all"></i> OK</span>`
+                                    }
+                                    <button class="btn btn-sm btn-outline-danger" onclick="eliminarPedido(${p.PedidoID})"><i class="bi bi-trash"></i></button>
+                                </div>
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+            } catch (err) { console.error(err); } 
+            finally { setTimeout(() => { cargandoPedidosFlag = false; }, 500); }
+        }
+
+        async function eliminarPedido(id) {
+            if (!(await Swal.fire({title:'¿Borrar pedido?', icon:'warning', showCancelButton:true}).then(r => r.isConfirmed))) return;
+            try {
+                const res = await fetch(`${BASE_URL}/pedidos/${id}`, { method: 'DELETE' });
+                if (res.ok) { cargarPedidos(); }
+            } catch (error) { console.error(error); }
+        }
+
+        async function completarPedido(id) {
+            try {
+                const res = await fetch(`${BASE_URL}/pedidos/${id}/completar`, { method: 'PUT' });
+                if (res.ok) { 
+                    Swal.fire('Completado', 'El pedido se marcó como entregado', 'success');
+                    cargarPedidos(); 
+                }
+            } catch (err) { console.error(err); }
+        }
+
         document.getElementById('form-producto').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('prod-id').value;
             const formData = new FormData();
+            
             formData.append('nombre', document.getElementById('nombre').value);
             formData.append('marca', document.getElementById('marca').value);
             formData.append('sku', document.getElementById('sku').value);
@@ -336,17 +433,28 @@
             if (fileInput.files[0]) formData.append('imagenes', fileInput.files[0]);
 
             const url = editando ? `${BASE_URL}/productos/${id}` : `${BASE_URL}/productos`;
+            const method = editando ? 'PUT' : 'POST';
+
             try {
-                const res = await fetch(url, { method: editando ? 'PUT' : 'POST', body: formData });
+                Swal.showLoading();
+                const res = await fetch(url, { method: method, body: formData });
+                
                 if (res.ok) { 
-                    Swal.fire('Éxito','Datos guardados correctamente','success'); 
+                    Swal.fire('Éxito', editando ? 'Producto actualizado' : 'Producto creado', 'success'); 
                     limpiarForm(); 
                     cargarInventario();
                     cargarAgotados();
+                } else {
+                    const errorData = await res.json();
+                    Swal.fire('Error', errorData.message || 'No se pudo guardar', 'error');
                 }
-            } catch (err) { console.error(err); }
+            } catch (err) { 
+                console.error(err);
+                Swal.fire('Error', 'Problema de conexión con el servidor', 'error');
+            }
         });
 
+        // Carga inicial
         cargarInventario();
     </script>
 </body>
