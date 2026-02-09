@@ -18,7 +18,7 @@ const config = {
     server: process.env.DB_SERVER, 
     database: process.env.DB_NAME,
     options: {
-        encrypt: false, 
+        encrypt: true, // Cambiado a true si usas Azure/Render para mayor seguridad
         trustServerCertificate: true
     }
 };
@@ -38,7 +38,10 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// OBTENER PRODUCTOS
+// ==========================================
+// RUTAS DE PRODUCTOS (Ya las tenías bien)
+// ==========================================
+
 app.get('/productos', async (req, res) => {
     try {
         const pool = await poolPromise;
@@ -58,51 +61,6 @@ app.get('/productos', async (req, res) => {
     }
 });
 
-// EDITAR PRODUCTO (Ruta Crítica)
-app.put('/productos/:id', upload.array('imagenes', 10), async (req, res) => {
-    try {
-        const { nombre, marca, precio, stock, caracteristicas, sku } = req.body;
-        const id = req.params.id;
-        const pool = await poolPromise;
-        const request = pool.request();
-
-        request.input('id', sql.Int, id);
-        request.input('n', sql.NVarChar, nombre);
-        request.input('m', sql.NVarChar, marca);
-        request.input('p', sql.Decimal(18, 2), precio);
-        request.input('s', sql.Int, stock);
-        request.input('c', sql.NVarChar, caracteristicas || '');
-        request.input('sku', sql.NVarChar, sku);
-
-        let query = `UPDATE [dbo].[Productos] SET Nombre = @n, Marca = @m, Precio = @p, Stock = @s, Caracteristicas = @c, CodigoSKU = @sku`;
-
-        if (req.files && req.files.length > 0) {
-            const pathImagen = `/uploads/${req.files[0].filename}`;
-            request.input('img', sql.NVarChar, pathImagen);
-            query += `, ImagenURL = @img`;
-        }
-
-        query += ` WHERE ProductoID = @id`;
-        await request.query(query);
-
-        // Actualizar galería si hay fotos nuevas
-        if (req.files && req.files.length > 0) {
-            await pool.request().input('id', sql.Int, id).query('DELETE FROM [dbo].[ProductoImagenes] WHERE ProductoID = @id');
-            for (const file of req.files) {
-                await pool.request()
-                    .input('id', sql.Int, id)
-                    .input('url', sql.NVarChar, `/uploads/${file.filename}`)
-                    .query('INSERT INTO [dbo].[ProductoImagenes] (ProductoID, ImagenURL) VALUES (@id, @url)');
-            }
-        }
-        res.json({ success: true, message: "Actualizado" });
-    } catch (err) { 
-        console.error(err);
-        res.status(500).json({ success: false, error: err.message }); 
-    }
-});
-
-// CREAR PRODUCTO
 app.post('/productos', upload.array('imagenes', 10), async (req, res) => {
     try {
         const { nombre, marca, precio, stock, caracteristicas, sku } = req.body;
@@ -132,7 +90,48 @@ app.post('/productos', upload.array('imagenes', 10), async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
-// ELIMINAR PRODUCTO
+app.put('/productos/:id', upload.array('imagenes', 10), async (req, res) => {
+    try {
+        const { nombre, marca, precio, stock, caracteristicas, sku } = req.body;
+        const id = req.params.id;
+        const pool = await poolPromise;
+        const request = pool.request();
+
+        request.input('id', sql.Int, id);
+        request.input('n', sql.NVarChar, nombre);
+        request.input('m', sql.NVarChar, marca);
+        request.input('p', sql.Decimal(18, 2), precio);
+        request.input('s', sql.Int, stock);
+        request.input('c', sql.NVarChar, caracteristicas || '');
+        request.input('sku', sql.NVarChar, sku);
+
+        let query = `UPDATE [dbo].[Productos] SET Nombre = @n, Marca = @m, Precio = @p, Stock = @s, Caracteristicas = @c, CodigoSKU = @sku`;
+
+        if (req.files && req.files.length > 0) {
+            const pathImagen = `/uploads/${req.files[0].filename}`;
+            request.input('img', sql.NVarChar, pathImagen);
+            query += `, ImagenURL = @img`;
+        }
+
+        query += ` WHERE ProductoID = @id`;
+        await request.query(query);
+
+        if (req.files && req.files.length > 0) {
+            await pool.request().input('id', sql.Int, id).query('DELETE FROM [dbo].[ProductoImagenes] WHERE ProductoID = @id');
+            for (const file of req.files) {
+                await pool.request()
+                    .input('id', sql.Int, id)
+                    .input('url', sql.NVarChar, `/uploads/${file.filename}`)
+                    .query('INSERT INTO [dbo].[ProductoImagenes] (ProductoID, ImagenURL) VALUES (@id, @url)');
+            }
+        }
+        res.json({ success: true, message: "Actualizado" });
+    } catch (err) { 
+        console.error(err);
+        res.status(500).json({ success: false, error: err.message }); 
+    }
+});
+
 app.delete('/productos/:id', async (req, res) => {
     try {
         const pool = await poolPromise;
@@ -141,6 +140,60 @@ app.delete('/productos/:id', async (req, res) => {
         res.json({ success: true });
     } catch (err) { res.status(500).send(err.message); }
 });
+
+// ==========================================
+// RUTAS DE PEDIDOS (NUEVAS / CORREGIDAS)
+// ==========================================
+
+// 1. Obtener todos los pedidos
+app.get('/pedidos', async (req, res) => {
+    try {
+        const pool = await poolPromise;
+        const result = await pool.request().query('SELECT * FROM Pedidos ORDER BY Fecha DESC');
+        res.json(result.recordset);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 2. Crear un pedido (Desde la tienda)
+app.post('/pedidos', async (req, res) => {
+    try {
+        const { nombre, correo, telefono, documento, direccion, productos, total } = req.body;
+        const pool = await poolPromise;
+        
+        await pool.request()
+            .input('nc', sql.NVarChar, nombre)
+            .input('co', sql.NVarChar, correo)
+            .input('te', sql.NVarChar, telefono)
+            .input('do', sql.NVarChar, documento)
+            .input('di', sql.NVarChar, direccion)
+            .input('pr', sql.NVarChar, JSON.stringify(productos)) // Convertir array a String para SQL
+            .input('to', sql.Decimal(18, 2), total)
+            .query(`INSERT INTO Pedidos (NombreCliente, Correo, Telefono, Documento, Direccion, Productos, Total) 
+                    VALUES (@nc, @co, @te, @do, @di, @pr, @to)`);
+
+        res.json({ success: true, message: "Pedido recibido" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 3. Marcar pedido como entregado/completado
+app.put('/pedidos/:id/completar', async (req, res) => {
+    try {
+        const pool = await poolPromise;
+        await pool.request()
+            .input('id', sql.Int, req.params.id)
+            .query("UPDATE Pedidos SET Estado = 'Completado' WHERE PedidoID = @id");
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ==========================================
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'tienda.html'));
