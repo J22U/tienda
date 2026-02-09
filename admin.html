@@ -293,10 +293,10 @@
                 return;
             }
 
-            // 1. ORDENAR DESCENDENTE (El más reciente arriba)
-            pedidos.sort((a, b) => new Date(b.Fecha) - new Date(a.Fecha));
+            // 1. ORDENAR DESCENDENTE (El más reciente arriba por ID)
+            pedidos.sort((a, b) => b.PedidoID - a.PedidoID);
 
-            // 2. RENDERIZAR (Inner HTML directo para evitar acumulaciones/duplicados)
+            // 2. RENDERIZAR (Se limpia y sobrescribe para evitar duplicados)
             lista.innerHTML = pedidos.map((p) => {
                 let productos = [];
                 try { 
