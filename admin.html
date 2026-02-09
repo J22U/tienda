@@ -80,13 +80,15 @@
             align-items: center;
             border: 1px solid #f1f2f6;
             transition: 0.3s;
+            gap: 10px;
         }
 
         .img-box {
-            width: 60px; height: 60px;
+            width: 60px; 
+            height: 60px;
+            flex-shrink: 0; /* Evita que la imagen se achique */
             border-radius: 14px;
             overflow: hidden;
-            margin-right: 15px;
             background: #eee;
         }
         .img-box img { width: 100%; height: 100%; object-fit: cover; }
@@ -117,6 +119,17 @@
             color: #636e72;
         }
         .nav-pills .nav-link.active { background-color: var(--accent); }
+
+        /* AJUSTE PARA MÓVILES */
+        @media (max-width: 576px) {
+            .product-row {
+                padding: 12px;
+                flex-wrap: wrap;
+            }
+            .price-badge {
+                font-size: 1rem;
+            }
+        }
     </style>
 </head>
 <body>
