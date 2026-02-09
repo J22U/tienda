@@ -49,12 +49,7 @@
             transition: all 0.3s ease;
         }
 
-        .form-label {
-            font-weight: 700;
-            font-size: 1.1rem;
-            margin-bottom: 10px;
-            color: #4b4b4b;
-        }
+        .form-label { font-weight: 700; font-size: 1.1rem; margin-bottom: 10px; color: #4b4b4b; }
 
         .form-control {
             border-radius: 18px;
@@ -83,12 +78,6 @@
             transition: all 0.3s ease;
         }
 
-        .btn-main:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 25px rgba(108, 92, 231, 0.4);
-            color: white;
-        }
-
         .btn-clear {
             background: #f1f2f6;
             color: #636e72;
@@ -97,17 +86,17 @@
             font-size: 0.8rem;
             font-weight: 700;
             border: none;
-            transition: 0.2s;
         }
 
-        .product-row {
+        /* --- ESTILOS DE FILAS (PRODUCTOS Y PEDIDOS) --- */
+        .product-row, .order-row {
             background: white;
             border-radius: 25px;
             margin-bottom: 15px;
             padding: 20px;
             display: flex;
             align-items: center;
-            flex-wrap: wrap; /* PERMITE QUE LOS ELEMENTOS BAJEN EN MÓVIL */
+            flex-wrap: wrap;
             border: 1px solid #f1f2f6;
             transition: 0.3s;
         }
@@ -126,7 +115,7 @@
 
         .price-badge { font-weight: 800; font-size: 1.3rem; color: #2d3436; }
 
-        .stock-pill {
+        .stock-pill, .status-pill {
             padding: 8px 15px;
             border-radius: 12px;
             font-weight: 700;
@@ -136,6 +125,11 @@
         .stock-pill.low { background: #fff0f0; color: #ff7675; }
         .stock-pill.ok { background: #e3fcef; color: #00b894; }
 
+        /* Estados de Pedidos */
+        .status-pendiente { background: #fff4e6; color: #fd7e14; }
+        .status-visto { background: #e7f5ff; color: #228be6; }
+        .status-despachado { background: #ebfbee; color: #40c057; }
+
         .action-btn {
             width: 45px; height: 45px;
             border-radius: 15px;
@@ -144,48 +138,23 @@
         }
         .btn-edit { background: #f1f2f6; color: #2d3436; }
         .btn-delete { background: #fff0f0; color: #ff7675; }
+        .btn-view { background: #6c5ce720; color: var(--accent); }
 
-        .product-desc-list {
+        .nav-pills .nav-link {
+            border-radius: 15px;
+            font-weight: 700;
             color: #636e72;
-            font-size: 0.9rem;
-            margin-top: 4px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            line-height: 1.2;
+            padding: 12px 25px;
+        }
+        .nav-pills .nav-link.active {
+            background-color: var(--accent);
         }
 
-        /* --- NUEVAS REGLAS PARA MÓVIL --- */
         @media (max-width: 576px) {
-            .product-row {
-                flex-direction: column;
-                text-align: center;
-                padding: 15px;
-            }
-            .img-box {
-                margin-right: 0;
-                margin-bottom: 15px;
-                width: 120px;
-                height: 120px;
-            }
-            .product-info {
-                margin-bottom: 15px;
-                padding-right: 0 !important;
-            }
-            .text-end {
-                text-align: center !important;
-                width: 100%;
-                margin-bottom: 15px;
-                padding: 0 !important;
-            }
-            .d-flex {
-                justify-content: center;
-                width: 100%;
-            }
-            .action-btn {
-                margin: 0 5px;
-            }
+            .product-row, .order-row { flex-direction: column; text-align: center; padding: 15px; }
+            .img-box { margin-right: 0; margin-bottom: 15px; width: 120px; height: 120px; }
+            .text-end { text-align: center !important; width: 100%; margin-bottom: 15px; padding: 0 !important; }
+            .d-flex { justify-content: center; width: 100%; }
         }
     </style>
 </head>
@@ -195,7 +164,7 @@
         <div class="header-section d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
                 <h1>AgroAdmin<span style="color:var(--accent)">.</span></h1>
-                <p class="text-muted fw-bold fs-5">Panel de gestión de inventario profesional</p>
+                <p class="text-muted fw-bold fs-5">Panel de gestión profesional</p>
             </div>
             <a href="tienda.html" class="btn btn-dark rounded-pill px-4 fw-bold">
                 <i class="bi bi-shop me-2"></i> VER TIENDA
@@ -214,12 +183,10 @@
                     
                     <form id="form-producto">
                         <input type="hidden" id="prod-id">
-                        
                         <div class="mb-3">
                             <label class="form-label">Nombre del Artículo</label>
                             <input type="text" id="nombre" class="form-control" placeholder="Ej: Motosierra Profesional" required>
                         </div>
-
                         <div class="row mb-3">
                             <div class="col-6">
                                 <label class="form-label">Marca</label>
@@ -230,7 +197,6 @@
                                 <input type="text" id="sku" class="form-control bg-light" readonly>
                             </div>
                         </div>
-
                         <div class="row mb-3">
                             <div class="col-6">
                                 <label class="form-label">Precio ($)</label>
@@ -241,41 +207,183 @@
                                 <input type="number" id="stock" class="form-control" placeholder="0" required>
                             </div>
                         </div>
-
                         <div class="mb-3">
                             <label class="form-label">Características / Descripción</label>
                             <textarea id="caracteristicas" class="form-control" rows="3" placeholder="Motor de 2 tiempos, 50cc..."></textarea>
                         </div>
-
                         <div class="mb-4">
-                            <label class="form-label">Imágenes (Puedes seleccionar varias)</label>
+                            <label class="form-label">Imágenes</label>
                             <input type="file" id="imagenes" class="form-control" accept="image/*" multiple>
                         </div>
-
-                        <button type="submit" class="btn-main w-100" id="btn-guardar">
-                            GUARDAR PRODUCTO
-                        </button>
+                        <button type="submit" class="btn-main w-100" id="btn-guardar">GUARDAR PRODUCTO</button>
                     </form>
                 </div>
             </div>
 
             <div class="col-lg-7">
                 <div class="bento-card">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3 class="fw-800 m-0">Inventario</h3>
-                        <span class="badge bg-dark rounded-pill px-3 py-2" id="total-count">0 items</span>
+                    <ul class="nav nav-pills mb-4 gap-2" id="adminTabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-inventario" type="button">
+                                <i class="bi bi-box-seam me-2"></i>Inventario
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-pedidos" type="button" onclick="cargarPedidos()">
+                                <i class="bi bi-cart-check me-2"></i>Pedidos
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="tab-inventario">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4 class="fw-bold m-0">Productos</h4>
+                                <span class="badge bg-dark rounded-pill" id="total-count">0 items</span>
+                            </div>
+                            <div id="lista-productos"></div>
+                        </div>
+
+                        <div class="tab-pane fade" id="tab-pedidos">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4 class="fw-bold m-0">Historial de Pedidos</h4>
+                                <span class="badge bg-dark rounded-pill" id="order-count">0 recibidos</span>
+                            </div>
+                            <div id="lista-pedidos"></div>
+                        </div>
                     </div>
-                    <div id="lista-productos"></div>
                 </div>
             </div>
         </div>
     </div>
 
+    <div class="modal fade" id="modalPedido" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 30px; border: none;">
+                <div class="modal-header border-0 p-4">
+                    <h3 class="fw-800 m-0">Detalle del Pedido</h3>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 pt-0">
+                    <div id="detalle-productos-pedido"></div>
+                    <hr class="my-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold fs-5">Total:</span>
+                        <span class="price-badge" id="total-modal" style="color: var(--accent); font-size: 1.8rem;">$0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <script>
         let editando = false;
         const BASE_URL = 'https://tienda-1vps.onrender.com';
+
+        async function cargarInventario() {
+            try {
+                const res = await fetch(`${BASE_URL}/productos`);
+                const data = await res.json();
+                document.getElementById('total-count').innerText = `${data.length} Items`;
+                const lista = document.getElementById('lista-productos');
+                lista.innerHTML = data.map(p => {
+                    const prodJson = JSON.stringify(p).replace(/'/g, "&apos;");
+                    return `
+                    <div class="product-row shadow-sm">
+                        <div class="img-box"><img src="${BASE_URL}${p.ImagenURL}" onerror="this.src='https://via.placeholder.com/150'"></div>
+                        <div class="flex-grow-1">
+                            <h5 class="mb-0 fw-bold">${p.Nombre}</h5>
+                            <small class="text-muted fw-bold">${p.Marca.toUpperCase()} • SKU: ${p.CodigoSKU}</small>
+                        </div>
+                        <div class="text-end px-3">
+                            <div class="price-badge">$${Number(p.Precio).toLocaleString()}</div>
+                            <span class="stock-pill ${p.Stock < 5 ? 'low' : 'ok'}">${p.Stock} unds</span>
+                        </div>
+                        <div class="d-flex">
+                            <button class="action-btn btn-edit" onclick='prepararEdicion(${prodJson})'><i class="bi bi-pencil-fill"></i></button>
+                            <button class="action-btn btn-delete" onclick="eliminarProducto(${p.ProductoID})"><i class="bi bi-trash-fill"></i></button>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch (err) { console.error(err); }
+        }
+
+        async function cargarPedidos() {
+            const contenedor = document.getElementById('lista-pedidos');
+            contenedor.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary"></div></div>';
+            try {
+                const res = await fetch(`${BASE_URL}/pedidos`);
+                const data = await res.json();
+                document.getElementById('order-count').innerText = `${data.length} pedidos`;
+                data.sort((a, b) => new Date(b.Fecha) - new Date(a.Fecha));
+                contenedor.innerHTML = data.map(o => `
+                    <div class="order-row shadow-sm">
+                        <div class="flex-grow-1 text-start">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <h5 class="mb-0 fw-bold">Pedido #${o.PedidoID || o.id}</h5>
+                                <span class="status-pill status-${(o.Estado || 'pendiente').toLowerCase()}">${o.Estado || 'Pendiente'}</span>
+                            </div>
+                            <p class="mb-0 text-muted small"><i class="bi bi-person me-1"></i>${o.ClienteNombre}</p>
+                            <p class="mb-0 text-muted small"><i class="bi bi-calendar3 me-1"></i>${new Date(o.Fecha).toLocaleString()}</p>
+                        </div>
+                        <div class="text-end px-3">
+                            <div class="price-badge">$${Number(o.Total).toLocaleString()}</div>
+                        </div>
+                        <div class="d-flex">
+                            <button class="action-btn btn-view" onclick="verDetallePedido(${o.PedidoID || o.id})">
+                                <i class="bi bi-eye-fill"></i>
+                            </button>
+                            <select class="form-select form-select-sm ms-2 rounded-3" style="width: auto;" onchange="cambiarEstadoPedido(${o.PedidoID || o.id}, this.value)">
+                                <option value="Pendiente" ${o.Estado === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
+                                <option value="Visto" ${o.Estado === 'Visto' ? 'selected' : ''}>Visto</option>
+                                <option value="Despachado" ${o.Estado === 'Despachado' ? 'selected' : ''}>Despachado</option>
+                            </select>
+                        </div>
+                    </div>`).join('');
+            } catch (err) { contenedor.innerHTML = '<p class="p-4 text-center">Error al cargar pedidos.</p>'; }
+        }
+
+        async function verDetallePedido(id) {
+            const contenedor = document.getElementById('detalle-productos-pedido');
+            const totalModal = document.getElementById('total-modal');
+            contenedor.innerHTML = '<div class="text-center"><div class="spinner-border text-primary"></div></div>';
+            
+            const miModal = new bootstrap.Modal(document.getElementById('modalPedido'));
+            miModal.show();
+
+            try {
+                const res = await fetch(`${BASE_URL}/pedidos/${id}`);
+                const pedido = await res.json();
+                if (pedido.Productos) {
+                    contenedor.innerHTML = pedido.Productos.map(item => `
+                        <div class="d-flex align-items-center mb-3 p-3 bg-light" style="border-radius: 20px;">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0 fw-bold">${item.Nombre}</h6>
+                                <small class="text-muted">${item.Cantidad} x $${Number(item.Precio).toLocaleString()}</small>
+                            </div>
+                            <div class="fw-bold">$${(item.Cantidad * item.Precio).toLocaleString()}</div>
+                        </div>`).join('');
+                }
+                totalModal.innerText = `$${Number(pedido.Total).toLocaleString()}`;
+            } catch (err) { contenedor.innerHTML = 'Error al cargar detalle.'; }
+        }
+
+        async function cambiarEstadoPedido(id, nuevoEstado) {
+            try {
+                const res = await fetch(`${BASE_URL}/pedidos/${id}/estado`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ estado: nuevoEstado })
+                });
+                if(res.ok) {
+                    Swal.fire({ title: 'Estado actualizado', icon: 'success', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false });
+                    cargarPedidos();
+                }
+            } catch (err) { console.error(err); }
+        }
 
         document.getElementById('marca').addEventListener('input', (e) => {
             if (!editando) {
@@ -285,134 +393,12 @@
             }
         });
 
-        async function cargarInventario() {
-            try {
-                const res = await fetch(`${BASE_URL}/productos`);
-                const data = await res.json();
-                document.getElementById('total-count').innerText = `${data.length} Productos`;
-                
-                const lista = document.getElementById('lista-productos');
-                lista.innerHTML = data.map(p => {
-                    const prodJson = JSON.stringify(p).replace(/'/g, "&apos;");
-                    // PROCESAR IMAGEN URL
-                    let fotos = [];
-                    try {
-                        fotos = p.ImagenURL.startsWith('[') ? JSON.parse(p.ImagenURL) : p.ImagenURL.split(',');
-                    } catch(e) { fotos = [p.ImagenURL]; }
-                    const imgPrincipal = (fotos[0] || '').trim();
-                    const urlImg = imgPrincipal.startsWith('http') ? imgPrincipal : `${BASE_URL}${imgPrincipal}`;
-
-                    return `
-                    <div class="product-row shadow-sm">
-                        <div class="img-box">
-                            <img src="${urlImg}" onerror="this.src='https://via.placeholder.com/150?text=Agro'">
-                        </div>
-                        <div class="flex-grow-1 product-info pe-3">
-                            <h5 class="mb-0 fw-bold">${p.Nombre}</h5>
-                            <p class="text-muted small fw-bold mb-0">${p.Marca.toUpperCase()} • SKU: ${p.CodigoSKU}</p>
-                            <p class="product-desc-list mb-0">${p.Caracteristicas || 'Sin descripción'}</p>
-                        </div>
-                        <div class="text-end px-3 info-numerica">
-                            <div class="price-badge">$${Number(p.Precio).toLocaleString()}</div>
-                            <span class="stock-pill ${p.Stock < 5 ? 'low' : 'ok'}">${p.Stock} unds</span>
-                        </div>
-                        <div class="d-flex acciones-box">
-                            <button class="action-btn btn-edit" onclick='prepararEdicion(${prodJson})'>
-                                <i class="bi bi-pencil-fill"></i>
-                            </button>
-                            <button class="action-btn btn-delete" onclick="eliminarProducto(${p.ProductoID})">
-                                <i class="bi bi-trash-fill"></i>
-                            </button>
-                        </div>
-                    </div>`;
-                }).join('');
-            } catch (err) { console.error(err); }
-        }
-
-        document.getElementById('form-producto').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('prod-id').value;
-            
-            const formData = new FormData();
-            formData.append('nombre', document.getElementById('nombre').value);
-            formData.append('marca', document.getElementById('marca').value);
-            formData.append('sku', document.getElementById('sku').value);
-            formData.append('precio', document.getElementById('precio').value);
-            formData.append('stock', document.getElementById('stock').value);
-            formData.append('caracteristicas', document.getElementById('caracteristicas').value);
-            
-            const inputImagenes = document.getElementById('imagenes');
-            for (let i = 0; i < inputImagenes.files.length; i++) {
-                formData.append('imagenes', inputImagenes.files[i]);
-            }
-
-            const url = editando ? `${BASE_URL}/productos/${id}` : `${BASE_URL}/productos`;
-            const method = editando ? 'PUT' : 'POST';
-
-            try {
-                const res = await fetch(url, { method, body: formData });
-                if(res.ok) {
-                    Swal.fire({ 
-                        title: editando ? '¡Actualizado!' : '¡Guardado!', 
-                        icon: 'success', 
-                        confirmButtonColor: '#6c5ce7',
-                        timer: 2000
-                    });
-                    limpiarForm();
-                    cargarInventario();
-                } else {
-                    const error = await res.json();
-                    Swal.fire('Error', error.message || 'No se pudo procesar', 'error');
-                }
-            } catch (error) {
-                Swal.fire('Error', 'No se pudo conectar con el servidor', 'error');
-            }
-        });
-
-        function prepararEdicion(p) {
-            editando = true;
-            document.getElementById('titulo-form').innerText = "Editar Producto";
-            document.getElementById('prod-id').value = p.ProductoID;
-            document.getElementById('nombre').value = p.Nombre;
-            document.getElementById('marca').value = p.Marca;
-            document.getElementById('sku').value = p.CodigoSKU;
-            document.getElementById('precio').value = p.Precio;
-            document.getElementById('stock').value = p.Stock;
-            document.getElementById('caracteristicas').value = p.Caracteristicas || '';
-            
-            const btn = document.getElementById('btn-guardar');
-            btn.innerText = "ACTUALIZAR CAMBIOS";
-            btn.style.background = "#2d3436"; 
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
         function limpiarForm() {
             editando = false;
             document.getElementById('form-producto').reset();
             document.getElementById('titulo-form').innerText = "Crear Producto";
-            const btn = document.getElementById('btn-guardar');
-            btn.innerText = "GUARDAR PRODUCTO";
-            btn.style.background = "var(--accent)"; 
             document.getElementById('prod-id').value = "";
-        }
-
-        async function eliminarProducto(id) {
-            const confirm = await Swal.fire({
-                title: '¿Borrar producto?',
-                text: "Esta acción no se puede deshacer",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ff7675',
-                confirmButtonText: 'Sí, borrar'
-            });
-            
-            if(confirm.isConfirmed) {
-                const res = await fetch(`${BASE_URL}/productos/${id}`, { method: 'DELETE' });
-                if(res.ok) {
-                    Swal.fire('Eliminado', 'Producto fuera del sistema', 'success');
-                    cargarInventario();
-                }
-            }
+            document.getElementById('btn-guardar').style.background = "var(--accent)";
         }
 
         cargarInventario();
