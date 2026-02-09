@@ -129,14 +129,14 @@
 
         .cart-modal-header { background: var(--primary-green); color: white; }
         .login-input { background-color: #f1f1f1 !important; border: none !important; padding: 12px 15px !important; border-radius: 12px !important; }
+        
         /* --- ESTILO PARA PRODUCTOS AGOTADOS --- */
         .product-out-of-stock {
-            background-color: #fff5f5 !important; /* Rojo muy clarito */
-            border: 2px solid #ffcccc !important; /* Borde rosado */
+            background-color: #fff5f5 !important;
+            border: 2px solid #ffcccc !important;
             opacity: 0.9;
         }
 
-        /* Cambia el color del stock cuando es 0 */
         .text-danger {
             color: #dc3545 !important;
         }
@@ -261,7 +261,7 @@
             <div class="modal-body p-0">
                 <div class="row g-0">
                     <div class="col-md-6 bg-white d-flex align-items-center justify-content-center p-4" id="contenedor-foto-modal">
-                        <img id="detalle-img" src="" class="img-fluid" style="max-height: 400px; object-fit: contain;">
+                        <img id="detalle-img" src="" class="img-fluid" style="max-height: 400px; object-fit: contain;" alt="Producto">
                     </div>
                     <div class="col-md-6 p-4 d-flex flex-column justify-content-center">
                         <button type="button" class="btn-close float-end mb-3" data-bs-dismiss="modal"></button>
