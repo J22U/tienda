@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AgroAdmin Pro | Panel de Control</title>
+    <title>Trébol | Panel de Control</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -279,133 +279,126 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <script>
-        let editando = false;
-        const BASE_URL = 'https://tienda-1vps.onrender.com';
+    let editando = false;
+    const BASE_URL = 'https://tienda-1vps.onrender.com';
 
-        async function cargarInventario() {
-            try {
-                const res = await fetch(`${BASE_URL}/productos`);
-                const data = await res.json();
-                document.getElementById('total-count').innerText = `${data.length} Items`;
-                const lista = document.getElementById('lista-productos');
-                
-                lista.innerHTML = data.map(p => {
-                    const prodJson = JSON.stringify(p).replace(/'/g, "&apos;");
-                    return `
-                    <div class="product-row shadow-sm">
-                        <div class="img-box"><img src="${BASE_URL}${p.ImagenURL}" onerror="this.src='https://via.placeholder.com/150'"></div>
-                        <div class="flex-grow-1">
-                            <h6 class="mb-0 fw-bold">${p.Nombre}</h6>
-                            <small class="text-muted fw-bold">${p.Marca.toUpperCase()} • SKU: ${p.CodigoSKU}</small>
-                        </div>
-                        <div class="text-end px-3">
-                            <div class="price-badge">$${Number(p.Precio).toLocaleString()}</div>
-                            <span class="stock-pill ${p.Stock < 5 ? 'low' : 'ok'}">${p.Stock} unds</span>
-                        </div>
-                        <div class="d-flex">
-                            <button class="action-btn btn-edit" onclick='prepararEdicion(${prodJson})'><i class="bi bi-pencil-fill"></i></button>
-                            <button class="action-btn btn-delete" onclick="eliminarProducto(${p.ProductoID})"><i class="bi bi-trash-fill"></i></button>
-                        </div>
-                    </div>`;
-                }).join('');
-            } catch (err) { console.error(err); }
+    async function cargarInventario() {
+        try {
+            const res = await fetch(`${BASE_URL}/productos`);
+            const data = await res.json();
+            document.getElementById('total-count').innerText = `${data.length} Items`;
+            const lista = document.getElementById('lista-productos');
+            
+            lista.innerHTML = data.map(p => {
+                const prodJson = JSON.stringify(p).replace(/'/g, "&apos;");
+                return `
+                <div class="product-row shadow-sm">
+                    <div class="img-box"><img src="${BASE_URL}${p.ImagenURL}" onerror="this.src='https://via.placeholder.com/150'"></div>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-0 fw-bold">${p.Nombre}</h6>
+                        <small class="text-muted fw-bold">${p.Marca ? p.Marca.toUpperCase() : 'SIN MARCA'} • SKU: ${p.CodigoSKU}</small>
+                    </div>
+                    <div class="text-end px-3">
+                        <div class="price-badge">$${Number(p.Precio).toLocaleString()}</div>
+                        <span class="stock-pill ${p.Stock < 5 ? 'low' : 'ok'}">${p.Stock} unds</span>
+                    </div>
+                    <div class="d-flex">
+                        <button class="action-btn btn-edit" onclick='prepararEdicion(${prodJson})'><i class="bi bi-pencil-fill"></i></button>
+                        <button class="action-btn btn-delete" onclick="eliminarProducto(${p.ProductoID})"><i class="bi bi-trash-fill"></i></button>
+                    </div>
+                </div>`;
+            }).join('');
+        } catch (err) { console.error("Error cargando inventario:", err); }
+    }
+
+    function prepararEdicion(p) {
+        editando = true;
+        document.getElementById('titulo-form').innerText = "Editando Producto";
+        document.getElementById('btn-guardar').innerText = "ACTUALIZAR";
+        document.getElementById('btn-guardar').style.background = "#2ecc71";
+        
+        // Mapeo de datos del objeto DB a los inputs
+        document.getElementById('prod-id').value = p.ProductoID;
+        document.getElementById('nombre').value = p.Nombre;
+        document.getElementById('marca').value = p.Marca;
+        document.getElementById('sku').value = p.CodigoSKU;
+        document.getElementById('precio').value = p.Precio;
+        document.getElementById('stock').value = p.Stock;
+        document.getElementById('caracteristicas').value = p.Caracteristicas || '';
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    document.getElementById('form-producto').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const id = document.getElementById('prod-id').value;
+        
+        // IMPORTANTE: Las llaves deben ser minúsculas para coincidir con tu app.js
+        const producto = {
+            nombre: document.getElementById('nombre').value,
+            marca: document.getElementById('marca').value,
+            sku: document.getElementById('sku').value,
+            precio: parseFloat(document.getElementById('precio').value),
+            stock: parseInt(document.getElementById('stock').value),
+            caracteristicas: document.getElementById('caracteristicas').value
+        };
+
+        const url = editando ? `${BASE_URL}/productos/${id}` : `${BASE_URL}/productos`;
+        const metodo = editando ? 'PUT' : 'POST';
+
+        try {
+            const res = await fetch(url, {
+                method: metodo,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(producto)
+            });
+
+            if (res.ok) {
+                Swal.fire('¡Éxito!', 'Producto guardado correctamente', 'success');
+                limpiarForm();
+                cargarInventario();
+            } else {
+                const errorData = await res.json();
+                Swal.fire('Error', errorData.error || 'No se pudo procesar', 'error');
+            }
+        } catch (err) { 
+            console.error(err);
+            Swal.fire('Error', 'Error de conexión con el servidor', 'error'); 
         }
+    });
 
-        function prepararEdicion(p) {
-            editando = true;
-            document.getElementById('titulo-form').innerText = "Editando";
-            document.getElementById('btn-guardar').innerText = "ACTUALIZAR";
-            document.getElementById('btn-guardar').style.background = "#2ecc71";
-            document.getElementById('prod-id').value = p.ProductoID;
-            document.getElementById('nombre').value = p.Nombre;
-            document.getElementById('marca').value = p.Marca;
-            document.getElementById('sku').value = p.CodigoSKU;
-            document.getElementById('precio').value = p.Precio;
-            document.getElementById('stock').value = p.Stock;
-            document.getElementById('caracteristicas').value = p.Caracteristicas || '';
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        document.getElementById('form-producto').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('prod-id').value;
-            const producto = {
-                Nombre: document.getElementById('nombre').value,
-                Marca: document.getElementById('marca').value,
-                CodigoSKU: document.getElementById('sku').value,
-                Precio: parseFloat(document.getElementById('precio').value),
-                Stock: parseInt(document.getElementById('stock').value),
-                Caracteristicas: document.getElementById('caracteristicas').value
-            };
-            const url = editando ? `${BASE_URL}/productos/${id}` : `${BASE_URL}/productos`;
-            const metodo = editando ? 'PUT' : 'POST';
-            try {
-                const res = await fetch(url, {
-                    method: metodo,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(producto)
-                });
-                if (res.ok) {
-                    Swal.fire('¡Éxito!', 'Operación realizada', 'success');
-                    limpiarForm();
-                    cargarInventario();
-                }
-            } catch (err) { Swal.fire('Error', 'No se pudo guardar', 'error'); }
+    async function eliminarProducto(id) {
+        const result = await Swal.fire({
+            title: '¿Eliminar producto?',
+            text: "Esta acción no se puede deshacer",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ff7675',
+            confirmButtonText: 'Sí, borrar'
         });
 
-        async function eliminarProducto(id) {
-            const result = await Swal.fire({
-                title: '¿Eliminar?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ff7675',
-                confirmButtonText: 'Sí, borrar'
-            });
-            if (result.isConfirmed) {
-                try {
-                    const res = await fetch(`${BASE_URL}/productos/${id}`, { method: 'DELETE' });
-                    if (res.ok) { cargarInventario(); }
-                } catch (err) { console.error(err); }
-            }
-        }
-
-        async function cargarPedidos() {
-            const contenedor = document.getElementById('lista-pedidos');
-            contenedor.innerHTML = '<div class="text-center p-4"><div class="spinner-border spinner-border-sm text-primary"></div></div>';
+        if (result.isConfirmed) {
             try {
-                const res = await fetch(`${BASE_URL}/pedidos`);
-                const data = await res.json();
-                document.getElementById('order-count').innerText = `${data.length} pedidos`;
-                data.sort((a, b) => new Date(b.Fecha) - new Date(a.Fecha));
-                contenedor.innerHTML = data.map(o => `
-                    <div class="order-row shadow-sm">
-                        <div class="flex-grow-1 text-start">
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <h6 class="mb-0 fw-bold">#${o.PedidoID || o.id}</h6>
-                                <span class="status-pill status-${(o.Estado || 'pendiente').toLowerCase()}">${o.Estado || 'Pendiente'}</span>
-                            </div>
-                            <p class="mb-0 text-muted small">${o.ClienteNombre}</p>
-                        </div>
-                        <div class="text-end px-3">
-                            <div class="price-badge">$${Number(o.Total).toLocaleString()}</div>
-                        </div>
-                        <div class="d-flex">
-                            <button class="action-btn btn-view" onclick="verDetallePedido(${o.PedidoID || o.id})"><i class="bi bi-eye-fill"></i></button>
-                        </div>
-                    </div>`).join('');
-            } catch (err) { contenedor.innerHTML = '<p>Error.</p>'; }
+                const res = await fetch(`${BASE_URL}/productos/${id}`, { method: 'DELETE' });
+                if (res.ok) { 
+                    Swal.fire('Eliminado', 'El producto ha sido borrado', 'success');
+                    cargarInventario(); 
+                }
+            } catch (err) { console.error(err); }
         }
+    }
 
-        function limpiarForm() {
-            editando = false;
-            document.getElementById('form-producto').reset();
-            document.getElementById('titulo-form').innerText = "Crear Producto";
-            document.getElementById('btn-guardar').innerText = "GUARDAR PRODUCTO";
-            document.getElementById('btn-guardar').style.background = "var(--accent)";
-            document.getElementById('prod-id').value = "";
-        }
+    function limpiarForm() {
+        editando = false;
+        document.getElementById('form-producto').reset();
+        document.getElementById('titulo-form').innerText = "Crear Producto";
+        document.getElementById('btn-guardar').innerText = "GUARDAR PRODUCTO";
+        document.getElementById('btn-guardar').style.background = "var(--accent)";
+        document.getElementById('prod-id').value = "";
+    }
 
-        cargarInventario();
-    </script>
+    cargarInventario();
+</script>
 </body>
 </html>

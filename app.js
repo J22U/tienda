@@ -2,18 +2,16 @@ const express = require('express');
 const sql = require('mssql');
 const cors = require('cors');
 const multer = require('multer');
-const path = require('path'); // Solo una declaración aquí arriba
+const path = require('path');
 const fs = require('fs');
 const app = express();
 
 app.use(express.json());
 app.use(cors());
 
-// Servir archivos estáticos y la carpeta de subidas
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(__dirname));
 
-// --- CONFIGURACIÓN DE DB ---
 const config = {
     user: process.env.DB_USER, 
     password: process.env.DB_PASSWORD, 
@@ -28,12 +26,11 @@ const config = {
 const poolPromise = new sql.ConnectionPool(config)
     .connect()
     .then(async pool => {
-        console.log('¡Conectado a SQL Server en Somee!');
+        console.log('¡Conectado a SQL Server!');
         return pool;
     })
     .catch(err => console.error('Error al conectar:', err));
 
-// --- CONFIGURACIÓN DE MULTER ---
 if (!fs.existsSync('./uploads')) fs.mkdirSync('./uploads');
 const storage = multer.diskStorage({
     destination: 'uploads/',
@@ -41,33 +38,27 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// --- RUTAS ---
-
-// OBTENER PRODUCTOS (Trae la galería de fotos)
+// OBTENER PRODUCTOS
 app.get('/productos', async (req, res) => {
     try {
         const pool = await poolPromise;
-        // Quitamos [AgroTienda] y usamos [dbo] para evitar errores de permisos en Somee
         const result = await pool.request().query(`
             SELECT p.*, 
             (SELECT ImagenURL FROM [dbo].[ProductoImagenes] 
              WHERE ProductoID = p.ProductoID FOR JSON PATH) AS Galeria
             FROM [dbo].[Productos] p
         `);
-        
         const productos = result.recordset.map(prod => ({
             ...prod,
             Galeria: prod.Galeria ? JSON.parse(prod.Galeria) : []
         }));
-
         res.json(productos);
     } catch (err) { 
-        console.error("Error en GET:", err.message);
         res.status(500).send(err.message); 
     }
 });
 
-// EDITAR PRODUCTO
+// EDITAR PRODUCTO (Ruta Crítica)
 app.put('/productos/:id', upload.array('imagenes', 10), async (req, res) => {
     try {
         const { nombre, marca, precio, stock, caracteristicas, sku } = req.body;
@@ -94,6 +85,7 @@ app.put('/productos/:id', upload.array('imagenes', 10), async (req, res) => {
         query += ` WHERE ProductoID = @id`;
         await request.query(query);
 
+        // Actualizar galería si hay fotos nuevas
         if (req.files && req.files.length > 0) {
             await pool.request().input('id', sql.Int, id).query('DELETE FROM [dbo].[ProductoImagenes] WHERE ProductoID = @id');
             for (const file of req.files) {
@@ -103,8 +95,11 @@ app.put('/productos/:id', upload.array('imagenes', 10), async (req, res) => {
                     .query('INSERT INTO [dbo].[ProductoImagenes] (ProductoID, ImagenURL) VALUES (@id, @url)');
             }
         }
-        res.json({ success: true, message: "Producto actualizado" });
-    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+        res.json({ success: true, message: "Actualizado" });
+    } catch (err) { 
+        console.error(err);
+        res.status(500).json({ success: false, error: err.message }); 
+    }
 });
 
 // CREAR PRODUCTO
@@ -147,12 +142,9 @@ app.delete('/productos/:id', async (req, res) => {
     } catch (err) { res.status(500).send(err.message); }
 });
 
-// RUTA INICIAL
 app.get('/', (req, res) => {
-    // Cambia 'index.html' por 'tienda.html' si ese es tu archivo principal
     res.sendFile(path.join(__dirname, 'tienda.html'));
 });
 
-// PUERTO DINÁMICO PARA RENDER
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor corriendo en el puerto ${PORT}`));
+app.listen(PORT, () => console.log(`Servidor en puerto ${PORT}`));
