@@ -120,6 +120,7 @@
         }
         .nav-pills .nav-link.active { background-color: var(--accent); }
 
+        /* AJUSTE PARA MÓVILES */
         @media (max-width: 576px) {
             .product-row {
                 padding: 12px;
@@ -158,35 +159,35 @@
                         <input type="hidden" id="prod-id">
                         <div class="mb-3">
                             <label class="form-label">Nombre del Artículo</label>
-                            <input type="text" id="nombre" name="nombre" class="form-control" placeholder="Ej: Motosierra" required>
+                            <input type="text" id="nombre" class="form-control" placeholder="Ej: Motosierra" required>
                         </div>
                         <div class="row mb-3">
                             <div class="col-6">
                                 <label class="form-label">Marca</label>
-                                <input type="text" id="marca" name="marca" class="form-control" placeholder="Stihl" required>
+                                <input type="text" id="marca" class="form-control" placeholder="Stihl" required>
                             </div>
                             <div class="col-6">
                                 <label class="form-label">SKU</label>
-                                <input type="text" id="sku" name="sku" class="form-control" placeholder="Código">
+                                <input type="text" id="sku" class="form-control" placeholder="Código">
                             </div>
                         </div>
                         <div class="row mb-3">
                             <div class="col-6">
                                 <label class="form-label">Precio ($)</label>
-                                <input type="number" id="precio" name="precio" class="form-control" required>
+                                <input type="number" id="precio" class="form-control" required>
                             </div>
                             <div class="col-6">
                                 <label class="form-label">Stock</label>
-                                <input type="number" id="stock" name="stock" class="form-control" required>
+                                <input type="number" id="stock" class="form-control" required>
                             </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Descripción</label>
-                            <textarea id="caracteristicas" name="caracteristicas" class="form-control" rows="2"></textarea>
+                            <textarea id="caracteristicas" class="form-control" rows="2"></textarea>
                         </div>
                         <div class="mb-4">
                             <label class="form-label">Imagen</label>
-                            <input type="file" id="imagenes" name="imagenes" class="form-control" accept="image/*">
+                            <input type="file" id="imagenes" class="form-control" accept="image/*">
                         </div>
                         <button type="submit" class="btn-main w-100" id="btn-guardar">GUARDAR PRODUCTO</button>
                     </form>
@@ -361,8 +362,7 @@
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
-                confirmButtonText: 'Sí, eliminar',
-                cancelButtonText: 'Cancelar'
+                confirmButtonText: 'Sí, eliminar'
             });
             if (confirm.isConfirmed) {
                 try {
@@ -386,12 +386,11 @@
             } catch (err) { console.error(err); }
         }
 
-        // --- CORRECCIÓN EN EL ENVÍO (FORM DATA PARA IMÁGENES) ---
+        // --- CORRECCIÓN: ENVÍO CON FORM DATA ---
         document.getElementById('form-producto').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('prod-id').value;
             
-            // Usamos FormData para poder enviar el archivo de imagen
             const formData = new FormData();
             formData.append('nombre', document.getElementById('nombre').value);
             formData.append('marca', document.getElementById('marca').value);
@@ -406,35 +405,33 @@
             }
 
             const url = editando ? `${BASE_URL}/productos/${id}` : `${BASE_URL}/productos`;
-            
             try {
                 const res = await fetch(url, {
                     method: editando ? 'PUT' : 'POST',
-                    // No establecemos Content-Type, el navegador lo hará automáticamente con el boundary de FormData
-                    body: formData
+                    body: formData // No enviamos headers manuales
                 });
-
                 if (res.ok) { 
-                    Swal.fire('Guardado','El producto se procesó correctamente','success'); 
+                    Swal.fire('Guardado','Inventario actualizado','success'); 
                     limpiarForm(); 
                     cargarInventario(); 
-                } else {
-                    const errorData = await res.json();
-                    Swal.fire('Error', errorData.error || 'No se pudo guardar', 'error');
                 }
-            } catch (err) { 
-                console.error(err);
-                Swal.fire('Error', 'Fallo en la comunicación con el servidor', 'error');
-            }
+            } catch (err) { console.error(err); }
         });
 
-        cargarInventario();
+        // --- SISTEMA DE AUTO-REFRESCO DINÁMICO ---
         setInterval(() => {
+            const tabInventario = document.getElementById('tab-inventario');
             const tabPedidos = document.getElementById('tab-pedidos');
+
+            if (tabInventario && tabInventario.classList.contains('active')) {
+                cargarInventario();
+            }
             if (tabPedidos && tabPedidos.classList.contains('active')) {
                 cargarPedidos();
             }
         }, 15000);
+
+        cargarInventario();
     </script>
 </body>
 </html>
