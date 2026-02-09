@@ -86,7 +86,7 @@
         .img-box {
             width: 60px; 
             height: 60px;
-            flex-shrink: 0;
+            flex-shrink: 0; 
             border-radius: 14px;
             overflow: hidden;
             background: #eee;
@@ -121,8 +121,13 @@
         .nav-pills .nav-link.active { background-color: var(--accent); }
 
         @media (max-width: 576px) {
-            .product-row { padding: 12px; flex-wrap: wrap; }
-            .price-badge { font-size: 1rem; }
+            .product-row {
+                padding: 12px;
+                flex-wrap: wrap;
+            }
+            .price-badge {
+                font-size: 1rem;
+            }
         }
     </style>
 </head>
@@ -192,7 +197,7 @@
                 <div class="bento-card">
                     <ul class="nav nav-pills mb-4 gap-2" id="adminTabs" role="tablist">
                         <li class="nav-item">
-                            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-inventario" type="button" onclick="cargarInventario()">
+                            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-inventario" type="button">
                                 <i class="bi bi-box-seam me-2"></i>Inventario
                             </button>
                         </li>
@@ -315,7 +320,7 @@
                         <div class="product-row shadow-sm border-start border-4 ${p.Estado === 'Pendiente' ? 'border-warning' : 'border-success'} mb-3">
                             <div class="flex-grow-1">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <h6 class="mb-0 fw-bold">Pedido #${p.PedidoID} — ${p.NombreCliente}</h6>
+                                    <h6 class="mb-0 fw-bold">Pedido #${pedidos.length - i} — ${p.NombreCliente}</h6>
                                     <span class="status-pill ${p.Estado === 'Pendiente' ? 'status-pendiente' : 'status-completado'}">${p.Estado}</span>
                                 </div>
                                 <div class="row small mb-2 text-muted">
@@ -331,60 +336,105 @@
                             <div class="text-end px-3 border-start">
                                 <div class="price-badge text-primary">$${Number(p.Total).toLocaleString()}</div>
                                 <div class="mt-2 d-flex gap-1 justify-content-end">
-                                    ${p.Estado === 'Pendiente' ? `<button class="btn btn-sm btn-success" onclick="completarPedido(${p.PedidoID})"><i class="bi bi-check-circle"></i></button>` : `<span class="text-success small fw-bold"><i class="bi bi-check-all"></i> OK</span>`}
+                                    ${p.Estado === 'Pendiente' ? 
+                                        `<button class="btn btn-sm btn-success" onclick="completarPedido(${p.PedidoID})"><i class="bi bi-check-circle"></i></button>` : 
+                                        `<span class="text-success small fw-bold"><i class="bi bi-check-all"></i> OK</span>`
+                                    }
                                     <button class="btn btn-sm btn-outline-danger" onclick="eliminarPedido(${p.PedidoID})"><i class="bi bi-trash"></i></button>
                                 </div>
                             </div>
                         </div>`;
                     }).join('');
                 }
-            } catch (err) { console.error(err); } finally { cargandoPedidosFlag = false; }
+            } catch (err) {
+                console.error(err);
+                if(lista) lista.innerHTML = '<p class="text-danger text-center">Error de conexión</p>';
+            } finally {
+                setTimeout(() => { cargandoPedidosFlag = false; }, 500);
+            }
         }
 
         async function eliminarPedido(id) {
-            if (!(await Swal.fire({title:'¿Borrar?', icon:'warning', showCancelButton:true}).then(r => r.isConfirmed))) return;
-            try {
-                const res = await fetch(`${BASE_URL}/pedidos/${id}`, { method: 'DELETE' });
-                if (res.ok) { cargarPedidos(); }
-            } catch (err) { console.error(err); }
+            const confirm = await Swal.fire({
+                title: '¿Borrar pedido?',
+                text: "Esta acción no se puede deshacer",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            });
+            if (confirm.isConfirmed) {
+                try {
+                    const res = await fetch(`${BASE_URL}/pedidos/${id}`, { method: 'DELETE' });
+                    if (res.ok) { 
+                        Swal.fire('Eliminado', 'El pedido ha sido borrado', 'success');
+                        cargandoPedidosFlag = false; 
+                        cargarPedidos(); 
+                    }
+                } catch (error) { console.error(error); }
+            }
         }
 
         async function completarPedido(id) {
             try {
                 const res = await fetch(`${BASE_URL}/pedidos/${id}/completar`, { method: 'PUT' });
-                if (res.ok) { cargarPedidos(); }
+                if (res.ok) { 
+                    Swal.fire('Completado', 'El estado ha cambiado', 'success');
+                    cargarPedidos(); 
+                }
             } catch (err) { console.error(err); }
         }
 
+        // --- CORRECCIÓN EN EL ENVÍO (FORM DATA PARA IMÁGENES) ---
         document.getElementById('form-producto').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('prod-id').value;
-            const formData = new FormData(e.target); // Usamos FormData para enviar archivos y texto juntos
+            
+            // Usamos FormData para poder enviar el archivo de imagen
+            const formData = new FormData();
+            formData.append('nombre', document.getElementById('nombre').value);
+            formData.append('marca', document.getElementById('marca').value);
+            formData.append('sku', document.getElementById('sku').value);
+            formData.append('precio', document.getElementById('precio').value);
+            formData.append('stock', document.getElementById('stock').value);
+            formData.append('caracteristicas', document.getElementById('caracteristicas').value);
+            
+            const fileInput = document.getElementById('imagenes');
+            if (fileInput.files[0]) {
+                formData.append('imagenes', fileInput.files[0]);
+            }
 
             const url = editando ? `${BASE_URL}/productos/${id}` : `${BASE_URL}/productos`;
+            
             try {
                 const res = await fetch(url, {
                     method: editando ? 'PUT' : 'POST',
-                    body: formData // Importante: Sin Content-Type header para que el navegador ponga el boundary
+                    // No establecemos Content-Type, el navegador lo hará automáticamente con el boundary de FormData
+                    body: formData
                 });
+
                 if (res.ok) { 
-                    Swal.fire('Éxito','Operación realizada correctamente','success'); 
+                    Swal.fire('Guardado','El producto se procesó correctamente','success'); 
                     limpiarForm(); 
                     cargarInventario(); 
+                } else {
+                    const errorData = await res.json();
+                    Swal.fire('Error', errorData.error || 'No se pudo guardar', 'error');
                 }
-            } catch (err) { console.error(err); }
+            } catch (err) { 
+                console.error(err);
+                Swal.fire('Error', 'Fallo en la comunicación con el servidor', 'error');
+            }
         });
 
-        // RECARGA AUTOMÁTICA CADA 20 SEGUNDOS (Sin recargar página)
+        cargarInventario();
         setInterval(() => {
-            cargarInventario(); // Actualiza stocks
             const tabPedidos = document.getElementById('tab-pedidos');
             if (tabPedidos && tabPedidos.classList.contains('active')) {
-                cargarPedidos(); // Actualiza pedidos si estás viendo la pestaña
+                cargarPedidos();
             }
-        }, 20000);
-
-        cargarInventario();
+        }, 15000);
     </script>
 </body>
 </html>
