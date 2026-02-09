@@ -226,10 +226,9 @@
     
     <script>
     let editando = false;
-    let cargandoPedidos = false; 
+    let cargandoPedidosFlag = false; 
     const BASE_URL = 'https://tienda-1vps.onrender.com';
 
-    // --- LÓGICA DE INVENTARIO ---
     async function cargarInventario() {
         try {
             const res = await fetch(`${BASE_URL}/productos`);
@@ -274,10 +273,9 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // --- LÓGICA DE PEDIDOS (CORREGIDA: SIN DUPLICADOS Y ORDEN ASCENDENTE) ---
     async function cargarPedidos() {
-        if (cargandoPedidos) return; 
-        cargandoPedidos = true;
+        if (cargandoPedidosFlag) return; 
+        cargandoPedidosFlag = true;
 
         const lista = document.getElementById('lista-pedidos');
         if (!lista) return;
@@ -295,18 +293,15 @@
                 return;
             }
 
-            // 1. ORDENAR ASCENDENTE (Por fecha: del más antiguo al más reciente)
-            pedidos.sort((a, b) => new Date(a.Fecha) - new Date(b.Fecha));
+            // 1. ORDENAR DESCENDENTE (El más reciente arriba)
+            pedidos.sort((a, b) => new Date(b.Fecha) - new Date(a.Fecha));
 
-            // 2. LIMPIAR LISTA ANTES DE RENDERIZAR (Evita duplicados)
-            lista.innerHTML = ''; 
-
-            const htmlPedidos = pedidos.map((p, index) => {
+            // 2. RENDERIZAR (Inner HTML directo para evitar acumulaciones/duplicados)
+            lista.innerHTML = pedidos.map((p) => {
                 let productos = [];
                 try { 
                     productos = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
                 } catch (e) { 
-                    console.error("Error al leer productos del pedido", p.PedidoID);
                     productos = []; 
                 }
                 
@@ -316,7 +311,7 @@
                 <div class="product-row shadow-sm border-start border-4 ${p.Estado === 'Pendiente' ? 'border-warning' : 'border-success'} mb-3">
                     <div class="flex-grow-1">
                         <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h6 class="mb-0 fw-bold">Pedido #${index + 1} — ${p.NombreCliente}</h6>
+                            <h6 class="mb-0 fw-bold">Pedido #${p.PedidoID} — ${p.NombreCliente}</h6>
                             <span class="status-pill ${p.Estado === 'Pendiente' ? 'status-pendiente' : 'status-completado'}">${p.Estado}</span>
                         </div>
                         <div class="row small mb-2">
@@ -351,13 +346,11 @@
                 </div>`;
             }).join('');
 
-            lista.innerHTML = htmlPedidos;
-
         } catch (err) {
             console.error("Error al cargar pedidos:", err);
             lista.innerHTML = `<div class="text-center p-4"><p class="text-danger">Error al cargar.</p></div>`;
         } finally {
-            cargandoPedidos = false;
+            cargandoPedidosFlag = false;
         }
     }
 
@@ -375,11 +368,8 @@
 
         if (confirmar.isConfirmed) {
             try {
-                const res = await fetch(`${BASE_URL}/pedidos/${id}`, {
-                    method: 'DELETE'
-                });
+                const res = await fetch(`${BASE_URL}/pedidos/${id}`, { method: 'DELETE' });
                 const result = await res.json();
-
                 if (result.success) {
                     Swal.fire('Eliminado', 'El pedido ha sido borrado.', 'success');
                     cargarPedidos(); 
@@ -400,7 +390,6 @@
         } catch (err) { console.error(err); }
     }
 
-    // --- GUARDAR PRODUCTO ---
     document.getElementById('form-producto').addEventListener('submit', async (e) => {
         e.preventDefault();
         const id = document.getElementById('prod-id').value;
