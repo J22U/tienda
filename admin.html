@@ -14,7 +14,7 @@
             --glass-bg: rgba(255, 255, 255, 0.95);
             --accent: #6c5ce7; 
             --bg: #f0f2f5;
-            font-size: 18px;
+            font-size: 16px;
         }
 
         body {
@@ -29,10 +29,10 @@
             cursor: pointer !important;
         }
 
-        .header-section { padding: 40px 0; }
+        .header-section { padding: 30px 0; }
         .header-section h1 {
             font-weight: 800;
-            font-size: 2.8rem;
+            font-size: 2.2rem;
             letter-spacing: -1px;
             background: linear-gradient(90deg, #2d3436, var(--accent));
             -webkit-background-clip: text;
@@ -41,20 +41,20 @@
 
         .bento-card {
             background: var(--glass-bg);
-            border-radius: 30px;
+            border-radius: 24px;
             border: 1px solid rgba(255,255,255,0.8);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.05);
-            padding: 35px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+            padding: 25px;
             height: 100%;
             transition: all 0.3s ease;
         }
 
-        .form-label { font-weight: 700; font-size: 1.1rem; margin-bottom: 10px; color: #4b4b4b; }
+        .form-label { font-weight: 700; font-size: 0.95rem; margin-bottom: 8px; color: #4b4b4b; }
 
         .form-control {
-            border-radius: 18px;
-            padding: 15px;
-            font-size: 1.1rem;
+            border-radius: 14px;
+            padding: 10px 15px;
+            font-size: 0.95rem;
             background: #f8f9fa;
             border: 2px solid #eee;
             transition: 0.3s;
@@ -69,10 +69,10 @@
         .btn-main {
             background: var(--accent);
             color: white;
-            border-radius: 20px;
-            padding: 20px;
+            border-radius: 15px;
+            padding: 15px;
             font-weight: 800;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             border: none;
             box-shadow: 0 10px 20px rgba(108, 92, 231, 0.2);
             transition: all 0.3s ease;
@@ -81,19 +81,18 @@
         .btn-clear {
             background: #f1f2f6;
             color: #636e72;
-            border-radius: 12px;
-            padding: 5px 15px;
-            font-size: 0.8rem;
+            border-radius: 10px;
+            padding: 4px 12px;
+            font-size: 0.75rem;
             font-weight: 700;
             border: none;
         }
 
-        /* --- ESTILOS DE FILAS (PRODUCTOS Y PEDIDOS) --- */
         .product-row, .order-row {
             background: white;
-            border-radius: 25px;
-            margin-bottom: 15px;
-            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 12px;
+            padding: 15px;
             display: flex;
             align-items: center;
             flex-wrap: wrap;
@@ -102,10 +101,10 @@
         }
 
         .img-box {
-            width: 90px; height: 90px;
-            border-radius: 22px;
+            width: 70px; height: 70px;
+            border-radius: 18px;
             overflow: hidden;
-            margin-right: 25px;
+            margin-right: 20px;
             flex-shrink: 0;
             box-shadow: 0 5px 15px rgba(0,0,0,0.08);
             background: #eee;
@@ -113,38 +112,38 @@
 
         .img-box img { width: 100%; height: 100%; object-fit: cover; }
 
-        .price-badge { font-weight: 800; font-size: 1.3rem; color: #2d3436; }
+        .price-badge { font-weight: 800; font-size: 1.15rem; color: #2d3436; }
 
         .stock-pill, .status-pill {
-            padding: 8px 15px;
-            border-radius: 12px;
+            padding: 6px 12px;
+            border-radius: 10px;
             font-weight: 700;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             display: inline-block;
         }
         .stock-pill.low { background: #fff0f0; color: #ff7675; }
         .stock-pill.ok { background: #e3fcef; color: #00b894; }
 
-        /* Estados de Pedidos */
         .status-pendiente { background: #fff4e6; color: #fd7e14; }
         .status-visto { background: #e7f5ff; color: #228be6; }
         .status-despachado { background: #ebfbee; color: #40c057; }
 
         .action-btn {
-            width: 45px; height: 45px;
-            border-radius: 15px;
+            width: 38px; height: 38px;
+            border-radius: 12px;
             display: flex; align-items: center; justify-content: center;
-            border: none; transition: 0.2s; margin-left: 10px;
+            border: none; transition: 0.2s; margin-left: 8px;
         }
         .btn-edit { background: #f1f2f6; color: #2d3436; }
         .btn-delete { background: #fff0f0; color: #ff7675; }
         .btn-view { background: #6c5ce720; color: var(--accent); }
 
         .nav-pills .nav-link {
-            border-radius: 15px;
+            border-radius: 12px;
             font-weight: 700;
             color: #636e72;
-            padding: 12px 25px;
+            padding: 10px 20px;
+            font-size: 0.9rem;
         }
         .nav-pills .nav-link.active {
             background-color: var(--accent);
@@ -152,8 +151,8 @@
 
         @media (max-width: 576px) {
             .product-row, .order-row { flex-direction: column; text-align: center; padding: 15px; }
-            .img-box { margin-right: 0; margin-bottom: 15px; width: 120px; height: 120px; }
-            .text-end { text-align: center !important; width: 100%; margin-bottom: 15px; padding: 0 !important; }
+            .img-box { margin-right: 0; margin-bottom: 15px; width: 100px; height: 100px; }
+            .text-end { text-align: center !important; width: 100%; margin-bottom: 10px; padding: 0 !important; }
             .d-flex { justify-content: center; width: 100%; }
         }
     </style>
@@ -163,10 +162,10 @@
     <div class="container">
         <div class="header-section d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
-                <h1>AgroAdmin<span style="color:var(--accent)">.</span></h1>
-                <p class="text-muted fw-bold fs-5">Panel de gestión profesional</p>
+                <h1>Administración TRÉBOL<span style="color:var(--accent)">.</span></h1>
+                <p class="text-muted fw-bold fs-6">Panel de gestión profesional</p>
             </div>
-            <a href="tienda.html" class="btn btn-dark rounded-pill px-4 fw-bold">
+            <a href="tienda.html" class="btn btn-dark rounded-pill px-4 fw-bold btn-sm">
                 <i class="bi bi-shop me-2"></i> VER TIENDA
             </a>
         </div>
@@ -175,7 +174,7 @@
             <div class="col-lg-5">
                 <div class="bento-card">
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3 class="fw-800 m-0" id="titulo-form">Crear Producto</h3>
+                        <h4 class="fw-800 m-0" id="titulo-form">Crear Producto</h4>
                         <button type="button" class="btn-clear" onclick="limpiarForm()">
                             <i class="bi bi-plus-lg"></i> NUEVO
                         </button>
@@ -185,7 +184,7 @@
                         <input type="hidden" id="prod-id">
                         <div class="mb-3">
                             <label class="form-label">Nombre del Artículo</label>
-                            <input type="text" id="nombre" class="form-control" placeholder="Ej: Motosierra Profesional" required>
+                            <input type="text" id="nombre" class="form-control" placeholder="Ej: Motosierra" required>
                         </div>
                         <div class="row mb-3">
                             <div class="col-6">
@@ -194,7 +193,7 @@
                             </div>
                             <div class="col-6">
                                 <label class="form-label">SKU</label>
-                                <input type="text" id="sku" class="form-control bg-light" readonly>
+                                <input type="text" id="sku" class="form-control" placeholder="Código único">
                             </div>
                         </div>
                         <div class="row mb-3">
@@ -208,12 +207,12 @@
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Características / Descripción</label>
-                            <textarea id="caracteristicas" class="form-control" rows="3" placeholder="Motor de 2 tiempos, 50cc..."></textarea>
+                            <label class="form-label">Descripción</label>
+                            <textarea id="caracteristicas" class="form-control" rows="2" placeholder="Detalles..."></textarea>
                         </div>
                         <div class="mb-4">
                             <label class="form-label">Imágenes</label>
-                            <input type="file" id="imagenes" class="form-control" accept="image/*" multiple>
+                            <input type="file" id="imagenes" class="form-control" accept="image/*">
                         </div>
                         <button type="submit" class="btn-main w-100" id="btn-guardar">GUARDAR PRODUCTO</button>
                     </form>
@@ -238,7 +237,7 @@
                     <div class="tab-content">
                         <div class="tab-pane fade show active" id="tab-inventario">
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h4 class="fw-bold m-0">Productos</h4>
+                                <h5 class="fw-bold m-0">Productos</h5>
                                 <span class="badge bg-dark rounded-pill" id="total-count">0 items</span>
                             </div>
                             <div id="lista-productos"></div>
@@ -246,7 +245,7 @@
 
                         <div class="tab-pane fade" id="tab-pedidos">
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h4 class="fw-bold m-0">Historial de Pedidos</h4>
+                                <h5 class="fw-bold m-0">Historial</h5>
                                 <span class="badge bg-dark rounded-pill" id="order-count">0 recibidos</span>
                             </div>
                             <div id="lista-pedidos"></div>
@@ -259,17 +258,17 @@
 
     <div class="modal fade" id="modalPedido" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="border-radius: 30px; border: none;">
+            <div class="modal-content" style="border-radius: 20px; border: none;">
                 <div class="modal-header border-0 p-4">
-                    <h3 class="fw-800 m-0">Detalle del Pedido</h3>
+                    <h4 class="fw-800 m-0">Detalle del Pedido</h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4 pt-0">
                     <div id="detalle-productos-pedido"></div>
                     <hr class="my-4">
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="fw-bold fs-5">Total:</span>
-                        <span class="price-badge" id="total-modal" style="color: var(--accent); font-size: 1.8rem;">$0</span>
+                        <span class="fw-bold fs-6">Total:</span>
+                        <span class="price-badge" id="total-modal" style="color: var(--accent); font-size: 1.5rem;">$0</span>
                     </div>
                 </div>
             </div>
@@ -289,13 +288,14 @@
                 const data = await res.json();
                 document.getElementById('total-count').innerText = `${data.length} Items`;
                 const lista = document.getElementById('lista-productos');
+                
                 lista.innerHTML = data.map(p => {
                     const prodJson = JSON.stringify(p).replace(/'/g, "&apos;");
                     return `
                     <div class="product-row shadow-sm">
                         <div class="img-box"><img src="${BASE_URL}${p.ImagenURL}" onerror="this.src='https://via.placeholder.com/150'"></div>
                         <div class="flex-grow-1">
-                            <h5 class="mb-0 fw-bold">${p.Nombre}</h5>
+                            <h6 class="mb-0 fw-bold">${p.Nombre}</h6>
                             <small class="text-muted fw-bold">${p.Marca.toUpperCase()} • SKU: ${p.CodigoSKU}</small>
                         </div>
                         <div class="text-end px-3">
@@ -311,9 +311,67 @@
             } catch (err) { console.error(err); }
         }
 
+        function prepararEdicion(p) {
+            editando = true;
+            document.getElementById('titulo-form').innerText = "Editando";
+            document.getElementById('btn-guardar').innerText = "ACTUALIZAR";
+            document.getElementById('btn-guardar').style.background = "#2ecc71";
+            document.getElementById('prod-id').value = p.ProductoID;
+            document.getElementById('nombre').value = p.Nombre;
+            document.getElementById('marca').value = p.Marca;
+            document.getElementById('sku').value = p.CodigoSKU;
+            document.getElementById('precio').value = p.Precio;
+            document.getElementById('stock').value = p.Stock;
+            document.getElementById('caracteristicas').value = p.Caracteristicas || '';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        document.getElementById('form-producto').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('prod-id').value;
+            const producto = {
+                Nombre: document.getElementById('nombre').value,
+                Marca: document.getElementById('marca').value,
+                CodigoSKU: document.getElementById('sku').value,
+                Precio: parseFloat(document.getElementById('precio').value),
+                Stock: parseInt(document.getElementById('stock').value),
+                Caracteristicas: document.getElementById('caracteristicas').value
+            };
+            const url = editando ? `${BASE_URL}/productos/${id}` : `${BASE_URL}/productos`;
+            const metodo = editando ? 'PUT' : 'POST';
+            try {
+                const res = await fetch(url, {
+                    method: metodo,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(producto)
+                });
+                if (res.ok) {
+                    Swal.fire('¡Éxito!', 'Operación realizada', 'success');
+                    limpiarForm();
+                    cargarInventario();
+                }
+            } catch (err) { Swal.fire('Error', 'No se pudo guardar', 'error'); }
+        });
+
+        async function eliminarProducto(id) {
+            const result = await Swal.fire({
+                title: '¿Eliminar?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ff7675',
+                confirmButtonText: 'Sí, borrar'
+            });
+            if (result.isConfirmed) {
+                try {
+                    const res = await fetch(`${BASE_URL}/productos/${id}`, { method: 'DELETE' });
+                    if (res.ok) { cargarInventario(); }
+                } catch (err) { console.error(err); }
+            }
+        }
+
         async function cargarPedidos() {
             const contenedor = document.getElementById('lista-pedidos');
-            contenedor.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary"></div></div>';
+            contenedor.innerHTML = '<div class="text-center p-4"><div class="spinner-border spinner-border-sm text-primary"></div></div>';
             try {
                 const res = await fetch(`${BASE_URL}/pedidos`);
                 const data = await res.json();
@@ -323,82 +381,28 @@
                     <div class="order-row shadow-sm">
                         <div class="flex-grow-1 text-start">
                             <div class="d-flex align-items-center gap-2 mb-1">
-                                <h5 class="mb-0 fw-bold">Pedido #${o.PedidoID || o.id}</h5>
+                                <h6 class="mb-0 fw-bold">#${o.PedidoID || o.id}</h6>
                                 <span class="status-pill status-${(o.Estado || 'pendiente').toLowerCase()}">${o.Estado || 'Pendiente'}</span>
                             </div>
-                            <p class="mb-0 text-muted small"><i class="bi bi-person me-1"></i>${o.ClienteNombre}</p>
-                            <p class="mb-0 text-muted small"><i class="bi bi-calendar3 me-1"></i>${new Date(o.Fecha).toLocaleString()}</p>
+                            <p class="mb-0 text-muted small">${o.ClienteNombre}</p>
                         </div>
                         <div class="text-end px-3">
                             <div class="price-badge">$${Number(o.Total).toLocaleString()}</div>
                         </div>
                         <div class="d-flex">
-                            <button class="action-btn btn-view" onclick="verDetallePedido(${o.PedidoID || o.id})">
-                                <i class="bi bi-eye-fill"></i>
-                            </button>
-                            <select class="form-select form-select-sm ms-2 rounded-3" style="width: auto;" onchange="cambiarEstadoPedido(${o.PedidoID || o.id}, this.value)">
-                                <option value="Pendiente" ${o.Estado === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
-                                <option value="Visto" ${o.Estado === 'Visto' ? 'selected' : ''}>Visto</option>
-                                <option value="Despachado" ${o.Estado === 'Despachado' ? 'selected' : ''}>Despachado</option>
-                            </select>
+                            <button class="action-btn btn-view" onclick="verDetallePedido(${o.PedidoID || o.id})"><i class="bi bi-eye-fill"></i></button>
                         </div>
                     </div>`).join('');
-            } catch (err) { contenedor.innerHTML = '<p class="p-4 text-center">Error al cargar pedidos.</p>'; }
+            } catch (err) { contenedor.innerHTML = '<p>Error.</p>'; }
         }
-
-        async function verDetallePedido(id) {
-            const contenedor = document.getElementById('detalle-productos-pedido');
-            const totalModal = document.getElementById('total-modal');
-            contenedor.innerHTML = '<div class="text-center"><div class="spinner-border text-primary"></div></div>';
-            
-            const miModal = new bootstrap.Modal(document.getElementById('modalPedido'));
-            miModal.show();
-
-            try {
-                const res = await fetch(`${BASE_URL}/pedidos/${id}`);
-                const pedido = await res.json();
-                if (pedido.Productos) {
-                    contenedor.innerHTML = pedido.Productos.map(item => `
-                        <div class="d-flex align-items-center mb-3 p-3 bg-light" style="border-radius: 20px;">
-                            <div class="flex-grow-1">
-                                <h6 class="mb-0 fw-bold">${item.Nombre}</h6>
-                                <small class="text-muted">${item.Cantidad} x $${Number(item.Precio).toLocaleString()}</small>
-                            </div>
-                            <div class="fw-bold">$${(item.Cantidad * item.Precio).toLocaleString()}</div>
-                        </div>`).join('');
-                }
-                totalModal.innerText = `$${Number(pedido.Total).toLocaleString()}`;
-            } catch (err) { contenedor.innerHTML = 'Error al cargar detalle.'; }
-        }
-
-        async function cambiarEstadoPedido(id, nuevoEstado) {
-            try {
-                const res = await fetch(`${BASE_URL}/pedidos/${id}/estado`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ estado: nuevoEstado })
-                });
-                if(res.ok) {
-                    Swal.fire({ title: 'Estado actualizado', icon: 'success', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false });
-                    cargarPedidos();
-                }
-            } catch (err) { console.error(err); }
-        }
-
-        document.getElementById('marca').addEventListener('input', (e) => {
-            if (!editando) {
-                const pre = e.target.value.substring(0, 3).toUpperCase();
-                const num = Math.floor(1000 + Math.random() * 9000);
-                document.getElementById('sku').value = pre.length >= 2 ? `AGRO-${pre}-${num}` : '';
-            }
-        });
 
         function limpiarForm() {
             editando = false;
             document.getElementById('form-producto').reset();
             document.getElementById('titulo-form').innerText = "Crear Producto";
-            document.getElementById('prod-id').value = "";
+            document.getElementById('btn-guardar').innerText = "GUARDAR PRODUCTO";
             document.getElementById('btn-guardar').style.background = "var(--accent)";
+            document.getElementById('prod-id').value = "";
         }
 
         cargarInventario();
