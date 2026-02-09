@@ -322,8 +322,12 @@
                                     <span class="status-pill ${p.Estado === 'Pendiente' ? 'status-pendiente' : 'status-completado'}">${p.Estado}</span>
                                 </div>
                                 <div class="row small mb-2 text-muted">
-                                    <div class="col-md-6"><i class="bi bi-telephone"></i> ${p.Telefono || 'S/N'} | <i class="bi bi-geo-alt"></i> ${p.Direccion || 'Local'}</div>
-                                    <div class="col-md-6 text-md-end"><i class="bi bi-calendar"></i> ${new Date(p.Fecha).toLocaleDateString()}</div>
+                                    <div class="col-md-8">
+                                        <i class="bi bi-envelope"></i> ${p.Correo || 'S/C'} | 
+                                        <i class="bi bi-telephone"></i> ${p.Telefono || 'S/N'} | 
+                                        <i class="bi bi-geo-alt"></i> ${p.Direccion || 'Local'}
+                                    </div>
+                                    <div class="col-md-4 text-md-end"><i class="bi bi-calendar"></i> ${new Date(p.Fecha).toLocaleDateString()}</div>
                                 </div>
                                 <ul class="text-muted small mb-0 ps-3">${resumenProd}</ul>
                             </div>
