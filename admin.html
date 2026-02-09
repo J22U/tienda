@@ -86,7 +86,7 @@
         .img-box {
             width: 60px; 
             height: 60px;
-            flex-shrink: 0; /* Evita que la imagen se achique */
+            flex-shrink: 0;
             border-radius: 14px;
             overflow: hidden;
             background: #eee;
@@ -120,15 +120,9 @@
         }
         .nav-pills .nav-link.active { background-color: var(--accent); }
 
-        /* AJUSTE PARA MÓVILES */
         @media (max-width: 576px) {
-            .product-row {
-                padding: 12px;
-                flex-wrap: wrap;
-            }
-            .price-badge {
-                font-size: 1rem;
-            }
+            .product-row { padding: 12px; flex-wrap: wrap; }
+            .price-badge { font-size: 1rem; }
         }
     </style>
 </head>
@@ -159,35 +153,35 @@
                         <input type="hidden" id="prod-id">
                         <div class="mb-3">
                             <label class="form-label">Nombre del Artículo</label>
-                            <input type="text" id="nombre" class="form-control" placeholder="Ej: Motosierra" required>
+                            <input type="text" id="nombre" name="nombre" class="form-control" placeholder="Ej: Motosierra" required>
                         </div>
                         <div class="row mb-3">
                             <div class="col-6">
                                 <label class="form-label">Marca</label>
-                                <input type="text" id="marca" class="form-control" placeholder="Stihl" required>
+                                <input type="text" id="marca" name="marca" class="form-control" placeholder="Stihl" required>
                             </div>
                             <div class="col-6">
                                 <label class="form-label">SKU</label>
-                                <input type="text" id="sku" class="form-control" placeholder="Código">
+                                <input type="text" id="sku" name="sku" class="form-control" placeholder="Código">
                             </div>
                         </div>
                         <div class="row mb-3">
                             <div class="col-6">
                                 <label class="form-label">Precio ($)</label>
-                                <input type="number" id="precio" class="form-control" required>
+                                <input type="number" id="precio" name="precio" class="form-control" required>
                             </div>
                             <div class="col-6">
                                 <label class="form-label">Stock</label>
-                                <input type="number" id="stock" class="form-control" required>
+                                <input type="number" id="stock" name="stock" class="form-control" required>
                             </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Descripción</label>
-                            <textarea id="caracteristicas" class="form-control" rows="2"></textarea>
+                            <textarea id="caracteristicas" name="caracteristicas" class="form-control" rows="2"></textarea>
                         </div>
                         <div class="mb-4">
                             <label class="form-label">Imagen</label>
-                            <input type="file" id="imagenes" class="form-control" accept="image/*">
+                            <input type="file" id="imagenes" name="imagenes" class="form-control" accept="image/*">
                         </div>
                         <button type="submit" class="btn-main w-100" id="btn-guardar">GUARDAR PRODUCTO</button>
                     </form>
@@ -198,7 +192,7 @@
                 <div class="bento-card">
                     <ul class="nav nav-pills mb-4 gap-2" id="adminTabs" role="tablist">
                         <li class="nav-item">
-                            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-inventario" type="button">
+                            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-inventario" type="button" onclick="cargarInventario()">
                                 <i class="bi bi-box-seam me-2"></i>Inventario
                             </button>
                         </li>
@@ -235,12 +229,9 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <script>
-        // CONFIGURACIÓN GLOBAL
         const BASE_URL = 'https://tienda-1vps.onrender.com';
         let editando = false;
         let cargandoPedidosFlag = false;
-
-        // --- FUNCIONES DE PRODUCTOS ---
 
         async function cargarInventario() {
             try {
@@ -303,21 +294,15 @@
             document.getElementById('prod-id').value = "";
         }
 
-        // --- FUNCIONES DE PEDIDOS ---
-
         async function cargarPedidos() {
             if (cargandoPedidosFlag) return; 
             cargandoPedidosFlag = true;
-
             const lista = document.getElementById('lista-pedidos');
             const contador = document.getElementById('order-count');
-            
             try {
                 const res = await fetch(`${BASE_URL}/pedidos`);
                 const pedidos = await res.json();
-                
                 if (contador) contador.innerText = `${pedidos.length} recibidos`;
-
                 if (pedidos.length === 0) {
                     lista.innerHTML = '<div class="text-center p-5 text-muted">No hay pedidos registrados.</div>';
                 } else {
@@ -326,12 +311,11 @@
                         let productos = [];
                         try { productos = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; } catch (e) { productos = []; }
                         const resumenProd = productos.map(item => `<li>${item.cantidad}x ${item.Nombre}</li>`).join('');
-                        
                         return `
                         <div class="product-row shadow-sm border-start border-4 ${p.Estado === 'Pendiente' ? 'border-warning' : 'border-success'} mb-3">
                             <div class="flex-grow-1">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <h6 class="mb-0 fw-bold">Pedido #${pedidos.length - i} — ${p.NombreCliente}</h6>
+                                    <h6 class="mb-0 fw-bold">Pedido #${p.PedidoID} — ${p.NombreCliente}</h6>
                                     <span class="status-pill ${p.Estado === 'Pendiente' ? 'status-pendiente' : 'status-completado'}">${p.Estado}</span>
                                 </div>
                                 <div class="row small mb-2 text-muted">
@@ -347,105 +331,60 @@
                             <div class="text-end px-3 border-start">
                                 <div class="price-badge text-primary">$${Number(p.Total).toLocaleString()}</div>
                                 <div class="mt-2 d-flex gap-1 justify-content-end">
-                                    ${p.Estado === 'Pendiente' ? 
-                                        `<button class="btn btn-sm btn-success" onclick="completarPedido(${p.PedidoID})"><i class="bi bi-check-circle"></i></button>` : 
-                                        `<span class="text-success small fw-bold"><i class="bi bi-check-all"></i> OK</span>`
-                                    }
+                                    ${p.Estado === 'Pendiente' ? `<button class="btn btn-sm btn-success" onclick="completarPedido(${p.PedidoID})"><i class="bi bi-check-circle"></i></button>` : `<span class="text-success small fw-bold"><i class="bi bi-check-all"></i> OK</span>`}
                                     <button class="btn btn-sm btn-outline-danger" onclick="eliminarPedido(${p.PedidoID})"><i class="bi bi-trash"></i></button>
                                 </div>
                             </div>
                         </div>`;
                     }).join('');
                 }
-            } catch (err) {
-                console.error(err);
-                if(lista) lista.innerHTML = '<p class="text-danger text-center">Error de conexión</p>';
-            } finally {
-                setTimeout(() => { cargandoPedidosFlag = false; }, 500);
-            }
+            } catch (err) { console.error(err); } finally { cargandoPedidosFlag = false; }
         }
 
         async function eliminarPedido(id) {
-    const confirm = await Swal.fire({
-        title: '¿Borrar pedido?',
-        text: "Esta acción no se puede deshacer",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        confirmButtonText: 'Sí, eliminar',
-        cancelButtonText: 'Cancelar'
-    });
-
-    if (confirm.isConfirmed) {
-        try {
-            // CORRECCIÓN: Cambiado /requests/ por /pedidos/
-            const res = await fetch(`${BASE_URL}/pedidos/${id}`, { 
-                method: 'DELETE' 
-            });
-
-            if (res.ok) { 
-                Swal.fire('Eliminado', 'El pedido ha sido borrado', 'success');
-                // Forzamos el reset del flag para que permita recargar inmediatamente
-                cargandoPedidosFlag = false; 
-                cargarPedidos(); 
-            } else {
-                Swal.fire('Error', 'No se pudo eliminar el pedido del servidor', 'error');
-            }
-        } catch (error) { 
-            console.error("Error al eliminar:", error);
-            Swal.fire('Error', 'Error de conexión con el servidor', 'error');
-        }
-    }
-}
-        async function completarPedido(id) {
+            if (!(await Swal.fire({title:'¿Borrar?', icon:'warning', showCancelButton:true}).then(r => r.isConfirmed))) return;
             try {
-                const res = await fetch(`${BASE_URL}/pedidos/${id}/completar`, { method: 'PUT' });
-                if (res.ok) { 
-                    Swal.fire('Completado', 'El estado ha cambiado', 'success');
-                    cargarPedidos(); 
-                }
+                const res = await fetch(`${BASE_URL}/pedidos/${id}`, { method: 'DELETE' });
+                if (res.ok) { cargarPedidos(); }
             } catch (err) { console.error(err); }
         }
 
-        // --- INICIALIZACIÓN ---
+        async function completarPedido(id) {
+            try {
+                const res = await fetch(`${BASE_URL}/pedidos/${id}/completar`, { method: 'PUT' });
+                if (res.ok) { cargarPedidos(); }
+            } catch (err) { console.error(err); }
+        }
 
         document.getElementById('form-producto').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('prod-id').value;
-            const producto = {
-                nombre: document.getElementById('nombre').value,
-                marca: document.getElementById('marca').value,
-                sku: document.getElementById('sku').value,
-                precio: parseFloat(document.getElementById('precio').value),
-                stock: parseInt(document.getElementById('stock').value),
-                caracteristicas: document.getElementById('caracteristicas').value
-            };
+            const formData = new FormData(e.target); // Usamos FormData para enviar archivos y texto juntos
 
             const url = editando ? `${BASE_URL}/productos/${id}` : `${BASE_URL}/productos`;
             try {
                 const res = await fetch(url, {
                     method: editando ? 'PUT' : 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(producto)
+                    body: formData // Importante: Sin Content-Type header para que el navegador ponga el boundary
                 });
                 if (res.ok) { 
-                    Swal.fire('Guardado','El producto se actualizó correctamente','success'); 
+                    Swal.fire('Éxito','Operación realizada correctamente','success'); 
                     limpiarForm(); 
                     cargarInventario(); 
                 }
             } catch (err) { console.error(err); }
         });
 
-        // Ejecución inicial
-        cargarInventario();
-
-        // Recarga automática de pedidos cada 15 seg solo si la pestaña está abierta
+        // RECARGA AUTOMÁTICA CADA 20 SEGUNDOS (Sin recargar página)
         setInterval(() => {
+            cargarInventario(); // Actualiza stocks
             const tabPedidos = document.getElementById('tab-pedidos');
             if (tabPedidos && tabPedidos.classList.contains('active')) {
-                cargarPedidos();
+                cargarPedidos(); // Actualiza pedidos si estás viendo la pestaña
             }
-        }, 15000);
+        }, 20000);
+
+        cargarInventario();
     </script>
 </body>
 </html>
