@@ -366,26 +366,37 @@
         }
 
         async function eliminarPedido(id) {
-            const confirm = await Swal.fire({
-                title: '¿Borrar pedido?',
-                text: "Esta acción no se puede deshacer",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                confirmButtonText: 'Sí, eliminar'
+    const confirm = await Swal.fire({
+        title: '¿Borrar pedido?',
+        text: "Esta acción no se puede deshacer",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    });
+
+    if (confirm.isConfirmed) {
+        try {
+            // CORRECCIÓN: Cambiado /requests/ por /pedidos/
+            const res = await fetch(`${BASE_URL}/pedidos/${id}`, { 
+                method: 'DELETE' 
             });
 
-            if (confirm.isConfirmed) {
-                try {
-                    const res = await fetch(`${BASE_URL}/requests/${id}`, { method: 'DELETE' });
-                    if (res.ok) { 
-                        Swal.fire('Eliminado', 'El pedido ha sido borrado', 'success');
-                        cargarPedidos(); 
-                    }
-                } catch (error) { console.error(error); }
+            if (res.ok) { 
+                Swal.fire('Eliminado', 'El pedido ha sido borrado', 'success');
+                // Forzamos el reset del flag para que permita recargar inmediatamente
+                cargandoPedidosFlag = false; 
+                cargarPedidos(); 
+            } else {
+                Swal.fire('Error', 'No se pudo eliminar el pedido del servidor', 'error');
             }
+        } catch (error) { 
+            console.error("Error al eliminar:", error);
+            Swal.fire('Error', 'Error de conexión con el servidor', 'error');
         }
-
+    }
+}
         async function completarPedido(id) {
             try {
                 const res = await fetch(`${BASE_URL}/pedidos/${id}/completar`, { method: 'PUT' });

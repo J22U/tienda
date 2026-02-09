@@ -157,25 +157,38 @@ app.get('/pedidos', async (req, res) => {
 });
 
 // 2. Crear un pedido (Desde la tienda)
+// 2. Crear un pedido (Desde la tienda con DESCUENTO DE STOCK)
 app.post('/pedidos', async (req, res) => {
     try {
         const { nombre, correo, telefono, documento, direccion, productos, total } = req.body;
         const pool = await poolPromise;
         
+        // 1. Insertar el pedido en la base de datos
         await pool.request()
             .input('nc', sql.NVarChar, nombre)
             .input('co', sql.NVarChar, correo)
             .input('te', sql.NVarChar, telefono)
             .input('do', sql.NVarChar, documento)
             .input('di', sql.NVarChar, direccion)
-            .input('pr', sql.NVarChar, JSON.stringify(productos)) // Convertir array a String para SQL
+            .input('pr', sql.NVarChar, JSON.stringify(productos)) 
             .input('to', sql.Decimal(18, 2), total)
             .query(`INSERT INTO Pedidos (NombreCliente, Correo, Telefono, Documento, Direccion, Productos, Total) 
                     VALUES (@nc, @co, @te, @do, @di, @pr, @to)`);
 
-        res.json({ success: true, message: "Pedido recibido" });
+        // 2. DESCONTAR DEL INVENTARIO
+        // Recorremos el array de productos para actualizar el stock de cada uno
+        for (const prod of productos) {
+            await pool.request()
+                .input('cant', sql.Int, prod.cantidad)
+                .input('pId', sql.Int, prod.ProductoID)
+                .query(`UPDATE [dbo].[Productos] 
+                        SET Stock = Stock - @cant 
+                        WHERE ProductoID = @pId`);
+        }
+
+        res.json({ success: true, message: "Pedido recibido e inventario actualizado" });
     } catch (err) {
-        console.error(err);
+        console.error("Error al procesar pedido:", err);
         res.status(500).json({ error: err.message });
     }
 });
