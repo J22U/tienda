@@ -274,50 +274,71 @@
     }
 
     // --- LÓGICA DE PEDIDOS (CORREGIDA) ---
-    async function cargarPedidos() {
-        const lista = document.getElementById('lista-pedidos');
-        try {
-            const res = await fetch(`${BASE_URL}/pedidos`);
-            const pedidos = await res.json();
-            document.getElementById('order-count').innerText = `${pedidos.length} recibidos`;
+    // Función para cargar pedidos y mostrarlos
+async function cargarPedidos() {
+    try {
+        const res = await fetch('https://tienda-1vps.onrender.com/pedidos');
+        const pedidos = await res.json();
+        const contenedor = document.getElementById('contenedorPedidos'); // Asegúrate que este ID exista
+        contenedor.innerHTML = '';
 
-            if (pedidos.length === 0) {
-                lista.innerHTML = '<div class="text-center p-5 text-muted">No hay pedidos registrados aún.</div>';
-                return;
-            }
-
-            lista.innerHTML = pedidos.map(p => {
-                let productos = [];
-                try { productos = JSON.parse(p.Productos); } catch (e) { productos = []; }
-                
-                const resumenProd = productos.map(item => `${item.cantidad}x ${item.Nombre}`).join(', ');
-
-                return `
-                <div class="product-row shadow-sm border-start border-4 ${p.Estado === 'Pendiente' ? 'border-warning' : 'border-success'}">
-                    <div class="flex-grow-1">
-                        <div class="d-flex justify-content-between mb-1">
-                            <h6 class="mb-0 fw-bold">Pedido #${p.PedidoID} - ${p.NombreCliente}</h6>
-                            <span class="status-pill ${p.Estado === 'Pendiente' ? 'status-pendiente' : 'status-completado'}">${p.Estado}</span>
-                        </div>
-                        <small class="text-muted d-block mb-1">📦 ${resumenProd}</small>
-                        <small class="text-primary small"><i class="bi bi-geo-alt"></i> ${p.Direccion} | <i class="bi bi-telephone"></i> ${p.Telefono}</small>
-                    </div>
-                    <div class="text-end px-3">
-                        <div class="price-badge" style="color: #2d5a27;">$${Number(p.Total).toLocaleString()}</div>
-                        <small class="text-muted" style="font-size:0.7rem">${new Date(p.Fecha).toLocaleDateString()}</small>
-                    </div>
-                    <div>
-                        <button class="action-btn btn-check" title="Completar" onclick="completarPedido(${p.PedidoID})">
-                            <i class="bi bi-check-lg"></i>
-                        </button>
-                    </div>
-                </div>`;
-            }).join('');
-        } catch (err) {
-            console.error("Error pedidos:", err);
-            lista.innerHTML = '<p class="text-danger text-center">Error al cargar pedidos del servidor.</p>';
+        if (pedidos.length === 0) {
+            contenedor.innerHTML = '<p class="text-center">No hay pedidos registrados aún.</p>';
+            return;
         }
+
+        pedidos.forEach(pedido => {
+            // Parsear los productos que vienen como string JSON desde SQL
+            const listaProductos = JSON.parse(pedido.Productos);
+            const productosHTML = listaProductos.map(p => `<li>${p.cantidad}x ${p.Nombre}</li>`).join('');
+
+            const card = document.createElement('div');
+            card.className = `pedido-card ${pedido.Estado.toLowerCase()}`;
+            card.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5>Pedido #${pedido.PedidoID} - ${pedido.NombreCliente}</h5>
+                        <p class="mb-1"><strong>📞 Tel:</strong> ${pedido.Telefono || 'N/A'} | <strong>📄 Doc:</strong> ${pedido.Documento || 'N/A'}</p>
+                        <p class="mb-1"><strong>📍 Dir:</strong> ${pedido.Direccion}</p>
+                        <ul class="productos-resumen">${productosHTML}</ul>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge ${pedido.Estado === 'Pendiente' ? 'bg-warning' : 'bg-success'}">${pedido.Estado}</span>
+                        <h4 class="mt-2">$${Number(pedido.Total).toLocaleString()}</h4>
+                        <small>${new Date(pedido.Fecha).toLocaleDateString()}</small>
+                    </div>
+                </div>
+                <div class="mt-3 border-top pt-2">
+                    ${pedido.Estado === 'Pendiente' 
+                        ? `<button class="btn btn-sm btn-success" onclick="actualizarEstado(${pedido.PedidoID})">Marcar como Completado</button>` 
+                        : `<span class="text-success"><i class="bi bi-check-circle"></i> Entregado</span>`
+                    }
+                </div>
+            `;
+            contenedor.appendChild(card);
+        });
+    } catch (err) {
+        console.error("Error al cargar pedidos:", err);
     }
+}
+
+// FUNCIÓN PARA ACTUALIZAR ESTADO SIN REFRESCAR
+async function actualizarEstado(id) {
+    try {
+        const res = await fetch(`https://tienda-1vps.onrender.com/pedidos/${id}/completar`, {
+            method: 'PUT'
+        });
+        const result = await res.json();
+        
+        if (result.success) {
+            // Recarga automática de la lista sin refrescar toda la página
+            cargarPedidos(); 
+            Swal.fire('¡Actualizado!', 'El pedido ha sido marcado como completado.', 'success');
+        }
+    } catch (err) {
+        Swal.fire('Error', 'No se pudo actualizar el estado', 'error');
+    }
+}
 
     async function completarPedido(id) {
         try {
@@ -376,6 +397,14 @@
         document.getElementById('btn-guardar').style.background = "var(--accent)";
         document.getElementById('prod-id').value = "";
     }
+
+    // Actualizar la lista de pedidos automáticamente cada 30 segundos
+setInterval(() => {
+    // Solo si estamos viendo la pestaña de pedidos
+    if (document.getElementById('seccionPedidos').style.display !== 'none') {
+        cargarPedidos();
+    }
+}, 30000);
 
     // Inicio
     cargarInventario();
