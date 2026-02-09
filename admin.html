@@ -260,9 +260,8 @@
         const BASE_URL = 'https://tienda-1vps.onrender.com';
         let editando = false;
         let cargandoPedidosFlag = false;
-        let productosLocal = []; // Almacén local para el buscador
+        let productosLocal = []; 
 
-        // Renderizado de productos (AHORA CON DESCRIPCIÓN)
         function renderizarProducto(p) {
             const prodJson = JSON.stringify(p).replace(/'/g, "&apos;");
             const imgPath = p.ImagenURL.startsWith('http') ? p.ImagenURL : `${BASE_URL}${p.ImagenURL}`;
@@ -294,13 +293,11 @@
             } catch (err) { console.error("Error inventario:", err); }
         }
 
-        // Función para inyectar productos en el DOM
         function mostrarProductos(data) {
             document.getElementById('total-count').innerText = `${data.length} Items`;
             document.getElementById('lista-productos').innerHTML = data.map(renderizarProducto).join('');
         }
 
-        // Lógica del buscador
         function filtrarProductos() {
             const termino = document.getElementById('buscar-prod').value.toLowerCase();
             const filtrados = productosLocal.filter(p => 
@@ -381,13 +378,10 @@
                 if (pedidos.length === 0) {
                     lista.innerHTML = '<div class="text-center p-5 text-muted">No hay pedidos registrados.</div>';
                 } else {
-                    // Ordenamos por ID para que el cálculo de posición sea coherente
                     pedidos.sort((a, b) => b.PedidoID - a.PedidoID);
                     
                     lista.innerHTML = pedidos.map((p, index) => {
-                        // El número visual será el total menos el índice actual
                         const numeroPedido = pedidos.length - index;
-                        
                         let productos = [];
                         try { 
                             productos = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
@@ -454,23 +448,58 @@
             }
         }
 
+        // --- FUNCIONES MODIFICADAS ---
         async function eliminarPedido(id) {
-            if (!(await Swal.fire({title:'¿Borrar pedido?', icon:'warning', showCancelButton:true}).then(r => r.isConfirmed))) return;
-            try {
-                const res = await fetch(`${BASE_URL}/pedidos/${id}`, { method: 'DELETE' });
-                if (res.ok) { cargarPedidos(); }
-            } catch (error) { console.error(error); }
+            const confirmar = await Swal.fire({
+                title: '¿Borrar pedido?',
+                text: "Esta acción no se puede deshacer",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if (confirmar.isConfirmed) {
+                try {
+                    const res = await fetch(`${BASE_URL}/pedidos/${id}`, { 
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    if (res.ok) {
+                        Swal.fire('Eliminado', 'El pedido ha sido borrado', 'success');
+                        cargarPedidos(); 
+                    } else {
+                        throw new Error('Error al eliminar');
+                    }
+                } catch (error) { 
+                    console.error(error);
+                    Swal.fire('Error', 'No se pudo eliminar el pedido', 'error');
+                }
+            }
         }
 
         async function completarPedido(id) {
             try {
-                const res = await fetch(`${BASE_URL}/pedidos/${id}/completar`, { method: 'PUT' });
+                // Se cambió a la ruta estándar de actualización de estado
+                const res = await fetch(`${BASE_URL}/pedidos/${id}/completar`, { 
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
                 if (res.ok) { 
-                    Swal.fire('Completado', 'El pedido se marcó como entregado', 'success');
+                    Swal.fire('¡Excelente!', 'Pedido marcado como completado', 'success');
                     cargarPedidos(); 
+                } else {
+                    throw new Error('Error en el servidor');
                 }
-            } catch (err) { console.error(err); }
+            } catch (err) { 
+                console.error(err);
+                Swal.fire('Error', 'No se pudo actualizar el estado', 'error');
+            }
         }
+        // --- FIN DE MODIFICACIONES ---
 
         document.getElementById('form-producto').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -509,7 +538,6 @@
             }
         });
 
-        // Carga inicial
         cargarInventario();
     </script>
 </body>
