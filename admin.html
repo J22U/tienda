@@ -221,8 +221,12 @@
 
                     <div class="tab-content">
                         <div class="tab-pane fade show active" id="tab-inventario">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                                 <h5 class="fw-bold m-0">Productos</h5>
+                                <div class="input-group input-group-sm" style="max-width: 250px;">
+                                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                                    <input type="text" id="buscar-prod" class="form-control border-start-0 bg-light" placeholder="Filtrar por nombre o SKU..." onkeyup="filtrarProductos()">
+                                </div>
                                 <span class="badge bg-dark rounded-pill" id="total-count">0 items</span>
                             </div>
                             <div id="lista-productos"></div>
@@ -256,6 +260,7 @@
         const BASE_URL = 'https://tienda-1vps.onrender.com';
         let editando = false;
         let cargandoPedidosFlag = false;
+        let productosLocal = []; // Almacén local para el buscador
 
         // Renderizado de productos (AHORA CON DESCRIPCIÓN)
         function renderizarProducto(p) {
@@ -284,10 +289,26 @@
         async function cargarInventario() {
             try {
                 const res = await fetch(`${BASE_URL}/productos`);
-                const data = await res.json();
-                document.getElementById('total-count').innerText = `${data.length} Items`;
-                document.getElementById('lista-productos').innerHTML = data.map(renderizarProducto).join('');
+                productosLocal = await res.json();
+                mostrarProductos(productosLocal);
             } catch (err) { console.error("Error inventario:", err); }
+        }
+
+        // Función para inyectar productos en el DOM
+        function mostrarProductos(data) {
+            document.getElementById('total-count').innerText = `${data.length} Items`;
+            document.getElementById('lista-productos').innerHTML = data.map(renderizarProducto).join('');
+        }
+
+        // Lógica del buscador
+        function filtrarProductos() {
+            const termino = document.getElementById('buscar-prod').value.toLowerCase();
+            const filtrados = productosLocal.filter(p => 
+                p.Nombre.toLowerCase().includes(termino) || 
+                (p.CodigoSKU && p.CodigoSKU.toLowerCase().includes(termino)) ||
+                (p.Marca && p.Marca.toLowerCase().includes(termino))
+            );
+            mostrarProductos(filtrados);
         }
 
         async function cargarAgotados() {
@@ -349,84 +370,89 @@
         }
 
         async function cargarPedidos() {
-    if (cargandoPedidosFlag) return; 
-    cargandoPedidosFlag = true;
-    const lista = document.getElementById('lista-pedidos');
-    try {
-        const res = await fetch(`${BASE_URL}/pedidos`);
-        const pedidos = await res.json();
-        document.getElementById('order-count').innerText = `${pedidos.length} recibidos`;
-        
-        if (pedidos.length === 0) {
-            lista.innerHTML = '<div class="text-center p-5 text-muted">No hay pedidos registrados.</div>';
-        } else {
-            pedidos.sort((a, b) => b.PedidoID - a.PedidoID);
-            lista.innerHTML = pedidos.map((p) => {
-                let productos = [];
-                try { 
-                    productos = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
-                } catch (e) { productos = []; }
+            if (cargandoPedidosFlag) return; 
+            cargandoPedidosFlag = true;
+            const lista = document.getElementById('lista-pedidos');
+            try {
+                const res = await fetch(`${BASE_URL}/pedidos`);
+                const pedidos = await res.json();
+                document.getElementById('order-count').innerText = `${pedidos.length} recibidos`;
                 
-                const resumenProd = productos.map(item => `
-                    <li class="d-flex justify-content-between border-bottom border-light py-1">
-                        <span>${item.cantidad}x ${item.Nombre}</span>
-                        <span class="text-dark fw-bold">$${(item.Precio * item.cantidad).toLocaleString()}</span>
-                    </li>`).join('');
-                
-                return `
-                <div class="product-row shadow-sm border-start border-4 ${p.Estado === 'Pendiente' ? 'border-warning' : 'border-success'} mb-4 flex-column align-items-stretch">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <span class="badge bg-secondary mb-1">ID: #${p.PedidoID}</span>
-                            <h5 class="mb-0 fw-bold text-uppercase">${p.NombreCliente}</h5>
-                        </div>
-                        <span class="status-pill ${p.Estado === 'Pendiente' ? 'status-pendiente' : 'status-completado'}">${p.Estado}</span>
-                    </div>
+                if (pedidos.length === 0) {
+                    lista.innerHTML = '<div class="text-center p-5 text-muted">No hay pedidos registrados.</div>';
+                } else {
+                    // Ordenamos por ID para que el cálculo de posición sea coherente
+                    pedidos.sort((a, b) => b.PedidoID - a.PedidoID);
+                    
+                    lista.innerHTML = pedidos.map((p, index) => {
+                        // El número visual será el total menos el índice actual
+                        const numeroPedido = pedidos.length - index;
+                        
+                        let productos = [];
+                        try { 
+                            productos = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
+                        } catch (e) { productos = []; }
+                        
+                        const resumenProd = productos.map(item => `
+                            <li class="d-flex justify-content-between border-bottom border-light py-1">
+                                <span>${item.cantidad}x ${item.Nombre}</span>
+                                <span class="text-dark fw-bold">$${(item.Precio * item.cantidad).toLocaleString()}</span>
+                            </li>`).join('');
+                        
+                        return `
+                        <div class="product-row shadow-sm border-start border-4 ${p.Estado === 'Pendiente' ? 'border-warning' : 'border-success'} mb-4 flex-column align-items-stretch">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <span class="badge bg-secondary mb-1">PEDIDO #${numeroPedido}</span>
+                                    <h5 class="mb-0 fw-bold text-uppercase">${p.NombreCliente}</h5>
+                                </div>
+                                <span class="status-pill ${p.Estado === 'Pendiente' ? 'status-pendiente' : 'status-completado'}">${p.Estado}</span>
+                            </div>
 
-                    <div class="row g-3 mb-3 pb-3 border-bottom">
-                        <div class="col-sm-6">
-                            <label class="small text-muted d-block uppercase fw-bold" style="font-size:0.65rem">Contacto</label>
-                            <div class="fw-medium"><i class="bi bi-telephone text-accent me-2"></i>${p.Telefono || 'No proporcionado'}</div>
-                            <div class="fw-medium"><i class="bi bi-envelope text-accent me-2"></i>${p.Email || p.Correo || 'Sin correo'}</div>
-                        </div>
-                        <div class="col-sm-6">
-                            <label class="small text-muted d-block uppercase fw-bold" style="font-size:0.65rem">Entrega</label>
-                            <div class="fw-medium"><i class="bi bi-geo-alt text-danger me-2"></i>${p.Direccion || 'Recojo en local'}</div>
-                            <div class="fw-medium text-muted"><i class="bi bi-calendar3 me-2"></i>${new Date(p.Fecha).toLocaleString()}</div>
-                        </div>
-                    </div>
+                            <div class="row g-3 mb-3 pb-3 border-bottom">
+                                <div class="col-sm-6">
+                                    <label class="small text-muted d-block uppercase fw-bold" style="font-size:0.65rem">Contacto</label>
+                                    <div class="fw-medium"><i class="bi bi-telephone text-accent me-2"></i>${p.Telefono || 'No proporcionado'}</div>
+                                    <div class="fw-medium"><i class="bi bi-envelope text-accent me-2"></i>${p.Email || p.Correo || 'Sin correo'}</div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="small text-muted d-block uppercase fw-bold" style="font-size:0.65rem">Dirección, fecha y hora del pedido</label>
+                                    <div class="fw-medium"><i class="bi bi-geo-alt text-danger me-2"></i>${p.Direccion || 'Recojo en local'}</div>
+                                    <div class="fw-medium text-muted"><i class="bi bi-calendar3 me-2"></i>${new Date(p.Fecha).toLocaleString()}</div>
+                                </div>
+                            </div>
 
-                    <div class="mb-3">
-                        <label class="small text-muted d-block uppercase fw-bold mb-2" style="font-size:0.65rem">Productos Solicitados</label>
-                        <ul class="list-unstyled small mb-0 bg-light p-3 rounded-3">${resumenProd}</ul>
-                    </div>
+                            <div class="mb-3">
+                                <label class="small text-muted d-block uppercase fw-bold mb-2" style="font-size:0.65rem">Productos Solicitados</label>
+                                <ul class="list-unstyled small mb-0 bg-light p-3 rounded-3">${resumenProd}</ul>
+                            </div>
 
-                    <div class="d-flex justify-content-between align-items-center mt-auto pt-2">
-                        <div>
-                            <small class="text-muted d-block">TOTAL A COBRAR</small>
-                            <div class="price-badge text-primary fs-4">$${Number(p.Total).toLocaleString()}</div>
-                        </div>
-                        <div class="d-flex gap-2">
-                            ${p.Estado === 'Pendiente' ? 
-                                `<button class="btn btn-success fw-bold px-3" onclick="completarPedido(${p.PedidoID})">
-                                    <i class="bi bi-check-lg"></i> COMPLETAR
-                                </button>` : 
-                                `<span class="badge bg-success py-2 px-3"><i class="bi bi-check-all"></i> ENTREGADO</span>`
-                            }
-                            <button class="btn btn-outline-danger" onclick="eliminarPedido(${p.PedidoID})">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>`;
-            }).join('');
+                            <div class="d-flex justify-content-between align-items-center mt-auto pt-2">
+                                <div>
+                                    <small class="text-muted d-block">TOTAL A COBRAR</small>
+                                    <div class="price-badge text-primary fs-4">$${Number(p.Total).toLocaleString()}</div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    ${p.Estado === 'Pendiente' ? 
+                                        `<button class="btn btn-success fw-bold px-3" onclick="completarPedido(${p.PedidoID})">
+                                            <i class="bi bi-check-lg"></i> COMPLETAR
+                                        </button>` : 
+                                        `<span class="badge bg-success py-2 px-3"><i class="bi bi-check-all"></i> ENTREGADO</span>`
+                                    }
+                                    <button class="btn btn-outline-danger" onclick="eliminarPedido(${p.PedidoID})">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+            } catch (err) { 
+                console.error("Error al cargar pedidos:", err); 
+            } finally { 
+                setTimeout(() => { cargandoPedidosFlag = false; }, 500); 
+            }
         }
-    } catch (err) { 
-        console.error("Error al cargar pedidos:", err); 
-    } finally { 
-        setTimeout(() => { cargandoPedidosFlag = false; }, 500); 
-    }
-}
 
         async function eliminarPedido(id) {
             if (!(await Swal.fire({title:'¿Borrar pedido?', icon:'warning', showCancelButton:true}).then(r => r.isConfirmed))) return;
