@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;800&display=swap" rel="stylesheet">
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
+
     <style>
         :root {
             --glass-bg: rgba(255, 255, 255, 0.95);
@@ -366,6 +369,157 @@
             document.getElementById('prod-id').value = "";
         }
 
+        async function generarFacturaPDF(p, numeroPedido) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    let productosArr = [];
+    try { 
+        productosArr = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
+    } catch (e) { productosArr = []; }
+
+    // --- CONFIGURACIÓN DE COLORES ---
+    const primaryColor = [34, 74, 43]; // Verde Trébol Profundo
+    const accentColor = [108, 92, 231]; // Morado suave (opcional para detalles)
+    const textColor = [45, 52, 54];
+    const lightGray = [240, 242, 245];
+
+    // 1. BARRA LATERAL DE DISEÑO (Opcional, da un toque moderno)
+    doc.setFillColor(34, 74, 43);
+    doc.rect(0, 0, 5, 297, 'F');
+
+    // 2. ENCABEZADO: LOGO Y DATOS EMPRESA
+    // Si tienes el logo en URL, jsPDF puede tardar. Aquí usamos texto con estilo de marca.
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(28);
+    doc.setTextColor(34, 74, 43);
+    doc.text("TRÉBOL S.A.S", 20, 25);
+    
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.setFont("helvetica", "normal");
+    doc.text("Herramientas profesionales", 20, 31);
+    doc.text("NIT: 900.555.123-1", 20, 36);
+    doc.text("El Peñol, Antioquia | Cel: 310 123 4567", 20, 41);
+    doc.text("trebol@gmail.com", 20, 46);
+
+    // 3. BLOQUE DE INFO DE FACTURA (Cuadro elegante)
+    doc.setFillColor(248, 249, 250);
+    doc.roundedRect(130, 15, 65, 35, 3, 3, 'F');
+    doc.setDrawColor(230);
+    doc.roundedRect(130, 15, 65, 35, 3, 3, 'D');
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.setFontSize(10);
+    doc.text("ORDEN DE SERVICIO", 135, 25);
+    doc.setFontSize(20);
+    doc.text(`# ${numeroPedido.toString().padStart(4, '0')}`, 135, 35);
+    doc.setFontSize(9);
+    doc.setTextColor(120);
+    doc.text(`Fecha: ${new Date(p.Fecha).toLocaleDateString()}`, 135, 43);
+
+    // 4. INFORMACIÓN DEL CLIENTE (Diseño en columnas)
+    doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.setLineWidth(0.5);
+    doc.line(20, 55, 195, 55);
+
+    doc.setFontSize(10);
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.text("FACTURADO A:", 20, 65);
+    
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.setFont("helvetica", "bold");
+    doc.text(p.NombreCliente.toUpperCase(), 20, 72);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(80);
+    doc.text(`C.C./NIT: ${p.Documento || '---'}`, 20, 78);
+    doc.text(`Teléfono: ${p.Telefono}`, 20, 83);
+    doc.text(`Dirección: ${p.Direccion || 'Entrega en local'}`, 20, 88);
+
+    // 5. TABLA DE PRODUCTOS (Estilo moderno y limpio)
+    const rows = productosArr.map(item => [
+        item.cantidad,
+        { content: item.Nombre, styles: { fontStyle: 'bold' } },
+        `$ ${Number(item.Precio).toLocaleString()}`,
+        `$ ${(item.cantidad * item.Precio).toLocaleString()}`
+    ]);
+
+    doc.autoTable({
+        startY: 95,
+        head: [['CANT.', 'DESCRIPCIÓN', 'VALOR UNIT.', 'SUBTOTAL']],
+        body: rows,
+        headStyles: { 
+            fillColor: primaryColor, 
+            textColor: [255, 255, 255], 
+            fontSize: 10,
+            halign: 'center'
+        },
+        bodyStyles: { 
+            fontSize: 9, 
+            cellPadding: 5 
+        },
+        columnStyles: {
+            0: { halign: 'center', cellWidth: 20 },
+            2: { halign: 'right' },
+            3: { halign: 'right' }
+        },
+        theme: 'striped',
+        margin: { left: 20, right: 15 }
+    });
+
+    // 6. RESUMEN DE TOTALES
+    const finalY = doc.lastAutoTable.finalY + 10;
+    
+    doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.rect(130, finalY, 65, 12, 'F');
+    
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(255, 255, 255);
+    doc.text("TOTAL NETO:", 135, finalY + 8);
+    doc.text(`$ ${Number(p.Total).toLocaleString()}`, 190, finalY + 8, { align: 'right' });
+
+    // 7. MÉTODOS DE PAGO Y NOTAS
+    const notasY = finalY + 25;
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.setFontSize(10);
+    doc.text("MÉTODOS DE PAGO:", 20, notasY);
+    
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.setFont("helvetica", "normal");
+    doc.text("• Nequi / Bancolombia: 310 123 4567", 20, notasY + 6);
+    doc.text("• Efectivo en local", 20, notasY + 11);
+
+    // 8. PIE DE PÁGINA LEGAL (Muy importante para la validez)
+    doc.setFontSize(7);
+    doc.setTextColor(150);
+    const legal1 = "Esta es una representación gráfica de una cuenta de cobro / orden de venta interna.";
+    const legal2 = "No somos responsables de IVA. Régimen Simplificado. Art. 774 del Código de Comercio.";
+    doc.text(legal1, 105, 280, { align: 'center' });
+    doc.text(legal2, 105, 284, { align: 'center' });
+    
+    // Frase final
+    doc.setFontSize(10);
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.setFont("helvetica", "bold");
+    doc.text("¡GRACIAS POR SU COMPRA!", 105, 270, { align: 'center' });
+
+    // Descargar
+    doc.save(`Factura_Trebol_${numeroPedido}.pdf`);
+    
+    Swal.fire({
+        title: 'Factura Generada',
+        text: 'Se ha descargado la factura exitosamente.',
+        icon: 'success',
+        confirmButtonColor: '#224a2b'
+    });
+}
+
         async function cargarPedidos() {
             if (cargandoPedidosFlag) return; 
             cargandoPedidosFlag = true;
@@ -382,17 +536,19 @@
                     
                     lista.innerHTML = pedidos.map((p, index) => {
                         const numeroPedido = pedidos.length - index;
-                        let productos = [];
+                        let productosArr = [];
                         try { 
-                            productos = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
-                        } catch (e) { productos = []; }
+                            productosArr = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
+                        } catch (e) { productosArr = []; }
                         
-                        const resumenProd = productos.map(item => `
+                        const resumenProd = productosArr.map(item => `
                             <li class="d-flex justify-content-between border-bottom border-light py-1">
                                 <span>${item.cantidad}x ${item.Nombre}</span>
                                 <span class="text-dark fw-bold">$${(item.Precio * item.cantidad).toLocaleString()}</span>
                             </li>`).join('');
                         
+                        const pedidoString = JSON.stringify(p).replace(/'/g, "&apos;");
+
                         return `
                         <div class="product-row shadow-sm border-start border-4 ${p.Estado === 'Pendiente' ? 'border-warning' : 'border-success'} mb-4 flex-column align-items-stretch">
                             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -427,6 +583,9 @@
                                     <div class="price-badge text-primary fs-4">$${Number(p.Total).toLocaleString()}</div>
                                 </div>
                                 <div class="d-flex gap-2">
+                                    <button class="btn btn-dark fw-bold" onclick='generarFacturaPDF(${pedidoString}, ${numeroPedido})'>
+                                        <i class="bi bi-file-earmark-pdf"></i> FACTURA
+                                    </button>
                                     ${p.Estado === 'Pendiente' ? 
                                         `<button class="btn btn-success fw-bold px-3" onclick="completarPedido(${p.PedidoID})">
                                             <i class="bi bi-check-lg"></i> COMPLETAR
@@ -448,7 +607,6 @@
             }
         }
 
-        // --- FUNCIONES MODIFICADAS ---
         async function eliminarPedido(id) {
             const confirmar = await Swal.fire({
                 title: '¿Borrar pedido?',
@@ -456,54 +614,32 @@
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Sí, eliminar',
                 cancelButtonText: 'Cancelar'
             });
 
             if (confirmar.isConfirmed) {
                 try {
-                    const res = await fetch(`${BASE_URL}/pedidos/${id}`, { 
-                        method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json' }
-                    });
+                    const res = await fetch(`${BASE_URL}/pedidos/${id}`, { method: 'DELETE' });
                     if (res.ok) {
                         Swal.fire('Eliminado', 'El pedido ha sido borrado', 'success');
                         cargarPedidos(); 
-                    } else {
-                        throw new Error('Error al eliminar');
                     }
-                } catch (error) { 
-                    console.error(error);
-                    Swal.fire('Error', 'No se pudo eliminar el pedido', 'error');
+                } catch (error) { console.error(error); }
+            }
+        }
+
+        async function completarPedido(id) {
+            try {
+                const res = await fetch(`${BASE_URL}/pedidos/${id}/completar`, { 
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (res.ok) { 
+                    Swal.fire('¡Excelente!', 'Pedido marcado como entregado', 'success');
+                    cargarPedidos(); 
                 }
-            }
+            } catch (err) { console.error(err); }
         }
-
-        
-                async function completarPedido(id) {
-    try {
-        // Añadimos headers para asegurar la compatibilidad
-        const res = await fetch(`${BASE_URL}/pedidos/${id}/completar`, { 
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (res.ok) { 
-            Swal.fire('¡Excelente!', 'Pedido marcado como entregado', 'success');
-            cargarPedidos(); 
-        } else {
-            const errorData = await res.json();
-            Swal.fire('Error', errorData.error || 'No se pudo actualizar', 'error');
-        }
-    } catch (err) { 
-        console.error("Error detallado:", err);
-        Swal.fire('Error', 'No hay conexión con el servidor. Verifica que el servidor en Render esté activo.', 'error');
-    }
-}
-        // --- FIN DE MODIFICACIONES ---
 
         document.getElementById('form-producto').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -526,20 +662,13 @@
             try {
                 Swal.showLoading();
                 const res = await fetch(url, { method: method, body: formData });
-                
                 if (res.ok) { 
                     Swal.fire('Éxito', editando ? 'Producto actualizado' : 'Producto creado', 'success'); 
                     limpiarForm(); 
                     cargarInventario();
                     cargarAgotados();
-                } else {
-                    const errorData = await res.json();
-                    Swal.fire('Error', errorData.message || 'No se pudo guardar', 'error');
                 }
-            } catch (err) { 
-                console.error(err);
-                Swal.fire('Error', 'Problema de conexión con el servidor', 'error');
-            }
+            } catch (err) { console.error(err); }
         });
 
         cargarInventario();
