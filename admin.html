@@ -329,6 +329,55 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    // Función para cambiar entre pestañas
+function mostrarPestana(tipo) {
+    if (tipo === 'pedidos') {
+        document.getElementById('seccion-inventario').style.display = 'none';
+        document.getElementById('seccion-pedidos').style.display = 'block';
+        cargarPedidos();
+    } else {
+        document.getElementById('seccion-inventario').style.display = 'block';
+        document.getElementById('seccion-pedidos').style.display = 'none';
+    }
+}
+
+async function cargarPedidos() {
+    try {
+        const res = await fetch(`${BASE_URL}/pedidos`);
+        const pedidos = await res.json();
+        const lista = document.getElementById('lista-pedidos');
+
+        lista.innerHTML = pedidos.map(p => {
+            // Convertimos el texto JSON de productos de nuevo a un objeto para leerlo
+            const productos = JSON.parse(p.Productos);
+            const resumenProd = productos.map(item => `${item.cantidad}x ${item.Nombre}`).join(', ');
+
+            return `
+                <div class="product-row shadow-sm border-start border-4 ${p.Estado === 'Pendiente' ? 'border-warning' : 'border-success'}">
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between">
+                            <h6 class="mb-0 fw-bold">Pedido #${p.PedidoID} - ${p.NombreCliente}</h6>
+                            <span class="badge ${p.Estado === 'Pendiente' ? 'bg-warning' : 'bg-success'} text-dark">${p.Estado}</span>
+                        </div>
+                        <small class="text-muted d-block">📦 ${resumenProd}</small>
+                        <small class="text-primary">📍 ${p.Direccion} | 📞 ${p.Telefono}</small>
+                    </div>
+                    <div class="text-end px-3">
+                        <div class="price-badge" style="color: #2d5a27;">$${Number(p.Total).toLocaleString()}</div>
+                        <small class="text-muted">${new Date(p.Fecha).toLocaleDateString()}</small>
+                    </div>
+                    <div>
+                        <button class="action-btn btn-edit" title="Marcar como entregado" onclick="completarPedido(${p.PedidoID})">
+                            <i class="bi bi-check-lg"></i>
+                        </button>
+                    </div>
+                </div>`;
+        }).join('');
+    } catch (err) {
+        console.error("Error al cargar pedidos:", err);
+    }
+}
+
     document.getElementById('form-producto').addEventListener('submit', async (e) => {
         e.preventDefault();
         
