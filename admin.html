@@ -25,10 +25,6 @@
             padding-bottom: 50px;
         }
 
-        button, .btn, .action-btn, .btn-main, select, input[type="file"], .nav-link {
-            cursor: pointer !important;
-        }
-
         .header-section { padding: 30px 0; }
         .header-section h1 {
             font-weight: 800;
@@ -46,7 +42,6 @@
             box-shadow: 0 15px 35px rgba(0,0,0,0.05);
             padding: 25px;
             height: 100%;
-            transition: all 0.3s ease;
         }
 
         .form-label { font-weight: 700; font-size: 0.95rem; margin-bottom: 8px; color: #4b4b4b; }
@@ -54,7 +49,6 @@
         .form-control {
             border-radius: 14px;
             padding: 10px 15px;
-            font-size: 0.95rem;
             background: #f8f9fa;
             border: 2px solid #eee;
             transition: 0.3s;
@@ -72,89 +66,58 @@
             border-radius: 15px;
             padding: 15px;
             font-weight: 800;
-            font-size: 1.1rem;
             border: none;
             box-shadow: 0 10px 20px rgba(108, 92, 231, 0.2);
-            transition: all 0.3s ease;
+            transition: 0.3s;
         }
 
-        .btn-clear {
-            background: #f1f2f6;
-            color: #636e72;
-            border-radius: 10px;
-            padding: 4px 12px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            border: none;
-        }
-
-        .product-row, .order-row {
+        .product-row {
             background: white;
             border-radius: 20px;
             margin-bottom: 12px;
             padding: 15px;
             display: flex;
             align-items: center;
-            flex-wrap: wrap;
             border: 1px solid #f1f2f6;
             transition: 0.3s;
         }
 
         .img-box {
-            width: 70px; height: 70px;
-            border-radius: 18px;
+            width: 60px; height: 60px;
+            border-radius: 14px;
             overflow: hidden;
-            margin-right: 20px;
-            flex-shrink: 0;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            margin-right: 15px;
             background: #eee;
         }
-
         .img-box img { width: 100%; height: 100%; object-fit: cover; }
 
-        .price-badge { font-weight: 800; font-size: 1.15rem; color: #2d3436; }
+        .price-badge { font-weight: 800; font-size: 1.1rem; color: #2d3436; }
 
-        .stock-pill, .status-pill {
-            padding: 6px 12px;
-            border-radius: 10px;
+        .status-pill {
+            padding: 4px 10px;
+            border-radius: 8px;
             font-weight: 700;
-            font-size: 0.8rem;
-            display: inline-block;
+            font-size: 0.75rem;
         }
-        .stock-pill.low { background: #fff0f0; color: #ff7675; }
-        .stock-pill.ok { background: #e3fcef; color: #00b894; }
-
         .status-pendiente { background: #fff4e6; color: #fd7e14; }
-        .status-visto { background: #e7f5ff; color: #228be6; }
-        .status-despachado { background: #ebfbee; color: #40c057; }
+        .status-completado { background: #ebfbee; color: #40c057; }
 
         .action-btn {
-            width: 38px; height: 38px;
-            border-radius: 12px;
+            width: 35px; height: 35px;
+            border-radius: 10px;
             display: flex; align-items: center; justify-content: center;
-            border: none; transition: 0.2s; margin-left: 8px;
+            border: none; margin-left: 5px;
         }
         .btn-edit { background: #f1f2f6; color: #2d3436; }
         .btn-delete { background: #fff0f0; color: #ff7675; }
-        .btn-view { background: #6c5ce720; color: var(--accent); }
+        .btn-check { background: #e3fcef; color: #00b894; }
 
         .nav-pills .nav-link {
             border-radius: 12px;
             font-weight: 700;
             color: #636e72;
-            padding: 10px 20px;
-            font-size: 0.9rem;
         }
-        .nav-pills .nav-link.active {
-            background-color: var(--accent);
-        }
-
-        @media (max-width: 576px) {
-            .product-row, .order-row { flex-direction: column; text-align: center; padding: 15px; }
-            .img-box { margin-right: 0; margin-bottom: 15px; width: 100px; height: 100px; }
-            .text-end { text-align: center !important; width: 100%; margin-bottom: 10px; padding: 0 !important; }
-            .d-flex { justify-content: center; width: 100%; }
-        }
+        .nav-pills .nav-link.active { background-color: var(--accent); }
     </style>
 </head>
 <body>
@@ -174,8 +137,8 @@
             <div class="col-lg-5">
                 <div class="bento-card">
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h4 class="fw-800 m-0" id="titulo-form">Crear Producto</h4>
-                        <button type="button" class="btn-clear" onclick="limpiarForm()">
+                        <h4 class="fw-bold m-0" id="titulo-form">Crear Producto</h4>
+                        <button type="button" class="btn-clear btn btn-light btn-sm fw-bold" onclick="limpiarForm()">
                             <i class="bi bi-plus-lg"></i> NUEVO
                         </button>
                     </div>
@@ -193,25 +156,25 @@
                             </div>
                             <div class="col-6">
                                 <label class="form-label">SKU</label>
-                                <input type="text" id="sku" class="form-control" placeholder="Código único">
+                                <input type="text" id="sku" class="form-control" placeholder="Código">
                             </div>
                         </div>
                         <div class="row mb-3">
                             <div class="col-6">
                                 <label class="form-label">Precio ($)</label>
-                                <input type="number" id="precio" class="form-control" placeholder="0" required>
+                                <input type="number" id="precio" class="form-control" required>
                             </div>
                             <div class="col-6">
                                 <label class="form-label">Stock</label>
-                                <input type="number" id="stock" class="form-control" placeholder="0" required>
+                                <input type="number" id="stock" class="form-control" required>
                             </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Descripción</label>
-                            <textarea id="caracteristicas" class="form-control" rows="2" placeholder="Detalles..."></textarea>
+                            <textarea id="caracteristicas" class="form-control" rows="2"></textarea>
                         </div>
                         <div class="mb-4">
-                            <label class="form-label">Imágenes</label>
+                            <label class="form-label">Imagen</label>
                             <input type="file" id="imagenes" class="form-control" accept="image/*">
                         </div>
                         <button type="submit" class="btn-main w-100" id="btn-guardar">GUARDAR PRODUCTO</button>
@@ -245,30 +208,13 @@
 
                         <div class="tab-pane fade" id="tab-pedidos">
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="fw-bold m-0">Historial</h5>
-                                <span class="badge bg-dark rounded-pill" id="order-count">0 recibidos</span>
+                                <h5 class="fw-bold m-0">Historial de Ventas</h5>
+                                <span class="badge bg-primary rounded-pill" id="order-count">0 recibidos</span>
                             </div>
-                            <div id="lista-pedidos"></div>
+                            <div id="lista-pedidos">
+                                <p class="text-center text-muted p-4">Cargando pedidos...</p>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="modalPedido" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="border-radius: 20px; border: none;">
-                <div class="modal-header border-0 p-4">
-                    <h4 class="fw-800 m-0">Detalle del Pedido</h4>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4 pt-0">
-                    <div id="detalle-productos-pedido"></div>
-                    <hr class="my-4">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="fw-bold fs-6">Total:</span>
-                        <span class="price-badge" id="total-modal" style="color: var(--accent); font-size: 1.5rem;">$0</span>
                     </div>
                 </div>
             </div>
@@ -282,6 +228,7 @@
     let editando = false;
     const BASE_URL = 'https://tienda-1vps.onrender.com';
 
+    // --- LÓGICA DE INVENTARIO ---
     async function cargarInventario() {
         try {
             const res = await fetch(`${BASE_URL}/productos`);
@@ -296,11 +243,11 @@
                     <div class="img-box"><img src="${BASE_URL}${p.ImagenURL}" onerror="this.src='https://via.placeholder.com/150'"></div>
                     <div class="flex-grow-1">
                         <h6 class="mb-0 fw-bold">${p.Nombre}</h6>
-                        <small class="text-muted fw-bold">${p.Marca ? p.Marca.toUpperCase() : 'SIN MARCA'} • SKU: ${p.CodigoSKU}</small>
+                        <small class="text-muted">SKU: ${p.CodigoSKU}</small>
                     </div>
                     <div class="text-end px-3">
                         <div class="price-badge">$${Number(p.Precio).toLocaleString()}</div>
-                        <span class="stock-pill ${p.Stock < 5 ? 'low' : 'ok'}">${p.Stock} unds</span>
+                        <small class="fw-bold ${p.Stock < 5 ? 'text-danger' : 'text-success'}">${p.Stock} unds</small>
                     </div>
                     <div class="d-flex">
                         <button class="action-btn btn-edit" onclick='prepararEdicion(${prodJson})'><i class="bi bi-pencil-fill"></i></button>
@@ -308,7 +255,7 @@
                     </div>
                 </div>`;
             }).join('');
-        } catch (err) { console.error("Error cargando inventario:", err); }
+        } catch (err) { console.error("Error inventario:", err); }
     }
 
     function prepararEdicion(p) {
@@ -316,8 +263,6 @@
         document.getElementById('titulo-form').innerText = "Editando Producto";
         document.getElementById('btn-guardar').innerText = "ACTUALIZAR";
         document.getElementById('btn-guardar').style.background = "#2ecc71";
-        
-        // Mapeo de datos del objeto DB a los inputs
         document.getElementById('prod-id').value = p.ProductoID;
         document.getElementById('nombre').value = p.Nombre;
         document.getElementById('marca').value = p.Marca;
@@ -325,65 +270,69 @@
         document.getElementById('precio').value = p.Precio;
         document.getElementById('stock').value = p.Stock;
         document.getElementById('caracteristicas').value = p.Caracteristicas || '';
-        
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // Función para cambiar entre pestañas
-function mostrarPestana(tipo) {
-    if (tipo === 'pedidos') {
-        document.getElementById('seccion-inventario').style.display = 'none';
-        document.getElementById('seccion-pedidos').style.display = 'block';
-        cargarPedidos();
-    } else {
-        document.getElementById('seccion-inventario').style.display = 'block';
-        document.getElementById('seccion-pedidos').style.display = 'none';
-    }
-}
-
-async function cargarPedidos() {
-    try {
-        const res = await fetch(`${BASE_URL}/pedidos`);
-        const pedidos = await res.json();
+    // --- LÓGICA DE PEDIDOS (CORREGIDA) ---
+    async function cargarPedidos() {
         const lista = document.getElementById('lista-pedidos');
+        try {
+            const res = await fetch(`${BASE_URL}/pedidos`);
+            const pedidos = await res.json();
+            document.getElementById('order-count').innerText = `${pedidos.length} recibidos`;
 
-        lista.innerHTML = pedidos.map(p => {
-            // Convertimos el texto JSON de productos de nuevo a un objeto para leerlo
-            const productos = JSON.parse(p.Productos);
-            const resumenProd = productos.map(item => `${item.cantidad}x ${item.Nombre}`).join(', ');
+            if (pedidos.length === 0) {
+                lista.innerHTML = '<div class="text-center p-5 text-muted">No hay pedidos registrados aún.</div>';
+                return;
+            }
 
-            return `
+            lista.innerHTML = pedidos.map(p => {
+                let productos = [];
+                try { productos = JSON.parse(p.Productos); } catch (e) { productos = []; }
+                
+                const resumenProd = productos.map(item => `${item.cantidad}x ${item.Nombre}`).join(', ');
+
+                return `
                 <div class="product-row shadow-sm border-start border-4 ${p.Estado === 'Pendiente' ? 'border-warning' : 'border-success'}">
                     <div class="flex-grow-1">
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between mb-1">
                             <h6 class="mb-0 fw-bold">Pedido #${p.PedidoID} - ${p.NombreCliente}</h6>
-                            <span class="badge ${p.Estado === 'Pendiente' ? 'bg-warning' : 'bg-success'} text-dark">${p.Estado}</span>
+                            <span class="status-pill ${p.Estado === 'Pendiente' ? 'status-pendiente' : 'status-completado'}">${p.Estado}</span>
                         </div>
-                        <small class="text-muted d-block">📦 ${resumenProd}</small>
-                        <small class="text-primary">📍 ${p.Direccion} | 📞 ${p.Telefono}</small>
+                        <small class="text-muted d-block mb-1">📦 ${resumenProd}</small>
+                        <small class="text-primary small"><i class="bi bi-geo-alt"></i> ${p.Direccion} | <i class="bi bi-telephone"></i> ${p.Telefono}</small>
                     </div>
                     <div class="text-end px-3">
                         <div class="price-badge" style="color: #2d5a27;">$${Number(p.Total).toLocaleString()}</div>
-                        <small class="text-muted">${new Date(p.Fecha).toLocaleDateString()}</small>
+                        <small class="text-muted" style="font-size:0.7rem">${new Date(p.Fecha).toLocaleDateString()}</small>
                     </div>
                     <div>
-                        <button class="action-btn btn-edit" title="Marcar como entregado" onclick="completarPedido(${p.PedidoID})">
+                        <button class="action-btn btn-check" title="Completar" onclick="completarPedido(${p.PedidoID})">
                             <i class="bi bi-check-lg"></i>
                         </button>
                     </div>
                 </div>`;
-        }).join('');
-    } catch (err) {
-        console.error("Error al cargar pedidos:", err);
+            }).join('');
+        } catch (err) {
+            console.error("Error pedidos:", err);
+            lista.innerHTML = '<p class="text-danger text-center">Error al cargar pedidos del servidor.</p>';
+        }
     }
-}
 
+    async function completarPedido(id) {
+        try {
+            const res = await fetch(`${BASE_URL}/pedidos/${id}/completar`, { method: 'PUT' });
+            if (res.ok) {
+                Swal.fire('¡Listo!', 'Pedido marcado como entregado', 'success');
+                cargarPedidos();
+            }
+        } catch (err) { console.error(err); }
+    }
+
+    // --- GUARDAR PRODUCTO ---
     document.getElementById('form-producto').addEventListener('submit', async (e) => {
         e.preventDefault();
-        
         const id = document.getElementById('prod-id').value;
-        
-        // IMPORTANTE: Las llaves deben ser minúsculas para coincidir con tu app.js
         const producto = {
             nombre: document.getElementById('nombre').value,
             marca: document.getElementById('marca').value,
@@ -404,38 +353,19 @@ async function cargarPedidos() {
             });
 
             if (res.ok) {
-                Swal.fire('¡Éxito!', 'Producto guardado correctamente', 'success');
+                Swal.fire('¡Éxito!', 'Operación realizada', 'success');
                 limpiarForm();
                 cargarInventario();
-            } else {
-                const errorData = await res.json();
-                Swal.fire('Error', errorData.error || 'No se pudo procesar', 'error');
             }
-        } catch (err) { 
-            console.error(err);
-            Swal.fire('Error', 'Error de conexión con el servidor', 'error'); 
-        }
+        } catch (err) { console.error(err); }
     });
 
     async function eliminarProducto(id) {
-        const result = await Swal.fire({
-            title: '¿Eliminar producto?',
-            text: "Esta acción no se puede deshacer",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#ff7675',
-            confirmButtonText: 'Sí, borrar'
-        });
-
-        if (result.isConfirmed) {
-            try {
-                const res = await fetch(`${BASE_URL}/productos/${id}`, { method: 'DELETE' });
-                if (res.ok) { 
-                    Swal.fire('Eliminado', 'El producto ha sido borrado', 'success');
-                    cargarInventario(); 
-                }
-            } catch (err) { console.error(err); }
-        }
+        if (!(await Swal.fire({title:'¿Eliminar?', showCancelButton:true}).then(r => r.isConfirmed))) return;
+        try {
+            const res = await fetch(`${BASE_URL}/productos/${id}`, { method: 'DELETE' });
+            if (res.ok) { cargarInventario(); }
+        } catch (err) { console.error(err); }
     }
 
     function limpiarForm() {
@@ -447,7 +377,8 @@ async function cargarPedidos() {
         document.getElementById('prod-id').value = "";
     }
 
+    // Inicio
     cargarInventario();
-</script>
+    </script>
 </body>
 </html>
