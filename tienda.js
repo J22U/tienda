@@ -14,36 +14,36 @@ async function cargarProductos() {
         contenedor.innerHTML = ""; 
 
         const htmlProductos = productosData.map(p => {
-    // --- LÓGICA DE IMAGEN CORREGIDA ---
-    let fotoPrincipal = '';
-    
-    // 1. Prioridad: Revisar si existe Galeria (como array)
-    if (p.Galeria && Array.isArray(p.Galeria) && p.Galeria.length > 0) {
-        fotoPrincipal = p.Galeria[0].ImagenURL;
-    } 
-    // 2. Segunda opción: Usar el campo ImagenURL directo (el que devuelve Cloudinary)
-    else if (p.ImagenURL) {
-        fotoPrincipal = p.ImagenURL;
-    }
+            // --- LÓGICA DE IMAGEN CORREGIDA PARA CLOUDINARY Y GALERÍA ---
+            let fotoPrincipal = '';
+            
+            // Priorizamos ImagenURL (Cloudinary) y luego Galeria
+            if (p.ImagenURL) {
+                fotoPrincipal = p.ImagenURL;
+            } else if (p.Galeria && p.Galeria.length > 0) {
+                fotoPrincipal = p.Galeria[0].ImagenURL;
+            }
+            
+            // Verificamos si es URL completa o ruta local
+            const srcFinal = (fotoPrincipal && fotoPrincipal.startsWith('http')) 
+                ? fotoPrincipal 
+                : (fotoPrincipal ? `${BASE_URL}${fotoPrincipal}` : 'https://via.placeholder.com/250?text=Sin+Imagen');
 
-    // 3. Construir el SRC final
-    const srcFinal = (fotoPrincipal && fotoPrincipal.startsWith('http')) 
-        ? fotoPrincipal 
-        : (fotoPrincipal ? `${BASE_URL}${fotoPrincipal}` : 'https://via.placeholder.com/250?text=Sin+Imagen');
-
-    // --- LÓGICA DE AGOTADO (Igual que la tenías) ---
-    const estaAgotado = p.Stock <= 0;
-    // ... resto de tu código de return ` ...
+            // --- LÓGICA DE AGOTADO ---
+            const estaAgotado = p.Stock <= 0;
+            const claseAgotado = estaAgotado ? 'product-out-of-stock' : ''; 
+            const stockColor = estaAgotado ? 'text-danger' : 'text-success';
+            const stockTexto = estaAgotado ? '¡SIN EXISTENCIAS!' : `${p.Stock} disponibles`;
 
             return `
                 <div class="col-md-4 col-lg-3">
                     <div class="card product-card ${claseAgotado} h-100">
                         <div class="img-container" onclick="${estaAgotado ? '' : `verDetalle(${p.ProductoID})`}">
-                            <img src="${srcFinal}" onerror="this.src='https://via.placeholder.com/250?text=Agro+Ferretería'" 
+                            <img src="${srcFinal}" onerror="this.src='https://via.placeholder.com/250?text=Error+al+cargar'" 
                                  style="${estaAgotado ? 'filter: grayscale(1); opacity: 0.6;' : ''}">
                         </div>
                         <div class="p-4 text-center">
-                            <small class="text-uppercase fw-bold text-muted">${p.Marca}</small>
+                            <small class="text-uppercase fw-bold text-muted">${p.Marca || 'Genérico'}</small>
                             <h5 class="fw-bold mb-1 ${estaAgotado ? 'text-muted' : ''}">${p.Nombre}</h5>
                             <div class="price-tag mb-1">$${Number(p.Precio).toLocaleString()}</div>
                             
@@ -67,8 +67,7 @@ async function cargarProductos() {
     }
 }
 
-// 2. VER DETALLE (Mantiene tu lógica pero con seguro de stock)
-// 2. VER DETALLE (CORREGIDO PARA USAR LA GALERÍA)
+// 2. VER DETALLE CORREGIDO
 function verDetalle(id) {
     const p = productosData.find(item => item.ProductoID === id);
     if (!p) return;
@@ -76,14 +75,11 @@ function verDetalle(id) {
     const contenedorImagen = document.getElementById('contenedor-foto-modal');
     contenedorImagen.innerHTML = '';
 
-    // Extraemos las imágenes desde p.Galeria (igual que en la lista principal)
     let fotos = [];
+    // Recolectamos todas las fuentes posibles de imágenes
+    if (p.ImagenURL) fotos.push(p.ImagenURL);
     if (p.Galeria && p.Galeria.length > 0) {
-        // Mapeamos para obtener solo los strings de las URLs
-        fotos = p.Galeria.map(g => g.ImagenURL);
-    } else if (p.ImagenURL) {
-        // Por si acaso hay algo en el campo antiguo ImagenURL
-        fotos = [p.ImagenURL];
+        p.Galeria.forEach(g => { if(!fotos.includes(g.ImagenURL)) fotos.push(g.ImagenURL); });
     }
 
     if (fotos.length > 1) {
@@ -91,7 +87,8 @@ function verDetalle(id) {
             <div id="carouselDetalle" class="carousel slide carousel-dark w-100" data-bs-ride="false">
                 <div class="carousel-inner">
                     ${fotos.map((f, i) => {
-                        const srcFull = f.trim().startsWith('http') ? f.trim() : `${BASE_URL}${f.trim()}`;
+                        const fClean = f.trim();
+                        const srcFull = fClean.startsWith('http') ? fClean : `${BASE_URL}${fClean}`;
                         return `
                         <div class="carousel-item ${i === 0 ? 'active' : ''}">
                             <img src="${srcFull}" class="d-block w-100" style="height: 350px; object-fit: contain;" 
@@ -107,7 +104,6 @@ function verDetalle(id) {
                 </button>
             </div>`;
     } else {
-        // Si no hay fotos, ponemos el placeholder
         const fotoURL = fotos.length > 0 ? fotos[0].trim() : '';
         const singleSrc = fotoURL.startsWith('http') 
             ? fotoURL 
@@ -116,7 +112,6 @@ function verDetalle(id) {
         contenedorImagen.innerHTML = `<img src="${singleSrc}" class="img-fluid" style="max-height: 350px; object-fit: contain;" onerror="this.src='https://via.placeholder.com/400?text=Error+al+cargar'">`;
     }
 
-    // El resto de tu código se mantiene igual...
     document.getElementById('detalle-nombre').innerText = p.Nombre;
     document.getElementById('detalle-precio').innerText = `$${Number(p.Precio).toLocaleString()}`;
     document.getElementById('detalle-caracteristicas').innerText = p.Caracteristicas || 'Sin descripción';
@@ -138,7 +133,7 @@ function verDetalle(id) {
     bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDetalleProducto')).show();
 }
 
-// 3. AGREGAR AL CARRITO (Mismo tuyo)
+// 3. AGREGAR AL CARRITO
 function agregarAlPedido(producto) {
     const inputCant = document.getElementById('detalle-cantidad');
     const cantidad = parseInt(inputCant.value);
@@ -164,24 +159,26 @@ function agregarAlPedido(producto) {
     Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Agregado al pedido', showConfirmButton: false, timer: 1500 });
 }
 
-// 4. BÚSQUEDA (Optimizada para filtrar por el array original y repintar)
+// 4. BÚSQUEDA
 const buscador = document.getElementById('buscador');
 if(buscador) {
     buscador.addEventListener('input', (e) => {
         const termino = e.target.value.toLowerCase();
-        // En lugar de ocultar divs, es mejor filtrar el data y llamar a una función de renderizado
-        // Pero para mantener tu lógica simple, ocultamos los contenedores:
         const productosCards = document.querySelectorAll('#contenedor-productos > div');
 
         productosCards.forEach(card => {
-            const nombreProducto = card.querySelector('h5').textContent.toLowerCase();
-            const marcaProducto = card.querySelector('small').textContent.toLowerCase();
-            card.style.display = (nombreProducto.includes(termino) || marcaProducto.includes(termino)) ? 'block' : 'none';
+            const nombreElement = card.querySelector('h5');
+            const marcaElement = card.querySelector('small');
+            if(nombreElement && marcaElement) {
+                const nombreProducto = nombreElement.textContent.toLowerCase();
+                const marcaProducto = marcaElement.textContent.toLowerCase();
+                card.style.display = (nombreProducto.includes(termino) || marcaProducto.includes(termino)) ? 'block' : 'none';
+            }
         });
     });
 }
 
-// 5. UI CARRITO (Mismo tuyo)
+// 5. UI CARRITO
 function actualizarCarritoUI() {
     const lista = document.getElementById('lista-compra');
     const totalLabel = document.getElementById('total-compra');
@@ -212,7 +209,7 @@ function eliminarItem(index) {
     actualizarCarritoUI();
 }
 
-// 6. PROCESAR PAGO (Mismo tuyo)
+// 6. PROCESAR PAGO
 async function procesarPago() {
     if (carrito.length === 0) return Swal.fire('Carrito vacío', '', 'warning');
 
@@ -227,9 +224,7 @@ async function procesarPago() {
     }
 
     const datosPedido = {
-        nombre, 
-        correo, 
-        telefono,
+        nombre, correo, telefono,
         documento: documento || "No proporcionado",
         direccion,
         productos: carrito.map(item => ({
@@ -261,25 +256,19 @@ async function procesarPago() {
             Swal.fire({
                 icon: 'success',
                 title: '¡Pedido Confirmado!',
-                text: 'Gracias por tu compra. Se enviarán la factura al correo registrado.',
+                text: 'Gracias por tu compra. Se enviará la factura al correo registrado.',
                 confirmButtonColor: '#2d5a27'
             });
-            
             carrito = [];
             actualizarCarritoUI();
             document.getElementById('form-factura').reset();
-            
-            const modalElement = document.getElementById('modalCarrito');
-            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            const modalInstance = bootstrap.Modal.getInstance(document.getElementById('modalCarrito'));
             if (modalInstance) modalInstance.hide();
-
-            cargarProductos(); // Refresca la tienda con los nuevos stocks
-            
+            cargarProductos();
         } else {
             throw new Error(result.error || 'Error al procesar el pedido');
         }
     } catch (error) {
-        console.error("Error al enviar pedido:", error);
         Swal.fire('Error', error.message || 'No pudimos registrar tu pedido.', 'error');
     }
 }
