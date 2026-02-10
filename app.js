@@ -44,11 +44,16 @@ app.get('/productos', async (req, res) => {
     try {
         const pool = await poolPromise;
         const result = await pool.request().query(`
-            SELECT p.*, (SELECT ImagenURL FROM ProductoImagenes WHERE ProductoID = p.ProductoID FOR JSON PATH) as Galeria 
+            SELECT p.*, 
+            (SELECT TOP 1 ImagenURL FROM ProductoImagenes WHERE ProductoID = p.ProductoID) as ImagenPrincipal,
+            (SELECT ImagenURL FROM ProductoImagenes WHERE ProductoID = p.ProductoID FOR JSON PATH) as Galeria 
             FROM Productos p
         `);
+        
         const productos = result.recordset.map(p => ({
             ...p,
+            // Si ImagenURL en Productos es NULL, usamos la de la galería
+            ImagenURL: p.ImagenURL || p.ImagenPrincipal || 'https://placehold.co/150',
             Galeria: p.Galeria ? JSON.parse(p.Galeria) : []
         }));
         res.json(productos);
