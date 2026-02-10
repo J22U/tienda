@@ -293,6 +293,11 @@
                                 <i class="bi bi-cart-check me-2"></i>Pedidos
                             </button>
                         </li>
+                        <li class="nav-item ms-md-auto">
+        <button class="btn btn-outline-success btn-sm rounded-pill fw-bold px-3" onclick="exportarInventario()" title="Descargar copia de seguridad">
+            <i class="bi bi-cloud-arrow-down-fill me-2"></i>Backup
+        </button>
+    </li>
                     </ul>
 
                     <div class="tab-content">
@@ -780,6 +785,80 @@
             await Swal.fire('¡Éxito!', 'Producto guardado con imagen', 'success');
             limpiarForm();
             cargarInventario();
+        } else {
+            throw new Error(result.error || 'Error al guardar');
+        }
+    } catch (err) {
+        console.error("Error completo:", err);
+        Swal.fire('Error', err.message, 'error');
+    }
+});
+
+// --- FUNCIONES DE APOYO (Fuera de los eventos) ---
+
+function exportarInventario() {
+    // Usamos productosLocal que es la variable global que ya manejas
+    const datos = (typeof productosLocal !== 'undefined') ? productosLocal : [];
+    
+    if (datos.length === 0) {
+        Swal.fire("Aviso", "No hay productos para exportar", "info");
+        return;
+    }
+
+    const texto = JSON.stringify(datos, null, 4);
+    const paquete = new Blob([texto], { type: "application/json" });
+    const urlTemporal = URL.createObjectURL(paquete);
+    
+    const enlace = document.createElement("a");
+    enlace.href = urlTemporal;
+    enlace.download = `backup_trebol_${new Date().toISOString().slice(0,10)}.json`;
+    
+    document.body.appendChild(enlace);
+    enlace.click();
+    document.body.removeChild(enlace);
+    URL.revokeObjectURL(urlTemporal);
+}
+
+// --- EVENTO SUBMIT CORREGIDO ---
+
+document.getElementById('form-producto').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('prod-id').value;
+    const url = editando ? `${BASE_URL}/productos/${id}` : `${BASE_URL}/productos`;
+    const method = editando ? 'PUT' : 'POST';
+
+    const formData = new FormData();
+    formData.append('Nombre', document.getElementById('nombre').value);
+    formData.append('Marca', document.getElementById('marca').value);
+    formData.append('CodigoSKU', document.getElementById('sku').value);
+    formData.append('Precio', document.getElementById('precio').value);
+    formData.append('Stock', document.getElementById('stock').value);
+    formData.append('Caracteristicas', document.getElementById('caracteristicas').value);
+
+    const fotoInput = document.getElementById('imagenes');
+    if (fotoInput.files.length > 0) {
+        formData.append('imagenes', fotoInput.files[0]);
+    }
+
+    try {
+        Swal.fire({ 
+            title: 'Guardando...', 
+            allowOutsideClick: false, 
+            didOpen: () => Swal.showLoading() 
+        });
+
+        const res = await fetch(url, { 
+            method: method, 
+            body: formData // Sin headers de Content-Type, el navegador lo pone solo
+        });
+
+        const result = await res.json();
+
+        if (res.ok) {
+            await Swal.fire('¡Éxito!', 'Producto guardado correctamente', 'success');
+            limpiarForm();
+            cargarInventario();
+            cargarAgotados(); // Refrescar también la lista de alertas
         } else {
             throw new Error(result.error || 'Error al guardar');
         }
