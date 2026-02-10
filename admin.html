@@ -325,12 +325,20 @@
 }
 
         async function cargarInventario() {
-            try {
-                const res = await fetch(`${BASE_URL}/productos`);
-                productosLocal = await res.json();
-                mostrarProductos(productosLocal);
-            } catch (err) { console.error("Error inventario:", err); }
-        }
+    try {
+        const res = await fetch(`${BASE_URL}/productos`);
+        let data = await res.json();
+
+        // --- LÓGICA DE ORDEN ALFABÉTICO ---
+        data.sort((a, b) => a.Nombre.localeCompare(b.Nombre));
+        // ---------------------------------
+
+        productosLocal = data; 
+        mostrarProductos(productosLocal);
+    } catch (err) { 
+        console.error("Error inventario:", err); 
+    }
+}
 
         function mostrarProductos(data) {
             document.getElementById('total-count').innerText = `${data.length} Items`;
@@ -397,13 +405,18 @@
         }
 
         function limpiarForm() {
-            editando = false;
-            document.getElementById('form-producto').reset();
-            document.getElementById('titulo-form').innerText = "Crear Producto";
-            document.getElementById('btn-guardar').innerText = "GUARDAR PRODUCTO";
-            document.getElementById('btn-guardar').style.background = "var(--accent)";
-            document.getElementById('prod-id').value = "";
-        }
+    editando = false;
+    document.getElementById('form-producto').reset();
+    document.getElementById('titulo-form').innerText = "Crear Producto";
+    document.getElementById('btn-guardar').innerText = "GUARDAR PRODUCTO";
+    document.getElementById('btn-guardar').style.background = "var(--accent)";
+    document.getElementById('prod-id').value = "";
+
+    // --- GENERAR SKU AUTOMÁTICO ---
+    // Crea algo como: TRB-1707456123
+    const autoSKU = "TRB-" + Date.now().toString().slice(-8); 
+    document.getElementById('sku').value = autoSKU;
+}
 
         async function generarFacturaPDF(p, numeroPedido) {
             const { jsPDF } = window.jspdf;
@@ -599,30 +612,47 @@
         }
 
         document.getElementById('form-producto').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('prod-id').value;
-            const formData = new FormData();
-            formData.append('nombre', document.getElementById('nombre').value);
-            formData.append('marca', document.getElementById('marca').value);
-            formData.append('sku', document.getElementById('sku').value);
-            formData.append('precio', document.getElementById('precio').value);
-            formData.append('stock', document.getElementById('stock').value);
-            formData.append('caracteristicas', document.getElementById('caracteristicas').value);
-            const fileInput = document.getElementById('imagenes');
-            if (fileInput.files[0]) formData.append('imagenes', fileInput.files[0]);
-            const url = editando ? `${BASE_URL}/productos/${id}` : `${BASE_URL}/productos`;
-            const method = editando ? 'PUT' : 'POST';
-            try {
-                Swal.showLoading();
-                const res = await fetch(url, { method: method, body: formData });
-                if (res.ok) { 
-                    Swal.fire('Éxito', 'Operación completada', 'success'); 
-                    limpiarForm(); 
-                    cargarInventario();
-                    cargarAgotados();
-                }
-            } catch (err) { console.error(err); }
-        });
+    e.preventDefault();
+    const id = document.getElementById('prod-id').value;
+    const formData = new FormData();
+    
+    // Recopilación de datos (Asegúrate de que los IDs coincidan con tu HTML)
+    formData.append('nombre', document.getElementById('nombre').value);
+    formData.append('marca', document.getElementById('marca').value);
+    formData.append('sku', document.getElementById('sku').value);
+    formData.append('precio', document.getElementById('precio').value);
+    formData.append('stock', document.getElementById('stock').value);
+    formData.append('caracteristicas', document.getElementById('caracteristicas').value);
+    
+    const fileInput = document.getElementById('imagenes');
+    if (fileInput.files[0]) formData.append('imagenes', fileInput.files[0]);
+
+    const url = editando ? `${BASE_URL}/productos/${id}` : `${BASE_URL}/productos`;
+    const method = editando ? 'PUT' : 'POST';
+
+    try {
+        Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+        const res = await fetch(url, { method: method, body: formData });
+
+        // --- SOLUCIÓN AL ERROR DE JSON ---
+        if (!res.ok) {
+            // Si el servidor falla, leemos la respuesta como TEXTO para ver el error real
+            const errorTexto = await res.text();
+            throw new Error(errorTexto); 
+        }
+
+        const result = await res.json(); // Ahora sí es seguro intentar leer JSON
+
+        Swal.fire('¡Éxito!', 'Producto guardado correctamente', 'success');
+        limpiarForm();
+        cargarInventario();
+    } catch (err) {
+        console.error("Error completo:", err);
+        // Mostramos el error real que envió el servidor
+        Swal.fire('Error del Servidor', err.message, 'error');
+    }
+});
 
         cargarInventario();
     </script>

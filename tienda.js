@@ -63,18 +63,23 @@ async function cargarProductos() {
 }
 
 // 2. VER DETALLE (Mantiene tu lógica pero con seguro de stock)
+// 2. VER DETALLE (CORREGIDO PARA USAR LA GALERÍA)
 function verDetalle(id) {
     const p = productosData.find(item => item.ProductoID === id);
     if (!p) return;
 
-    let fotos = [];
-    try {
-        const imgStr = p.ImagenURL || '';
-        fotos = imgStr.startsWith('[') ? JSON.parse(imgStr) : imgStr.split(',');
-    } catch(e) { fotos = [p.ImagenURL]; }
-
     const contenedorImagen = document.getElementById('contenedor-foto-modal');
     contenedorImagen.innerHTML = '';
+
+    // Extraemos las imágenes desde p.Galeria (igual que en la lista principal)
+    let fotos = [];
+    if (p.Galeria && p.Galeria.length > 0) {
+        // Mapeamos para obtener solo los strings de las URLs
+        fotos = p.Galeria.map(g => g.ImagenURL);
+    } else if (p.ImagenURL) {
+        // Por si acaso hay algo en el campo antiguo ImagenURL
+        fotos = [p.ImagenURL];
+    }
 
     if (fotos.length > 1) {
         contenedorImagen.innerHTML = `
@@ -84,7 +89,8 @@ function verDetalle(id) {
                         const srcFull = f.trim().startsWith('http') ? f.trim() : `${BASE_URL}${f.trim()}`;
                         return `
                         <div class="carousel-item ${i === 0 ? 'active' : ''}">
-                            <img src="${srcFull}" class="d-block w-100" style="height: 350px; object-fit: contain;">
+                            <img src="${srcFull}" class="d-block w-100" style="height: 350px; object-fit: contain;" 
+                                 onerror="this.src='https://via.placeholder.com/400?text=Error+al+cargar'">
                         </div>`;
                     }).join('')}
                 </div>
@@ -96,11 +102,16 @@ function verDetalle(id) {
                 </button>
             </div>`;
     } else {
-        const fotoURL = fotos[0] ? fotos[0].trim() : '';
-        const singleSrc = fotoURL.startsWith('http') ? fotoURL : `${BASE_URL}${fotoURL}`;
-        contenedorImagen.innerHTML = `<img src="${singleSrc}" class="img-fluid" style="max-height: 350px; object-fit: contain;">`;
+        // Si no hay fotos, ponemos el placeholder
+        const fotoURL = fotos.length > 0 ? fotos[0].trim() : '';
+        const singleSrc = fotoURL.startsWith('http') 
+            ? fotoURL 
+            : (fotoURL ? `${BASE_URL}${fotoURL}` : 'https://via.placeholder.com/400?text=Sin+Imagen');
+            
+        contenedorImagen.innerHTML = `<img src="${singleSrc}" class="img-fluid" style="max-height: 350px; object-fit: contain;" onerror="this.src='https://via.placeholder.com/400?text=Error+al+cargar'">`;
     }
 
+    // El resto de tu código se mantiene igual...
     document.getElementById('detalle-nombre').innerText = p.Nombre;
     document.getElementById('detalle-precio').innerText = `$${Number(p.Precio).toLocaleString()}`;
     document.getElementById('detalle-caracteristicas').innerText = p.Caracteristicas || 'Sin descripción';
