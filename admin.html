@@ -292,16 +292,15 @@
         let productosLocal = []; 
 
         function renderizarProducto(p) {
-    // 1. DETERMINAR LA RUTA DE LA IMAGEN
-    let imgPath = 'https://placehold.co/150'; // Placeholder más confiable
+    // 1. Buscamos la imagen en la Galería, si no existe, usamos un placeholder
+    let imgPath = 'https://placehold.co/150'; 
     
-    // Si hay elementos en la galería (que es lo que trae de ProductoImagenes)
     if (p.Galeria && p.Galeria.length > 0) {
-        const url = p.Galeria[0].ImagenURL; // Tomamos la primera foto
+        // Tomamos la primera imagen de la tabla ProductoImagenes
+        const url = p.Galeria[0].ImagenURL; 
         imgPath = url.startsWith('http') ? url : `${BASE_URL}${url}`;
-    } 
-    // Si por alguna razón la tabla Productos sí tuviera la URL directa
-    else if (p.ImagenURL) {
+    } else if (p.ImagenURL) {
+        // Por si acaso alguna ruta quedó en la tabla principal
         imgPath = p.ImagenURL.startsWith('http') ? p.ImagenURL : `${BASE_URL}${p.ImagenURL}`;
     }
 
@@ -314,9 +313,9 @@
             <img src="${imgPath}" onerror="this.src='https://placehold.co/150'">
         </div>
         <div class="flex-grow-1">
-            <h6 class="mb-0 fw-bold">${p.Nombre || 'Producto sin nombre'}</h6>
+            <h6 class="mb-0 fw-bold">${p.Nombre || 'Sin nombre'}</h6>
             <small class="text-muted d-block" style="font-size:0.7rem">SKU: ${skuValido}</small>
-            <div class="desc-text">${p.Caracteristicas || 'Sin descripción detallada.'}</div>
+            <div class="desc-text">${p.Caracteristicas || 'Sin descripción.'}</div>
         </div>
         <div class="text-end px-2" style="min-width: 100px;">
             <div class="price-badge">$${Number(p.Precio || 0).toLocaleString()}</div>
