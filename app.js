@@ -45,19 +45,30 @@ app.get('/productos', async (req, res) => {
         const pool = await poolPromise;
         const result = await pool.request().query(`
             SELECT p.*, 
-            (SELECT TOP 1 ImagenURL FROM ProductoImagenes WHERE ProductoID = p.ProductoID) as ImagenPrincipal,
+            -- Obtenemos la primera imagen de la tabla ProductoImagenes para cada producto
+            (SELECT TOP 1 ImagenURL FROM ProductoImagenes WHERE ProductoID = p.ProductoID) as ImagenDeGaleria,
             (SELECT ImagenURL FROM ProductoImagenes WHERE ProductoID = p.ProductoID FOR JSON PATH) as Galeria 
             FROM Productos p
         `);
-        
-        const productos = result.recordset.map(p => ({
-            ...p,
-            // Si ImagenURL en Productos es NULL, usamos la de la galería
-            ImagenURL: p.ImagenURL || p.ImagenPrincipal || 'https://placehold.co/150',
-            Galeria: p.Galeria ? JSON.parse(p.Galeria) : []
-        }));
+
+        const productos = result.recordset.map(p => {
+            // Prioridad: 
+            // 1. ImagenURL de la tabla Productos (si existiera)
+            // 2. ImagenDeGaleria (la que acabamos de traer de la otra tabla)
+            // 3. Un placeholder si no hay ninguna
+            const fotoFinal = p.ImagenURL || p.ImagenDeGaleria || 'https://placehold.co/150';
+            
+            return {
+                ...p,
+                ImagenURL: fotoFinal,
+                Galeria: p.Galeria ? JSON.parse(p.Galeria) : []
+            };
+        });
+
         res.json(productos);
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) { 
+        res.status(500).json({ error: err.message }); 
+    }
 });
 
 app.post('/productos', upload.single('imagenes'), async (req, res) => {
