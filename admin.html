@@ -292,31 +292,31 @@
         let productosLocal = []; 
 
         function renderizarProducto(p) {
-    let imgPath = 'https://placehold.co/150'; 
+    // 1. EL DETECTIVE DE RUTAS
+    let rutaEncontrada = null;
 
-    // Intentamos obtener la imagen de la galería primero
-    if (p.Galeria) {
-        try {
-            // A veces el backend envía la Galería como texto JSON, hay que convertirlo
-            const galeriaArr = typeof p.Galeria === 'string' ? JSON.parse(p.Galeria) : p.Galeria;
-            
-            if (galeriaArr && galeriaArr.length > 0) {
-                const url = galeriaArr[0].ImagenURL;
-                imgPath = url.startsWith('http') ? url : `${BASE_URL}${url}`;
-            }
-        } catch (e) {
-            console.error("Error parseando galeria:", e);
-        }
-    } 
-    
-    // Si la galería falló, intentamos con la FotoReal o ImagenURL directa
-    if (imgPath.includes('placehold.co') && (p.FotoReal || p.ImagenURL)) {
-        const urlDirecta = p.FotoReal || p.ImagenURL;
-        imgPath = urlDirecta.startsWith('http') ? urlDirecta : `${BASE_URL}${urlDirecta}`;
+    // Buscamos en todas las propiedades posibles que el servidor suele enviar
+    if (p.FotoReal) rutaEncontrada = p.FotoReal;
+    else if (p.ImagenURL) rutaEncontrada = p.ImagenURL;
+    else if (p.Galeria && p.Galeria.length > 0) {
+        // Si Galeria es un string (JSON), lo convertimos
+        const gal = typeof p.Galeria === 'string' ? JSON.parse(p.Galeria) : p.Galeria;
+        if (gal[0] && gal[0].ImagenURL) rutaEncontrada = gal[0].ImagenURL;
     }
 
-    // DEBUG: Descomenta la siguiente línea para ver en la consola qué ruta se está generando
-    // console.log(`Producto: ${p.Nombre} -> Ruta final: ${imgPath}`);
+    // 2. CONSTRUIR URL FINAL
+    let imgPath = 'https://placehold.co/150?text=Sin+Imagen'; // Default
+    
+    if (rutaEncontrada) {
+        // Si la ruta ya es una URL completa (http...), la usamos. 
+        // Si es una ruta local (/uploads...), le pegamos el BASE_URL
+        imgPath = rutaEncontrada.startsWith('http') 
+                  ? rutaEncontrada 
+                  : `${BASE_URL}${rutaEncontrada}`;
+    }
+
+    // 3. LOG DE DIAGNÓSTICO (MIRA LA CONSOLA CON F12)
+    console.log(`Producto: ${p.Nombre} | Ruta detectada: ${rutaEncontrada} | URL Final: ${imgPath}`);
 
     const skuValido = p.CodigoSKU || 'S/N';
     const prodJson = JSON.stringify(p).replace(/'/g, "&apos;");
@@ -324,7 +324,9 @@
     return `
     <div class="product-row shadow-sm">
         <div class="img-box">
-            <img src="${imgPath}" onerror="this.src='https://placehold.co/150'">
+            <img src="${imgPath}" 
+                 alt="${p.Nombre}" 
+                 onerror="this.onerror=null; this.src='https://placehold.co/150?text=Error+Carga';">
         </div>
         <div class="flex-grow-1">
             <h6 class="mb-0 fw-bold">${p.Nombre || 'Sin nombre'}</h6>
