@@ -193,6 +193,22 @@ app.put('/pedidos/:id/completar', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ELIMINAR PEDIDO (Nueva ruta que faltaba)
+app.delete('/pedidos/:id', async (req, res) => {
+    try {
+        const pool = await poolPromise;
+        const { id } = req.params;
+        await pool.request()
+            .input('id', sql.Int, id)
+            .query('DELETE FROM Pedidos WHERE PedidoID = @id');
+        
+        res.json({ success: true, message: 'Pedido eliminado correctamente' });
+    } catch (err) {
+        console.error("Error al eliminar pedido:", err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'tienda.html')); });
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
