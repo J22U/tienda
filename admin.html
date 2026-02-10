@@ -292,27 +292,27 @@
         let productosLocal = []; 
 
         function renderizarProducto(p) {
-    let imgPath = 'https://via.placeholder.com/150';
+    // 1. DETERMINAR LA RUTA DE LA IMAGEN
+    let imgPath = 'https://placehold.co/150'; // Placeholder más confiable
     
-    // Si tu backend devuelve la imagen directamente en el objeto producto:
-    if (p.ImagenURL) {
-        imgPath = p.ImagenURL.startsWith('http') ? p.ImagenURL : `${BASE_URL}${p.ImagenURL}`;
-    } 
-    // Si la devuelve en un array llamado Galeria (como tenías antes):
-    else if (p.Galeria && p.Galeria.length > 0) {
-        const url = p.Galeria[0].ImagenURL;
+    // Si hay elementos en la galería (que es lo que trae de ProductoImagenes)
+    if (p.Galeria && p.Galeria.length > 0) {
+        const url = p.Galeria[0].ImagenURL; // Tomamos la primera foto
         imgPath = url.startsWith('http') ? url : `${BASE_URL}${url}`;
+    } 
+    // Si por alguna razón la tabla Productos sí tuviera la URL directa
+    else if (p.ImagenURL) {
+        imgPath = p.ImagenURL.startsWith('http') ? p.ImagenURL : `${BASE_URL}${p.ImagenURL}`;
     }
-    // ... el resto del código (const prodJson = ...) sigue igual
 
-    // 2. PROTECCIÓN PARA SKU: Si es null, ponemos 'S/N' (Sin Número)
     const skuValido = p.CodigoSKU || 'S/N';
-
     const prodJson = JSON.stringify(p).replace(/'/g, "&apos;");
     
     return `
     <div class="product-row shadow-sm">
-        <div class="img-box"><img src="${imgPath}" onerror="this.src='https://via.placeholder.com/150'"></div>
+        <div class="img-box">
+            <img src="${imgPath}" onerror="this.src='https://placehold.co/150'">
+        </div>
         <div class="flex-grow-1">
             <h6 class="mb-0 fw-bold">${p.Nombre || 'Producto sin nombre'}</h6>
             <small class="text-muted d-block" style="font-size:0.7rem">SKU: ${skuValido}</small>
@@ -328,6 +328,7 @@
         </div>
     </div>`;
 }
+
 
         async function cargarInventario() {
     try {
