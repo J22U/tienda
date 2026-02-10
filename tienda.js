@@ -14,15 +14,15 @@ async function cargarProductos() {
         contenedor.innerHTML = ""; 
 
         const htmlProductos = productosData.map(p => {
-            // Lógica de imágenes
-            let fotos = [];
-            try {
-                const imgStr = p.ImagenURL || '';
-                fotos = imgStr.startsWith('[') ? JSON.parse(imgStr) : imgStr.split(',');
-            } catch(e) { fotos = [p.ImagenURL]; }
-            
-            const fotoPrincipal = fotos[0] ? fotos[0].trim() : '';
-            const srcFinal = fotoPrincipal.startsWith('http') ? fotoPrincipal : `${BASE_URL}${fotoPrincipal}`;
+    // --- NUEVA LÓGICA DE GALERÍA ---
+    let fotoPrincipal = '';
+    if (p.Galeria && p.Galeria.length > 0) {
+        fotoPrincipal = p.Galeria[0].ImagenURL;
+    }
+    
+    const srcFinal = fotoPrincipal.startsWith('http') 
+        ? fotoPrincipal 
+        : (fotoPrincipal ? `${BASE_URL}${fotoPrincipal}` : 'https://via.placeholder.com/250?text=Agro+Ferretería');
 
             // --- LÓGICA DE AGOTADO ---
             const estaAgotado = p.Stock <= 0;
