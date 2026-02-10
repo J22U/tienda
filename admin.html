@@ -13,6 +13,23 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
 
     <style>
+
+        /* Estilo para el pedido acumulado */
+.order-collapse-trigger {
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.order-collapse-trigger:hover {
+    background: #f8f9fa !important;
+}
+.order-card-compact {
+    border-radius: 15px !important;
+    padding: 0 !important; /* El padding se maneja interno */
+    overflow: hidden;
+}
+.order-summary-line {
+    padding: 15px 20px;
+}
         :root {
             --glass-bg: rgba(255, 255, 255, 0.95);
             --accent: #6c5ce7; 
@@ -286,6 +303,38 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <script>
+        
+        function prepararFacturaConDescuento(p, numeroPedido, pedidoId) {
+    // Obtenemos el porcentaje del input
+    const inputDesc = document.querySelector(`#collapsePedido${pedidoId} input[type="number"]`);
+    const porcentaje = parseFloat(inputDesc.value) || 0;
+    
+    const totalOriginal = Number(p.Total);
+    const valorDescuento = totalOriginal * (porcentaje / 100);
+    const totalFinal = totalOriginal - valorDescuento;
+
+    // Enviamos el pedido al PDF con los nuevos datos
+    // Agregamos 'DescuentoValor' y 'Porcentaje' al objeto
+    const pedidoParaPDF = { 
+        ...p, 
+        Total: totalFinal, 
+        DescuentoValor: valorDescuento,
+        DescuentoPorcentaje: porcentaje 
+    };
+    
+    generarFacturaPDF(pedidoParaPDF, numeroPedido);
+}
+        function aplicarDescuento(pedidoId, totalOriginal, porcentaje) {
+    const desc = parseFloat(porcentaje) || 0;
+    const factor = (100 - desc) / 100;
+    const nuevoTotal = totalOriginal * factor;
+
+    // Actualizamos el total en el detalle
+    document.getElementById(`nuevo-total-${pedidoId}`).innerText = `$${nuevoTotal.toLocaleString()}`;
+    
+    // Opcional: Actualizamos también el total de la línea delgada (resumen)
+    document.getElementById(`resumen-total-${pedidoId}`).innerText = `$${nuevoTotal.toLocaleString()}`;
+}
         const BASE_URL = 'https://tienda-1vps.onrender.com';
         let editando = false;
         let cargandoPedidosFlag = false;
@@ -505,103 +554,135 @@
                 theme: 'striped',
                 margin: { left: 20, right: 15 }
             });
-            const finalY = doc.lastAutoTable.finalY + 10;
-            doc.setFillColor(34, 74, 43);
-            doc.rect(130, finalY, 65, 12, 'F');
-            doc.setFontSize(11);
-            doc.setFont("helvetica", "bold");
-            doc.setTextColor(255, 255, 255);
-            doc.text("TOTAL NETO:", 135, finalY + 8);
-            doc.text(`$ ${Number(p.Total).toLocaleString()}`, 190, finalY + 8, { align: 'right' });
-            doc.save(`Factura_Trebol_${numeroPedido}.pdf`);
+            const finalY = doc.lastAutoTable.finalY + 5;
+
+    // Si hay descuento, dibujamos una línea previa al total
+    if (p.DescuentoPorcentaje > 0) {
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Subtotal:`, 135, finalY + 5);
+        doc.text(`$ ${Number(p.Total + p.DescuentoValor).toLocaleString()}`, 190, finalY + 5, { align: 'right' });
+        
+        doc.setTextColor(200, 0, 0); // Rojo para el descuento
+        doc.text(`Descuento (${p.DescuentoPorcentaje}%):`, 135, finalY + 10);
+        doc.text(`- $ ${Number(p.DescuentoValor).toLocaleString()}`, 190, finalY + 10, { align: 'right' });
+        
+        var yTotal = finalY + 15;
+    } else {
+        var yTotal = finalY;
+    }
+
+    // Cuadro del Total Neto
+    doc.setFillColor(34, 74, 43);
+    doc.rect(130, yTotal, 65, 12, 'F');
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(255, 255, 255);
+    doc.text("TOTAL NETO:", 135, yTotal + 8);
+    doc.text(`$ ${Number(p.Total).toLocaleString()}`, 190, yTotal + 8, { align: 'right' });
+    
+    doc.save(`Factura_Trebol_${numeroPedido}.pdf`);
         }
 
         async function cargarPedidos() {
-            if (cargandoPedidosFlag) return; 
-            cargandoPedidosFlag = true;
-            const lista = document.getElementById('lista-pedidos');
-            try {
-                const res = await fetch(`${BASE_URL}/pedidos`);
-                const pedidos = await res.json();
-                document.getElementById('order-count').innerText = `${pedidos.length} recibidos`;
+    if (cargandoPedidosFlag) return; 
+    cargandoPedidosFlag = true;
+    const lista = document.getElementById('lista-pedidos');
+    try {
+        const res = await fetch(`${BASE_URL}/pedidos`);
+        const pedidos = await res.json();
+        document.getElementById('order-count').innerText = `${pedidos.length} recibidos`;
+        
+        if (pedidos.length === 0) {
+            lista.innerHTML = '<div class="text-center p-5 text-muted">No hay pedidos registrados.</div>';
+        } else {
+            pedidos.sort((a, b) => b.PedidoID - a.PedidoID);
+            
+            lista.innerHTML = pedidos.map((p, index) => {
+                const numeroPedido = pedidos.length - index;
+                const collapseId = `collapsePedido${p.PedidoID}`;
                 
-                if (pedidos.length === 0) {
-                    lista.innerHTML = '<div class="text-center p-5 text-muted">No hay pedidos registrados.</div>';
-                } else {
-                    pedidos.sort((a, b) => b.PedidoID - a.PedidoID);
+                let productosArr = [];
+                try { 
+                    productosArr = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
+                } catch (e) { productosArr = []; }
+                
+                const resumenProd = productosArr.map(item => `
+                    <li class="d-flex justify-content-between border-bottom border-light py-1">
+                        <span>${item.cantidad}x ${item.Nombre}</span>
+                        <span class="text-dark fw-bold">$${(item.Precio * item.cantidad).toLocaleString()}</span>
+                    </li>`).join('');
+                
+                const pedidoString = JSON.stringify(p).replace(/'/g, "&apos;");
+
+                return `
+                <div class="product-row shadow-sm border-start border-4 ${p.Estado === 'Pendiente' ? 'border-warning' : 'border-success'} mb-4 flex-column align-items-stretch" style="padding:0; overflow:hidden; border-radius:20px;">
                     
-                    lista.innerHTML = pedidos.map((p, index) => {
-                        const numeroPedido = pedidos.length - index;
-                        let productosArr = [];
-                        try { 
-                            productosArr = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
-                        } catch (e) { productosArr = []; }
-                        
-                        const resumenProd = productosArr.map(item => `
-                            <li class="d-flex justify-content-between border-bottom border-light py-1">
-                                <span>${item.cantidad}x ${item.Nombre}</span>
-                                <span class="text-dark fw-bold">$${(item.Precio * item.cantidad).toLocaleString()}</span>
-                            </li>`).join('');
-                        
-                        const pedidoString = JSON.stringify(p).replace(/'/g, "&apos;");
+                    <div class="d-flex justify-content-between align-items-center p-3" style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="badge bg-secondary">#${numeroPedido}</span>
+                            <h6 class="mb-0 fw-bold text-uppercase">${p.NombreCliente}</h6>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="price-badge text-primary" id="resumen-total-${p.PedidoID}">$${Number(p.Total).toLocaleString()}</span>
+                            <i class="bi bi-chevron-down text-muted"></i>
+                        </div>
+                    </div>
 
-                        return `
-                        <div class="product-row shadow-sm border-start border-4 ${p.Estado === 'Pendiente' ? 'border-warning' : 'border-success'} mb-4 flex-column align-items-stretch">
-                            <div class="d-flex justify-content-between align-items-center mb-3 order-header">
-                                <div>
-                                    <span class="badge bg-secondary mb-1">PEDIDO #${numeroPedido}</span>
-                                    <h5 class="mb-0 fw-bold text-uppercase">${p.NombreCliente}</h5>
-                                </div>
-                                <span class="status-pill ${p.Estado === 'Pendiente' ? 'status-pendiente' : 'status-completado'}">${p.Estado}</span>
-                            </div>
-
+                    <div class="collapse" id="${collapseId}">
+                        <div class="p-4 pt-0">
                             <div class="row g-3 mb-3 pb-3 border-bottom">
                                 <div class="col-sm-6">
-                                    <label class="small text-muted d-block uppercase fw-bold" style="font-size:0.65rem">Contacto</label>
-                                    <div class="fw-medium text-break"><i class="bi bi-telephone text-accent me-2"></i>${p.Telefono || 'No proporcionado'}</div>
-                                    <div class="fw-medium text-break"><i class="bi bi-envelope text-accent me-2"></i>${p.Email || p.Correo || 'Sin correo'}</div>
+                                    <label class="small text-muted d-block fw-bold" style="font-size:0.65rem">CONTACTO</label>
+                                    <div class="fw-medium small"><i class="bi bi-telephone me-2"></i>${p.Telefono || '---'}</div>
+                                    <div class="fw-medium small text-break"><i class="bi bi-envelope me-2"></i>${p.Email || p.Correo || '---'}</div>
                                 </div>
                                 <div class="col-sm-6">
-                                    <label class="small text-muted d-block uppercase fw-bold" style="font-size:0.65rem">Dirección y Fecha</label>
-                                    <div class="fw-medium text-break"><i class="bi bi-geo-alt text-danger me-2"></i>${p.Direccion || 'Recojo en local'}</div>
-                                    <div class="fw-medium text-muted"><i class="bi bi-calendar3 me-2"></i>${new Date(p.Fecha).toLocaleString()}</div>
+                                    <label class="small text-muted d-block fw-bold" style="font-size:0.65rem">ENTREGA</label>
+                                    <div class="fw-medium small"><i class="bi bi-geo-alt me-2"></i>${p.Direccion || 'Recojo en local'}</div>
+                                    <div class="fw-medium text-muted small"><i class="bi bi-calendar3 me-2"></i>${new Date(p.Fecha).toLocaleString()}</div>
                                 </div>
                             </div>
 
                             <div class="mb-3">
-                                <label class="small text-muted d-block uppercase fw-bold mb-2" style="font-size:0.65rem">Productos Solicitados</label>
+                                <label class="small text-muted d-block fw-bold mb-2" style="font-size:0.65rem">PRODUCTOS</label>
                                 <ul class="list-unstyled small mb-0 bg-light p-3 rounded-3">${resumenProd}</ul>
                             </div>
 
-                            <div class="d-flex justify-content-between align-items-center mt-auto pt-2 flex-wrap gap-3">
-                                <div>
-                                    <small class="text-muted d-block">TOTAL A COBRAR</small>
-                                    <div class="price-badge text-primary fs-4">$${Number(p.Total).toLocaleString()}</div>
+                            <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded-3 mb-3 border border-dashed">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="small fw-bold text-muted">DESC %:</span>
+                                    <input type="number" class="form-control form-control-sm border-0 bg-white" style="width:60px" placeholder="0" 
+                                           oninput="aplicarDescuento(${p.PedidoID}, ${p.Total}, this.value)">
                                 </div>
-                                <div class="d-flex gap-2 order-actions flex-grow-1 justify-content-end">
-                                    <button class="btn btn-dark fw-bold btn-sm" onclick='generarFacturaPDF(${pedidoString}, ${numeroPedido})'>
-                                        <i class="bi bi-file-earmark-pdf"></i> FACTURA
-                                    </button>
-                                    ${p.Estado === 'Pendiente' ? 
-                                        `<button class="btn btn-success fw-bold btn-sm" onclick="completarPedido(${p.PedidoID})">
-                                            <i class="bi bi-check-lg"></i> COMPLETAR
-                                        </button>` : 
-                                        `<span class="badge bg-success py-2 px-3 d-flex align-items-center"><i class="bi bi-check-all me-1"></i> LISTO</span>`
-                                    }
-                                    <button class="btn btn-outline-danger btn-sm" onclick="eliminarPedido(${p.PedidoID})">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                                <div class="text-end">
+                                    <span class="small text-muted">NUEVO TOTAL:</span>
+                                    <span class="fw-bold d-block text-accent fs-5" id="nuevo-total-${p.PedidoID}">$${Number(p.Total).toLocaleString()}</span>
                                 </div>
                             </div>
-                        </div>`;
-                    }).join('');
-                }
-            } catch (err) { 
-                console.error("Error al cargar pedidos:", err); 
-            } finally { 
-                setTimeout(() => { cargandoPedidosFlag = false; }, 500); 
-            }
+
+                            <div class="d-flex justify-content-end gap-2 order-actions">
+                                <button class="btn btn-dark fw-bold btn-sm" onclick='prepararFacturaConDescuento(${pedidoString}, ${numeroPedido}, ${p.PedidoID})'>
+                                    <i class="bi bi-file-earmark-pdf"></i> FACTURA
+                                </button>
+                                ${p.Estado === 'Pendiente' ? 
+                                    `<button class="btn btn-success fw-bold btn-sm" onclick="completarPedido(${p.PedidoID})">
+                                        <i class="bi bi-check-lg"></i> COMPLETAR
+                                    </button>` : 
+                                    `<span class="badge bg-success py-2 px-3 d-flex align-items-center"><i class="bi bi-check-all me-1"></i> LISTO</span>`
+                                }
+                                <button class="btn btn-outline-danger btn-sm" onclick="eliminarPedido(${p.PedidoID})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
         }
+    } catch (err) { console.error(err); } finally { cargandoPedidosFlag = false; }
+}
 
         async function eliminarPedido(id) {
             const confirmar = await Swal.fire({
