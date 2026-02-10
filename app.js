@@ -4,11 +4,20 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const cloudinary = require('cloudinary').v2; // Agregado
+const { CloudinaryStorage } = require('multer-storage-cloudinary'); // Agregado
 require('dotenv').config();
 
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+// Configuración de Cloudinary (Usa tus credenciales)
+cloudinary.config({
+    cloud_name: 'donc8a6tc',
+    api_key: '781626543592578',
+    api_secret: 'Tjxp0bDLONGpIyMxm5TPtl1tkVhU' // Reemplaza esto con tu API Secret real
+});
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(__dirname));
@@ -29,10 +38,13 @@ const poolPromise = new sql.ConnectionPool(config)
     })
     .catch(err => console.error('Error al conectar:', err));
 
-if (!fs.existsSync('./uploads')) fs.mkdirSync('./uploads');
-const storage = multer.diskStorage({
-    destination: 'uploads/',
-    filename: (req, file, cb) => { cb(null, Date.now() + path.extname(file.originalname)); }
+// Nuevo almacenamiento configurado para Cloudinary
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'productos_trebol',
+        allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+    },
 });
 const upload = multer({ storage: storage });
 
@@ -51,7 +63,6 @@ app.get('/productos', async (req, res) => {
 
         const productos = result.recordset.map(p => ({
             ...p,
-            // Si ImagenURL es nulo, usamos FotoReal que viene de la otra tabla
             ImagenURL: p.ImagenURL || p.FotoReal || ''
         }));
 
@@ -62,7 +73,6 @@ app.get('/productos', async (req, res) => {
 });
 
 app.post('/productos', upload.single('imagenes'), async (req, res) => {
-    // Soporte para nombres en Mayúscula y Minúscula (Evita error NULL en Somee)
     const nombre = req.body.Nombre || req.body.nombre;
     const marca = req.body.Marca || req.body.marca;
     const sku = req.body.CodigoSKU || req.body.sku;
@@ -87,7 +97,8 @@ app.post('/productos', upload.single('imagenes'), async (req, res) => {
 
         const nuevoId = result.recordset[0].ProductoID;
         if (req.file) {
-            const url = `/uploads/${req.file.filename}`;
+            // Cloudinary devuelve la URL completa en req.file.path
+            const url = req.file.path; 
             await pool.request()
                 .input('id', sql.Int, nuevoId)
                 .input('url', sql.NVarChar, url)
@@ -119,7 +130,7 @@ app.put('/productos/:id', upload.single('imagenes'), async (req, res) => {
             .query(`UPDATE Productos SET Nombre=@n, Marca=@m, CodigoSKU=@s, Precio=@p, Stock=@st, Caracteristicas=@c WHERE ProductoID=@id`);
 
         if (req.file) {
-            const url = `/uploads/${req.file.filename}`;
+            const url = req.file.path; // URL de Cloudinary
             await pool.request().input('id', sql.Int, id).query('DELETE FROM ProductoImagenes WHERE ProductoID=@id');
             await pool.request().input('id', sql.Int, id).input('url', sql.NVarChar, url).query('INSERT INTO ProductoImagenes (ProductoID, ImagenURL) VALUES (@id, @url)');
         }
