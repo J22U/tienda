@@ -16,7 +16,7 @@ app.use(cors());
 cloudinary.config({
     cloud_name: 'donc8a6tc',
     api_key: '781626543592578',
-    api_secret: 'Tjxp0bDLONGpIyMxm5TPtl1tkVhU' // Reemplaza esto con tu API Secret real
+    api_secret: 'jxp0bDLONGpIyMxm5TPtl1tkVhU' // Reemplaza esto con tu API Secret real
 });
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
