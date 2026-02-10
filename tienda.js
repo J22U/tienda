@@ -14,21 +14,26 @@ async function cargarProductos() {
         contenedor.innerHTML = ""; 
 
         const htmlProductos = productosData.map(p => {
-    // --- NUEVA LÓGICA DE GALERÍA ---
+    // --- LÓGICA DE IMAGEN CORREGIDA ---
     let fotoPrincipal = '';
-    if (p.Galeria && p.Galeria.length > 0) {
-        fotoPrincipal = p.Galeria[0].ImagenURL;
-    }
     
-    const srcFinal = fotoPrincipal.startsWith('http') 
-        ? fotoPrincipal 
-        : (fotoPrincipal ? `${BASE_URL}${fotoPrincipal}` : 'https://via.placeholder.com/250?text=Agro+Ferretería');
+    // 1. Prioridad: Revisar si existe Galeria (como array)
+    if (p.Galeria && Array.isArray(p.Galeria) && p.Galeria.length > 0) {
+        fotoPrincipal = p.Galeria[0].ImagenURL;
+    } 
+    // 2. Segunda opción: Usar el campo ImagenURL directo (el que devuelve Cloudinary)
+    else if (p.ImagenURL) {
+        fotoPrincipal = p.ImagenURL;
+    }
 
-            // --- LÓGICA DE AGOTADO ---
-            const estaAgotado = p.Stock <= 0;
-            const claseAgotado = estaAgotado ? 'product-out-of-stock' : ''; // Esta es la clase roja del HTML
-            const stockColor = estaAgotado ? 'text-danger' : 'text-success';
-            const stockTexto = estaAgotado ? '¡SIN EXISTENCIAS!' : `${p.Stock} disponibles`;
+    // 3. Construir el SRC final
+    const srcFinal = (fotoPrincipal && fotoPrincipal.startsWith('http')) 
+        ? fotoPrincipal 
+        : (fotoPrincipal ? `${BASE_URL}${fotoPrincipal}` : 'https://via.placeholder.com/250?text=Sin+Imagen');
+
+    // --- LÓGICA DE AGOTADO (Igual que la tenías) ---
+    const estaAgotado = p.Stock <= 0;
+    // ... resto de tu código de return ` ...
 
             return `
                 <div class="col-md-4 col-lg-3">
