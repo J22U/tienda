@@ -292,27 +292,35 @@
         let productosLocal = []; 
 
         function renderizarProducto(p) {
-            const prodJson = JSON.stringify(p).replace(/'/g, "&apos;");
-            const imgPath = p.ImagenURL.startsWith('http') ? p.ImagenURL : `${BASE_URL}${p.ImagenURL}`;
-            
-            return `
-            <div class="product-row shadow-sm">
-                <div class="img-box"><img src="${imgPath}" onerror="this.src='https://via.placeholder.com/150'"></div>
-                <div class="flex-grow-1">
-                    <h6 class="mb-0 fw-bold">${p.Nombre}</h6>
-                    <small class="text-muted d-block" style="font-size:0.7rem">SKU: ${p.CodigoSKU || 'S/N'}</small>
-                    <div class="desc-text">${p.Caracteristicas || 'Sin descripción detallada.'}</div>
-                </div>
-                <div class="text-end px-2" style="min-width: 100px;">
-                    <div class="price-badge">$${Number(p.Precio).toLocaleString()}</div>
-                    <small class="fw-bold ${p.Stock < 10 ? 'text-danger' : 'text-success'}">${p.Stock} unds</small>
-                </div>
-                <div class="d-flex">
-                    <button class="action-btn btn-edit" onclick='prepararEdicion(${prodJson})'><i class="bi bi-pencil-fill"></i></button>
-                    <button class="action-btn btn-delete" onclick="eliminarProducto(${p.ProductoID})"><i class="bi bi-trash-fill"></i></button>
-                </div>
-            </div>`;
-        }
+    // 1. PROTECCIÓN PARA IMAGEN: Si p.ImagenURL es null o vacío, usamos una por defecto
+    const imagenValida = p.ImagenURL && typeof p.ImagenURL === 'string';
+    const imgPath = imagenValida 
+        ? (p.ImagenURL.startsWith('http') ? p.ImagenURL : `${BASE_URL}${p.ImagenURL}`)
+        : 'https://via.placeholder.com/150';
+
+    // 2. PROTECCIÓN PARA SKU: Si es null, ponemos 'S/N' (Sin Número)
+    const skuValido = p.CodigoSKU || 'S/N';
+
+    const prodJson = JSON.stringify(p).replace(/'/g, "&apos;");
+    
+    return `
+    <div class="product-row shadow-sm">
+        <div class="img-box"><img src="${imgPath}" onerror="this.src='https://via.placeholder.com/150'"></div>
+        <div class="flex-grow-1">
+            <h6 class="mb-0 fw-bold">${p.Nombre || 'Producto sin nombre'}</h6>
+            <small class="text-muted d-block" style="font-size:0.7rem">SKU: ${skuValido}</small>
+            <div class="desc-text">${p.Caracteristicas || 'Sin descripción detallada.'}</div>
+        </div>
+        <div class="text-end px-2" style="min-width: 100px;">
+            <div class="price-badge">$${Number(p.Precio || 0).toLocaleString()}</div>
+            <small class="fw-bold ${p.Stock < 10 ? 'text-danger' : 'text-success'}">${p.Stock || 0} unds</small>
+        </div>
+        <div class="d-flex">
+            <button class="action-btn btn-edit" onclick='prepararEdicion(${prodJson})'><i class="bi bi-pencil-fill"></i></button>
+            <button class="action-btn btn-delete" onclick="eliminarProducto(${p.ProductoID})"><i class="bi bi-trash-fill"></i></button>
+        </div>
+    </div>`;
+}
 
         async function cargarInventario() {
             try {
