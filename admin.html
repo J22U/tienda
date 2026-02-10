@@ -293,11 +293,23 @@
                                 <i class="bi bi-cart-check me-2"></i>Pedidos
                             </button>
                         </li>
-                        <li class="nav-item ms-md-auto">
-        <button class="btn btn-outline-success btn-sm rounded-pill fw-bold px-3" onclick="exportarInventario()" title="Descargar copia de seguridad">
-            <i class="bi bi-cloud-arrow-down-fill me-2"></i>Backup
-        </button>
-    </li>
+                        <li class="nav-item ms-md-auto d-flex align-items-center gap-2">
+    <button class="btn btn-outline-success btn-sm rounded-pill fw-bold px-3" 
+            style="min-width: 120px;" 
+            onclick="exportarInventario()" 
+            title="Descargar copia de seguridad">
+        <i class="bi bi-cloud-arrow-down-fill me-2"></i>Backup
+    </button>
+
+    <button class="btn btn-outline-warning btn-sm rounded-pill fw-bold px-3" 
+            style="min-width: 120px;" 
+            onclick="document.getElementById('inputImportar').click()" 
+            title="Restaurar desde archivo">
+        <i class="bi bi-cloud-arrow-up-fill me-2"></i>Recuperar
+    </button>
+
+    <input type="file" id="inputImportar" accept=".json" style="display: none;" onchange="importarBackup(event)">
+</li>
                     </ul>
 
                     <div class="tab-content">
@@ -867,6 +879,81 @@ document.getElementById('form-producto').addEventListener('submit', async (e) =>
         Swal.fire('Error', err.message, 'error');
     }
 });
+
+async function importarBackup(event) {
+    const archivo = event.target.files[0];
+    if (!archivo) return;
+
+    const lector = new FileReader();
+    lector.onload = async (e) => {
+        try {
+            const productosBackup = JSON.parse(e.target.result);
+            
+            // Confirmación detallada
+            const confirm = await Swal.fire({
+                title: '¿Restaurar Inventario?',
+                text: `Se procesarán ${productosBackup.length} productos. Los que ya existan (mismo SKU) se omitirán para evitar duplicados.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#27ae60',
+                confirmButtonText: 'Iniciar Restauración'
+            });
+
+            if (!confirm.isConfirmed) return;
+
+            Swal.fire({
+                title: 'Restaurando...',
+                html: 'Producto: <b></b>',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            let creados = 0;
+            let omitidos = 0;
+
+            for (const p of productosBackup) {
+                // Actualizamos el nombre en el cartel de carga
+                Swal.getHtmlContainer().querySelector('b').innerText = p.Nombre;
+
+                // 1. Verificamos si el SKU ya existe en productosLocal
+                const existe = productosLocal.some(local => local.CodigoSKU === p.CodigoSKU);
+
+                if (!existe) {
+                    await fetch(`${BASE_URL}/productos`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            Nombre: p.Nombre,
+                            Marca: p.Marca,
+                            Precio: p.Precio,
+                            Stock: p.Stock,
+                            CodigoSKU: p.CodigoSKU || `REC-${Date.now()}`,
+                            Caracteristicas: p.Caracteristicas || ""
+                        })
+                    });
+                    creados++;
+                } else {
+                    omitidos++;
+                }
+            }
+
+            await Swal.fire({
+                title: 'Proceso Finalizado',
+                text: `Éxito: ${creados} | Omitidos por duplicidad: ${omitidos}`,
+                icon: 'success'
+            });
+
+            cargarInventario(); // Refrescar la vista
+
+        } catch (err) {
+            console.error(err);
+            Swal.fire('Error', 'El archivo no es válido o hubo un problema con el servidor.', 'error');
+        } finally {
+            event.target.value = ''; // Resetear input
+        }
+    };
+    lector.readAsText(archivo);
+}
 
         cargarInventario();
     </script>
