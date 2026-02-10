@@ -685,23 +685,31 @@
 }
 
         async function eliminarPedido(id) {
-            const confirmar = await Swal.fire({
-                title: '¿Borrar pedido?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonText: 'Cancelar'
-            });
-            if (confirmar.isConfirmed) {
-                try {
-                    const res = await fetch(`${BASE_URL}/pedidos/${id}`, { method: 'DELETE' });
-                    if (res.ok) {
-                        Swal.fire('Eliminado', '', 'success');
-                        cargarPedidos(); 
-                    }
-                } catch (error) { console.error(error); }
+    const confirmar = await Swal.fire({
+        title: '¿Borrar pedido?',
+        text: "Esta acción no se puede deshacer",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonText: 'Cancelar',
+        confirmButtonText: 'Sí, eliminar'
+    });
+
+    if (confirmar.isConfirmed) {
+        try {
+            const res = await fetch(`${BASE_URL}/pedidos/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                Swal.fire('Eliminado', 'El pedido ha sido borrado', 'success');
+                cargarPedidos(); // Recarga la lista automáticamente
+            } else {
+                Swal.fire('Error', 'No se pudo eliminar el pedido', 'error');
             }
+        } catch (err) {
+            console.error("Error al eliminar:", err);
+            Swal.fire('Error de conexión', 'No hay respuesta del servidor', 'error');
         }
+    }
+}
 
         async function completarPedido(id) {
             try {
