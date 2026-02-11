@@ -691,74 +691,94 @@ async function guardarDescuentoServidor(pedidoId, porcentaje) {
                     </li>`).join('');
                 
                 const pedidoString = JSON.stringify(p).replace(/'/g, "&apos;");
+                const descuento = p.DescuentoPorcentaje || 0; // Traemos el valor de la DB
+                const totalConDescuento = p.Total - (p.Total * descuento / 100);
 
-                return `
-                <div class="product-row shadow-sm border-start border-4 ${p.Estado === 'Pendiente' ? 'border-warning' : 'border-success'} mb-4 flex-column align-items-stretch" style="padding:0; overflow:hidden; border-radius:20px;">
-                    
-                    <div class="d-flex justify-content-between align-items-center p-3" style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
-                        <div class="d-flex align-items-center gap-3">
-                            <span class="badge bg-secondary">#${numeroPedido}</span>
-                            <h6 class="mb-0 fw-bold text-uppercase">${p.NombreCliente}</h6>
-                        </div>
-                        <div class="d-flex align-items-center gap-3">
-                            <span class="price-badge text-primary" id="resumen-total-${p.PedidoID}">$${Number(p.Total).toLocaleString()}</span>
-                            <i class="bi bi-chevron-down text-muted"></i>
-                        </div>
-                    </div>
+return `
+<div class="product-row shadow-sm border-start border-4 ${p.Estado === 'Pendiente' ? 'border-warning' : 'border-success'} mb-4 flex-column align-items-stretch" style="padding:0; overflow:hidden; border-radius:20px;">
+    
+    <div class="d-flex justify-content-between align-items-center p-3" style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
+        <div class="d-flex align-items-center gap-3">
+            <span class="badge bg-secondary">#${numeroPedido}</span>
+            <h6 class="mb-0 fw-bold text-uppercase">${p.NombreCliente}</h6>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <span class="price-badge text-primary" id="resumen-total-${p.PedidoID}">$${Number(p.Total).toLocaleString()}</span>
+            <i class="bi bi-chevron-down text-muted"></i>
+        </div>
+    </div>
 
-                    <div class="collapse" id="${collapseId}">
-                        <div class="p-4 pt-0">
-                            <div class="row g-3 mb-3 pb-3 border-bottom">
-                                <div class="col-sm-6">
-                                    <label class="small text-muted d-block fw-bold" style="font-size:0.65rem">CONTACTO</label>
-                                    <div class="fw-medium small"><i class="bi bi-telephone me-2"></i>${p.Telefono || '---'}</div>
-                                    <div class="fw-medium small text-break"><i class="bi bi-envelope me-2"></i>${p.Email || p.Correo || '---'}</div>
-                                </div>
-                                <div class="col-sm-6">
-                                    <label class="small text-muted d-block fw-bold" style="font-size:0.65rem">DIRECCIÓN Y FECHA DE PEDIDO</label>
-                                    <div class="fw-medium small"><i class="bi bi-geo-alt me-2"></i>${p.Direccion || 'Recojo en local'}</div>
-                                    <div class="fw-medium text-muted small"><i class="bi bi-calendar3 me-2"></i>${new Date(p.Fecha).toLocaleString('es-CO', { timeZone: 'America/Bogota' })}</div>>
-                                </div>
-                            </div>
+    <div class="collapse" id="${collapseId}">
+        <div class="p-4 pt-0">
+            <div class="row g-3 mb-3 pb-3 border-bottom">
+                <div class="col-sm-6">
+                    <label class="small text-muted d-block fw-bold" style="font-size:0.65rem">CONTACTO</label>
+                    <div class="fw-medium small"><i class="bi bi-telephone me-2"></i>${p.Telefono || '---'}</div>
+                    <div class="fw-medium small text-break"><i class="bi bi-envelope me-2"></i>${p.Email || p.Correo || '---'}</div>
+                </div>
+                <div class="col-sm-6">
+                    <label class="small text-muted d-block fw-bold" style="font-size:0.65rem">DIRECCIÓN Y FECHA DE PEDIDO</label>
+                    <div class="fw-medium small"><i class="bi bi-geo-alt me-2"></i>${p.Direccion || 'Recojo en local'}</div>
+                    <div class="fw-medium text-muted small"><i class="bi bi-calendar3 me-2"></i>${new Date(p.Fecha).toLocaleString('es-CO', { timeZone: 'America/Bogota' })}</div>
+                </div>
+            </div>
 
-                            <div class="mb-3">
-                                <label class="small text-muted d-block fw-bold mb-2" style="font-size:0.65rem">PRODUCTOS</label>
-                                <ul class="list-unstyled small mb-0 bg-light p-3 rounded-3">${resumenProd}</ul>
-                            </div>
+            <div class="mb-3">
+                <label class="small text-muted d-block fw-bold mb-2" style="font-size:0.65rem">PRODUCTOS</label>
+                <ul class="list-unstyled small mb-0 bg-light p-3 rounded-3">${resumenProd}</ul>
+            </div>
 
-                            <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded-3 mb-3 border border-dashed">
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="small fw-bold text-muted">DESC %:</span>
-                                    <input type="number" class="form-control form-control-sm border-0 bg-white" style="width:60px" placeholder="0" 
-                                           oninput="aplicarDescuento(${p.PedidoID}, ${p.Total}, this.value)"
-                                           onblur="guardarDescuentoServidor(${p.PedidoID}, this.value)">
-                                </div>
-                                <div class="text-end">
-                                    <span class="small text-muted">NUEVO TOTAL:</span>
-                                    <span class="fw-bold d-block text-accent fs-5" id="nuevo-total-${p.PedidoID}">$${Number(p.Total).toLocaleString()}</span>
-                                </div>
-                            </div>
+            <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded-3 mb-3 border border-dashed">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="small fw-bold text-muted">DESC %:</span>
+                    <input type="number" class="form-control form-control-sm border-0 bg-white" style="width:60px" 
+                           placeholder="0" 
+                           value="${descuento}" 
+                           oninput="aplicarDescuentoVisual(${p.PedidoID}, ${p.Total}, this.value)"
+                           onblur="guardarDescuentoServidor(${p.PedidoID}, this.value)">
+                </div>
+                <div class="text-end">
+                    <span class="small text-muted">NUEVO TOTAL:</span>
+                    <span class="fw-bold d-block text-accent fs-5" id="nuevo-total-${p.PedidoID}">$${Number(totalConDescuento).toLocaleString()}</span>
+                </div>
+            </div>
 
-                            <div class="d-flex justify-content-end gap-2 order-actions">
-                                <button class="btn btn-dark fw-bold btn-sm" onclick='prepararFacturaConDescuento(${pedidoString}, ${numeroPedido}, ${p.PedidoID})'>
-                                    <i class="bi bi-file-earmark-pdf"></i> FACTURA
-                                </button>
-                                ${p.Estado === 'Pendiente' ? 
-                                    `<button class="btn btn-success fw-bold btn-sm" onclick="completarPedido(${p.PedidoID})">
-                                        <i class="bi bi-check-lg"></i> COMPLETAR
-                                    </button>` : 
-                                    `<span class="badge bg-success py-2 px-3 d-flex align-items-center"><i class="bi bi-check-all me-1"></i> LISTO</span>`
-                                }
-                                <button class="btn btn-outline-danger btn-sm" onclick="eliminarPedido(${p.PedidoID})">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
+            <div class="d-flex justify-content-end gap-2 order-actions">
+                <button class="btn btn-dark fw-bold btn-sm" onclick='prepararFacturaConDescuento(${pedidoString}, ${numeroPedido}, ${p.PedidoID})'>
+                    <i class="bi bi-file-earmark-pdf"></i> FACTURA
+                </button>
+                ${p.Estado === 'Pendiente' ? 
+                    `<button class="btn btn-success fw-bold btn-sm" onclick="completarPedido(${p.PedidoID})">
+                        <i class="bi bi-check-lg"></i> COMPLETAR
+                    </button>` : 
+                    `<span class="badge bg-success py-2 px-3 d-flex align-items-center"><i class="bi bi-check-all me-1"></i> LISTO</span>`
+                }
+                <button class="btn btn-outline-danger btn-sm" onclick="eliminarPedido(${p.PedidoID})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>`;
             }).join('');
         }
     } catch (err) { console.error(err); } finally { cargandoPedidosFlag = false; }
+}
+
+      async function guardarDescuentoServidor(pedidoId, porcentaje) {
+    try {
+        const res = await fetch(`${BASE_URL}/pedidos/${pedidoId}/descuento`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ descuento: parseFloat(porcentaje) || 0 })
+        });
+
+        if (!res.ok) throw new Error("Error en la respuesta del servidor");
+        
+        console.log(`Descuento del ${porcentaje}% guardado para el pedido ${pedidoId}`);
+    } catch (err) {
+        console.error("No se pudo guardar el descuento:", err);
+    }
 }
 
         async function eliminarPedido(id) {

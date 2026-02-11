@@ -209,12 +209,23 @@ app.delete('/pedidos/:id', async (req, res) => {
     }
 });
 
+
 app.put('/pedidos/:id/descuento', async (req, res) => {
     const { id } = req.params;
     const { descuento } = req.body;
-    // Aquí harías el UPDATE en tu base de datos:
-    // UPDATE Pedidos SET DescuentoPorcentaje = descuento WHERE PedidoID = id
-    res.json({ success: true });
+
+    try {
+        const pool = await poolPromise;
+        await pool.request()
+            .input('id', sql.Int, id)
+            .input('desc', sql.Decimal(5, 2), parseFloat(descuento) || 0)
+            .query('UPDATE Pedidos SET DescuentoPorcentaje = @desc WHERE PedidoID = @id');
+
+        res.json({ success: true, message: 'Descuento actualizado correctamente' });
+    } catch (err) {
+        console.error("Error al actualizar descuento:", err);
+        res.status(500).json({ success: false, error: err.message });
+    }
 });
 
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'tienda.html')); });
