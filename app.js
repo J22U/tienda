@@ -210,21 +210,18 @@ app.delete('/pedidos/:id', async (req, res) => {
 });
 
 
-app.put('/pedidos/:id/descuento', async (req, res) => {
+app.put('/pedidos/:id/total-manual', async (req, res) => {
     const { id } = req.params;
-    const { descuento } = req.body;
-
+    const { totalManual } = req.body;
     try {
         const pool = await poolPromise;
         await pool.request()
             .input('id', sql.Int, id)
-            .input('desc', sql.Decimal(5, 2), parseFloat(descuento) || 0)
-            .query('UPDATE Pedidos SET DescuentoPorcentaje = @desc WHERE PedidoID = @id');
-
-        res.json({ success: true, message: 'Descuento actualizado correctamente' });
+            .input('tm', sql.Decimal(18, 2), totalManual)
+            .query('UPDATE Pedidos SET TotalManual = @tm WHERE PedidoID = @id');
+        res.json({ success: true });
     } catch (err) {
-        console.error("Error al actualizar descuento:", err);
-        res.status(500).json({ success: false, error: err.message });
+        res.status(500).json({ error: err.message });
     }
 });
 

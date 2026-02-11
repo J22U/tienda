@@ -536,13 +536,28 @@
 }
 
 // 1. Esta solo cambia los números en pantalla mientras escribes
+// 1. Al mover el %, actualiza el cuadro del total automáticamente
 function aplicarDescuentoVisual(pedidoId, totalOriginal, porcentaje) {
     const desc = parseFloat(porcentaje) || 0;
     const nuevoTotal = totalOriginal - (totalOriginal * desc / 100);
     
-    const elNuevoTotal = document.getElementById(`nuevo-total-${pedidoId}`);
-    if (elNuevoTotal) {
-        elNuevoTotal.innerText = `$${Number(nuevoTotal).toLocaleString()}`;
+    const inputTotal = document.getElementById(`input-total-${pedidoId}`);
+    if (inputTotal) {
+        inputTotal.value = nuevoTotal.toFixed(0); // Lo ponemos en el input
+    }
+}
+
+// 2. Guarda el total (ya sea el automático o el que tú escribiste)
+async function guardarTotalManual(pedidoId, valor) {
+    try {
+        await fetch(`${BASE_URL}/pedidos/${pedidoId}/total-manual`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ totalManual: parseFloat(valor) })
+        });
+        console.log("Total actualizado");
+    } catch (err) {
+        console.error("Error al guardar total:", err);
     }
 }
 
@@ -738,9 +753,14 @@ return `
                            onblur="guardarDescuentoServidor(${p.PedidoID}, this.value)">
                 </div>
                 <div class="text-end">
-                    <span class="small text-muted">NUEVO TOTAL:</span>
-                    <span class="fw-bold d-block text-accent fs-5" id="nuevo-total-${p.PedidoID}">$${Number(totalConDescuento).toLocaleString()}</span>
-                </div>
+    <span class="small text-muted">TOTAL FINAL ($):</span>
+    <input type="number" 
+           id="input-total-${p.PedidoID}"
+           class="form-control form-control-sm border-0 bg-white fw-bold text-end fs-5 text-accent" 
+           style="width: 120px; display: inline-block;"
+           value="${p.TotalManual || totalConDescuento}" 
+           onblur="guardarTotalManual(${p.PedidoID}, this.value)">
+</div>
             </div>
 
             <div class="d-flex justify-content-end gap-2 order-actions">
