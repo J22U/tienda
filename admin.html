@@ -580,101 +580,112 @@ async function guardarDescuentoServidor(pedidoId, porcentaje) {
 }
 
         async function generarFacturaPDF(p, numeroPedido) {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            let productosArr = [];
-            try { 
-                productosArr = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
-            } catch (e) { productosArr = []; }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // --- TU LOGO EN BASE64 ---
+    const logoBase64 = "data:image/jpeg;base64,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";
 
-            const primaryColor = [34, 74, 43];
-            doc.setFillColor(34, 74, 43);
-            doc.rect(0, 0, 5, 297, 'F');
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(28);
-            doc.setTextColor(34, 74, 43);
-            doc.text("TRÉBOL S.A.S", 20, 25);
-            doc.setFontSize(9);
-            doc.setTextColor(100);
-            doc.setFont("helvetica", "normal");
-            doc.text("Herramientas profesionales", 20, 31);
-            doc.text("NIT: 900.555.123-1", 20, 36);
-            doc.text("El Peñol, Antioquia | Cel: 310 123 4567", 20, 41);
-            doc.text("trebol@gmail.com", 20, 46);
-            doc.setFillColor(248, 249, 250);
-            doc.roundedRect(130, 15, 65, 35, 3, 3, 'F');
-            doc.setDrawColor(230);
-            doc.roundedRect(130, 15, 65, 35, 3, 3, 'D');
-            doc.setFont("helvetica", "bold");
-            doc.setTextColor(34, 74, 43);
-            doc.setFontSize(10);
-            doc.text("ORDEN DE SERVICIO", 135, 25);
-            doc.setFontSize(20);
-            doc.text(`# ${numeroPedido.toString().padStart(4, '0')}`, 135, 35);
-            doc.setFontSize(9);
-            doc.setTextColor(120);
-            doc.text(`Fecha: ${new Date(p.Fecha).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })}`, 135, 43);
-            doc.setDrawColor(34, 74, 43);
-            doc.setLineWidth(0.5);
-            doc.line(20, 55, 195, 55);
-            doc.setFontSize(10);
-            doc.setTextColor(34, 74, 43);
-            doc.text("FACTURADO A:", 20, 65);
-            doc.setFontSize(12);
-            doc.setTextColor(0);
-            doc.setFont("helvetica", "bold");
-            doc.text(p.NombreCliente.toUpperCase(), 20, 72);
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(10);
-            doc.setTextColor(80);
-            doc.text(`C.C./NIT: ${p.Documento || '---'}`, 20, 78);
-            doc.text(`Teléfono: ${p.Telefono}`, 20, 83);
-            doc.text(`Dirección: ${p.Direccion || 'Entrega en local'}`, 20, 88);
-            const rows = productosArr.map(item => [
-                item.cantidad,
-                { content: item.Nombre, styles: { fontStyle: 'bold' } },
-                `$ ${Number(item.Precio).toLocaleString()}`,
-                `$ ${(item.cantidad * item.Precio).toLocaleString()}`
-            ]);
-            doc.autoTable({
-                startY: 95,
-                head: [['CANT.', 'DESCRIPCIÓN', 'VALOR UNIT.', 'SUBTOTAL']],
-                body: rows,
-                headStyles: { fillColor: primaryColor, textColor: [255, 255, 255], fontSize: 10, halign: 'center' },
-                theme: 'striped',
-                margin: { left: 20, right: 15 }
-            });
-            const finalY = doc.lastAutoTable.finalY + 5;
-
-    // Si hay descuento, dibujamos una línea previa al total
-    if (p.DescuentoPorcentaje > 0) {
-        doc.setFontSize(10);
-        doc.setTextColor(100);
-        doc.setFont("helvetica", "normal");
-        doc.text(`Subtotal:`, 135, finalY + 5);
-        doc.text(`$ ${Number(p.Total + p.DescuentoValor).toLocaleString()}`, 190, finalY + 5, { align: 'right' });
-        
-        doc.setTextColor(200, 0, 0); // Rojo para el descuento
-        doc.text(`Descuento (${p.DescuentoPorcentaje}%):`, 135, finalY + 10);
-        doc.text(`- $ ${Number(p.DescuentoValor).toLocaleString()}`, 190, finalY + 10, { align: 'right' });
-        
-        var yTotal = finalY + 15;
-    } else {
-        var yTotal = finalY;
+    // --- INSERTAR LOGO ---
+    // Posición X=20, Y=10, Tamaño 25x25mm
+    try {
+        doc.addImage(logoBase64, 'JPEG', 20, 10, 25, 25);
+    } catch (e) {
+        console.error("Error al cargar el logo Base64", e);
     }
 
-    // Cuadro del Total Neto
+    // --- DATOS DE LA EMPRESA (Movidos a la derecha del logo) ---
+    const primaryColor = [34, 74, 43]; // Verde Trébol
     doc.setFillColor(34, 74, 43);
-    doc.rect(130, yTotal, 65, 12, 'F');
+    doc.rect(0, 0, 5, 297, 'F'); // Barra lateral decorativa
+    
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(26);
+    doc.setTextColor(34, 74, 43);
+    doc.text("TRÉBOL S.A.S", 48, 22); // X=48 para dar espacio al logo
+
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.setFont("helvetica", "normal");
+    doc.text("Herramientas profesionales", 48, 28);
+    doc.text("NIT: 900.555.123-1", 48, 33);
+    doc.text("El Peñol, Antioquia | Cel: 310 123 4567", 48, 38);
+    doc.text("trebol@gmail.com", 48, 43);
+
+    // --- RECUADRO DE NÚMERO DE ORDEN ---
+    doc.setFillColor(248, 249, 250);
+    doc.roundedRect(135, 15, 60, 30, 3, 3, 'F');
+    doc.setDrawColor(230);
+    doc.roundedRect(135, 15, 60, 30, 3, 3, 'D');
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(34, 74, 43);
+    doc.setFontSize(10);
+    doc.text("ORDEN DE SERVICIO", 138, 23);
+    doc.setFontSize(18);
+    doc.text(`# ${numeroPedido.toString().padStart(4, '0')}`, 138, 32);
+    doc.setFontSize(9);
+    doc.setTextColor(120);
+    doc.text(`Fecha: ${new Date(p.Fecha).toLocaleDateString()}`, 138, 40);
+
+    // --- LÍNEA DIVISORIA ---
+    doc.setDrawColor(34, 74, 43);
+    doc.setLineWidth(0.5);
+    doc.line(20, 50, 195, 50);
+
+    // --- DATOS DEL CLIENTE ---
+    doc.setFontSize(10);
+    doc.setTextColor(34, 74, 43);
+    doc.text("FACTURADO A:", 20, 60);
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.setFont("helvetica", "bold");
+    doc.text(p.NombreCliente.toUpperCase(), 20, 67);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(80);
+    doc.text(`C.C./NIT: ${p.Documento || '---'}`, 20, 73);
+    doc.text(`Teléfono: ${p.Telefono}`, 20, 78);
+    doc.text(`Dirección: ${p.Direccion || 'Entrega en local'}`, 20, 83);
+
+    // --- TABLA DE PRODUCTOS ---
+    let productosArr = [];
+    try { 
+        productosArr = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
+    } catch (e) { productosArr = []; }
+
+    const rows = productosArr.map(item => [
+        item.cantidad,
+        { content: item.Nombre, styles: { fontStyle: 'bold' } },
+        `$ ${Number(item.Precio).toLocaleString()}`,
+        `$ ${(item.cantidad * item.Precio).toLocaleString()}`
+    ]);
+
+    doc.autoTable({
+        startY: 90,
+        head: [['CANT.', 'DESCRIPCIÓN', 'VALOR UNIT.', 'SUBTOTAL']],
+        body: rows,
+        headStyles: { fillColor: primaryColor, textColor: [255, 255, 255], fontSize: 10, halign: 'center' },
+        theme: 'striped',
+        margin: { left: 20, right: 15 }
+    });
+
+    // --- TOTALES ---
+    const finalY = doc.lastAutoTable.finalY + 10;
+    
+    // Obtener el total manual si existe, si no el total con descuento
+    const totalAMostrar = p.TotalManual || (p.Total - (p.Total * (p.DescuentoPorcentaje || 0) / 100));
+
+    doc.setFillColor(34, 74, 43);
+    doc.rect(130, finalY, 65, 12, 'F');
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(255, 255, 255);
-    doc.text("TOTAL NETO:", 135, yTotal + 8);
-    doc.text(`$ ${Number(p.Total).toLocaleString()}`, 190, yTotal + 8, { align: 'right' });
-    
+    doc.text("TOTAL NETO:", 135, finalY + 8);
+    doc.text(`$ ${Number(totalAMostrar).toLocaleString()}`, 190, finalY + 8, { align: 'right' });
+
     doc.save(`Factura_Trebol_${numeroPedido}.pdf`);
-        }
+}
 
         async function cargarPedidos() {
     if (cargandoPedidosFlag) return; 
