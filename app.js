@@ -209,6 +209,14 @@ app.delete('/pedidos/:id', async (req, res) => {
     }
 });
 
+app.put('/pedidos/:id/descuento', async (req, res) => {
+    const { id } = req.params;
+    const { descuento } = req.body;
+    // Aquí harías el UPDATE en tu base de datos:
+    // UPDATE Pedidos SET DescuentoPorcentaje = descuento WHERE PedidoID = id
+    res.json({ success: true });
+});
+
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'tienda.html')); });
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));

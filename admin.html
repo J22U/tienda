@@ -535,6 +535,35 @@
     document.getElementById('sku').value = autoSKU;
 }
 
+// 1. Esta solo cambia los números en pantalla mientras escribes
+function aplicarDescuentoVisual(pedidoId, totalOriginal, porcentaje) {
+    const desc = parseFloat(porcentaje) || 0;
+    const nuevoTotal = totalOriginal - (totalOriginal * desc / 100);
+    
+    const elNuevoTotal = document.getElementById(`nuevo-total-${pedidoId}`);
+    if (elNuevoTotal) {
+        elNuevoTotal.innerText = `$${Number(nuevoTotal).toLocaleString()}`;
+    }
+}
+
+// 2. Esta guarda el porcentaje en la base de datos cuando dejas de escribir (onblur)
+async function guardarDescuentoServidor(pedidoId, porcentaje) {
+    try {
+        const res = await fetch(`${BASE_URL}/pedidos/${pedidoId}/descuento`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ descuento: parseFloat(porcentaje) || 0 })
+        });
+
+        if (res.ok) {
+            // Opcional: un brindis pequeño o notificación silenciosa
+            console.log("Descuento guardado");
+        }
+    } catch (err) {
+        console.error("Error al guardar descuento:", err);
+    }
+}
+
         async function generarFacturaPDF(p, numeroPedido) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -701,7 +730,8 @@
                                 <div class="d-flex align-items-center gap-2">
                                     <span class="small fw-bold text-muted">DESC %:</span>
                                     <input type="number" class="form-control form-control-sm border-0 bg-white" style="width:60px" placeholder="0" 
-                                           oninput="aplicarDescuento(${p.PedidoID}, ${p.Total}, this.value)">
+                                           oninput="aplicarDescuento(${p.PedidoID}, ${p.Total}, this.value)"
+                                           onblur="guardarDescuentoServidor(${p.PedidoID}, this.value)">
                                 </div>
                                 <div class="text-end">
                                     <span class="small text-muted">NUEVO TOTAL:</span>
