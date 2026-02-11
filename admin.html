@@ -570,7 +570,7 @@
             doc.text(`# ${numeroPedido.toString().padStart(4, '0')}`, 135, 35);
             doc.setFontSize(9);
             doc.setTextColor(120);
-            doc.text(`Fecha: ${new Date(p.Fecha).toLocaleDateString()}`, 135, 43);
+            doc.text(`Fecha: ${new Date(p.Fecha).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })}`, 135, 43);
             doc.setDrawColor(34, 74, 43);
             doc.setLineWidth(0.5);
             doc.line(20, 55, 195, 55);
@@ -688,7 +688,7 @@
                                 <div class="col-sm-6">
                                     <label class="small text-muted d-block fw-bold" style="font-size:0.65rem">DIRECCIÓN Y FECHA DE PEDIDO</label>
                                     <div class="fw-medium small"><i class="bi bi-geo-alt me-2"></i>${p.Direccion || 'Recojo en local'}</div>
-                                    <div class="fw-medium text-muted small"><i class="bi bi-calendar3 me-2"></i>${new Date(p.Fecha).toLocaleString()}</div>
+                                    <div class="fw-medium text-muted small"><i class="bi bi-calendar3 me-2"></i>${new Date(p.Fecha).toLocaleString('es-CO', { timeZone: 'America/Bogota' })}</div>>
                                 </div>
                             </div>
 
