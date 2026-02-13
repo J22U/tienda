@@ -307,80 +307,170 @@ function prepararFacturaConDescuento(p, numeroPedido, pedidoId) {
     generarFacturaPDF(pedidoParaPDF, numeroPedido);
 }
 
+// Recupera el pedido desde el servidor por id y llama a la generación de factura
+async function prepararFacturaPorId(pedidoId, numeroPedido) {
+    try {
+        const res = await fetch(`${BASE_URL}/pedidos`);
+        if (!res.ok) throw new Error('No se pudo obtener pedidos');
+        const lista = await res.json();
+        const pedido = lista.find(x => Number(x.PedidoID) === Number(pedidoId));
+        if (!pedido) {
+            Swal.fire('Error', 'Pedido no encontrado para generar factura', 'error');
+            return;
+        }
+        prepararFacturaConDescuento(pedido, numeroPedido, pedidoId);
+    } catch (err) {
+        console.error('Error preparando factura por id:', err);
+        Swal.fire('Error', 'No se pudo preparar la factura', 'error');
+    }
+}
+
 async function generarFacturaPDF(p, numeroPedido) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-
-    // LOGO
+    // LOGO y CABECERA estilo TRÉBOL (verde) con caja "ORDEN DE SERVICIO"
     const logoURL = 'https://res.cloudinary.com/donc8a6tc/image/upload/v1770738241/LOGO_TR%C3%89BOL-removebg-preview_uyamlw.png';
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = function() {
-        doc.addImage(img, 'PNG', 15, 10, 30, 30);
-        
-        // ENCABEZADO
-        doc.setFillColor(108, 92, 231);
-        doc.rect(0, 0, 210, 45, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(16);
-        doc.text('FACTURA TRÉBOL', 130, 25, { align: 'right' });
+        // Logo izquierda
+        doc.addImage(img, 'PNG', 12, 12, 36, 36);
+
+        // Nombre empresarial a la derecha del logo
+        doc.setFontSize(20);
+        doc.setTextColor(45, 90, 39); // var --primary-green
+        doc.setFont('helvetica', 'bold');
+        doc.text('TRÉBOL S.A.S', 60, 22);
         doc.setFontSize(10);
-        doc.text(`#${numeroPedido}`, 130, 32, { align: 'right' });
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(80, 80, 80);
+        doc.text('Herramientas profesionales', 60, 28);
+        doc.text('NIT: 900.555.123-1', 60, 34);
+        doc.text('El Peñol, Antioquia | Cel: 310 123 4567', 60, 40);
+
+        // Caja derecha: ORDEN DE SERVICIO (número y fecha)
+        const servicioNum = String(numeroPedido).padStart(4, '0');
+        const fechaPedido = p.Fecha ? new Date(p.Fecha).toLocaleDateString('es-CO') : new Date().toLocaleDateString('es-CO');
+        const boxX = 138, boxY = 12, boxW = 66, boxH = 44;
+        doc.setDrawColor(45, 90, 39);
+        doc.setFillColor(250, 251, 249);
+        doc.roundedRect(boxX, boxY, boxW, boxH, 6, 6, 'FD');
+        const centerX = boxX + boxW / 2;
+        const titleY = boxY + 11;
+        const numY = boxY + 26;
+        const dateY = boxY + 36;
+        doc.setFontSize(8);
+        doc.setTextColor(80,80,80);
+        doc.text('ORDEN DE SERVICIO', centerX, titleY, { align: 'center' });
+        doc.setFontSize(12);
+        doc.setFont('helvetica','bold');
+        doc.setTextColor(45, 90, 39);
+        doc.text(`# ${servicioNum}`, centerX, numY, { align: 'center' });
+        doc.setFontSize(8);
+        doc.setFont('helvetica','normal');
+        doc.setTextColor(100,100,100);
+        doc.text(`Fecha: ${fechaPedido}`, centerX, dateY, { align: 'center' });
 
         // DATOS DEL CLIENTE
-        doc.setTextColor(0, 0, 0);
+        const clienteNombre = p.NombreCliente || p.Cliente || p.Nombre || 'Cliente General';
+        const clienteEmail = p.Correo || p.Email || 'N/A';
+        const clienteTelefono = p.Telefono || p.TelefonoCliente || 'N/A';
+        const clienteDireccion = p.Direccion || p.DireccionEnvio || 'N/A';
+
         doc.setFontSize(10);
-        doc.text(`Cliente: ${p.Cliente || 'Cliente General'}`, 20, 55);
-        doc.text(`Email: ${p.Email || 'N/A'}`, 20, 62);
-        doc.text(`Teléfono: ${p.Telefono || 'N/A'}`, 20, 69);
-        doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 76);
+        doc.setFont('helvetica','bold');
+        doc.setTextColor(45,90,39);
+        doc.text('FACTURADO A:', 20, 62);
+        doc.setFont('helvetica','bold');
+        doc.setTextColor(0,0,0);
+        doc.text(clienteNombre, 20, 70);
+        doc.setFontSize(9);
+        doc.text(`Teléfono: ${clienteTelefono}`, 20, 76);
+        doc.text(`Email: ${clienteEmail}`, 20, 82);
+        doc.text(`Dirección: ${clienteDireccion}`, 20, 88);
 
         // TABLA DE PRODUCTOS
-        const tableColumn = ['Artículo', 'Cantidad', 'Precio', 'Subtotal'];
+        const tableColumn = ['CANT.', 'DESCRIPCIÓN', 'VALOR UNIT.', 'SUBTOTAL'];
         const tableRows = [];
 
-        if (p.Productos && Array.isArray(p.Productos)) {
-            p.Productos.forEach(prod => {
-                const nombreProd = typeof prod === 'string' ? prod : prod.Nombre || 'Producto';
-                const cantidad = prod.Cantidad || 1;
-                const precio = prod.Precio || 0;
-                const subtotal = cantidad * precio;
+        // Asegurar parsing de productos (puede venir string)
+        let productosParaPDF = [];
+        try {
+            if (!p.Productos) productosParaPDF = [];
+            else if (Array.isArray(p.Productos)) productosParaPDF = p.Productos;
+            else if (typeof p.Productos === 'string') productosParaPDF = JSON.parse(p.Productos);
+        } catch (err) { productosParaPDF = []; }
 
-                tableRows.push([
-                    nombreProd,
-                    cantidad,
-                    `$${precio.toLocaleString()}`,
-                    `$${subtotal.toLocaleString()}`
-                ]);
-            });
-        }
+        productosParaPDF.forEach(prod => {
+            const nombreProd = typeof prod === 'string' ? prod : (prod.Nombre || prod.descripcion || prod.Descripcion || prod.Producto || 'Producto');
+            let cantidad = prod.Cantidad || prod.cantidad || prod.qty || prod.CantidadVendida || 1;
+            cantidad = Number(cantidad) || 1;
+            let precio = prod.Precio || prod.precio || prod.PrecioUnitario || prod.ValorUnitario || 0;
+            precio = Number(precio) || 0;
+            const subtotal = cantidad * precio;
+
+            tableRows.push([
+                cantidad,
+                nombreProd,
+                `$ ${precio.toLocaleString()}`,
+                `$ ${subtotal.toLocaleString()}`
+            ]);
+        });
 
         doc.autoTable({
             head: [tableColumn],
             body: tableRows,
-            startY: 85,
-            headStyles: { fillColor: [108, 92, 231], textColor: [255, 255, 255] },
-            alternateRowStyles: { fillColor: [245, 245, 245] }
+            startY: 100,
+            theme: 'grid',
+            styles: { font: 'helvetica', fontSize: 9 },
+            headStyles: { fillColor: [45, 90, 39], textColor: [255, 255, 255], halign: 'center' },
+            alternateRowStyles: { fillColor: [250, 250, 250] },
+            tableLineColor: [200,200,200],
+            tableLineWidth: 0.3,
+            columnStyles: { 0: { cellWidth: 18, halign: 'center' }, 1: { cellWidth: 90 }, 2: { cellWidth: 30, halign: 'right' }, 3: { cellWidth: 30, halign: 'right' } }
         });
 
         // TOTAL
         let finalY = doc.lastAutoTable.finalY + 10;
-        
-        if (p.DescuentoPorcentaje && p.DescuentoPorcentaje > 0) {
-            doc.setFontSize(10);
-            doc.text(`Subtotal: $${Number(p.Total + p.DescuentoValor).toLocaleString()}`, 130, finalY);
-            doc.text(`Descuento (${p.DescuentoPorcentaje}%): -$${Number(p.DescuentoValor).toLocaleString()}`, 130, finalY + 7);
+        // Totales y descuento (si aplica)
+        const subtotalCalc = Number(p.Total) + (Number(p.DescuentoValor) || 0);
+        doc.setFontSize(10);
+        doc.setTextColor(80,80,80);
+        doc.text(`Subtotal: $${subtotalCalc.toLocaleString()}`, 140, finalY);
+
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const rightX = pageWidth - 14;
+
+        if (p.DescuentoPorcentaje && Number(p.DescuentoPorcentaje) > 0) {
+            doc.setTextColor(220,20,20); // rojo para descuento
+            doc.text(`Descuento (${Number(p.DescuentoPorcentaje).toFixed(2)}%): - $${Number(p.DescuentoValor).toLocaleString()}`, 140, finalY + 7);
             doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
-            doc.text(`TOTAL: $${Number(p.Total).toLocaleString()}`, 130, finalY + 15, { align: 'right' });
+            doc.setTextColor(45,90,39);
+            const totalText = `TOTAL NETO: $${Number(p.Total).toLocaleString()}`;
+            doc.text(totalText, rightX, finalY + 22, { align: 'right' });
+            const textWidth = doc.getTextWidth(totalText);
+            const lineStartX = rightX - textWidth;
+            const yLine = finalY + 24;
+            doc.setDrawColor(45,90,39);
+            doc.setLineWidth(1.8);
+            doc.line(lineStartX, yLine, rightX, yLine);
         } else {
             doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
-            doc.text(`TOTAL: $${Number(p.Total).toLocaleString()}`, 130, finalY, { align: 'right' });
+            doc.setTextColor(45,90,39);
+            const totalText = `TOTAL NETO: $${Number(p.Total).toLocaleString()}`;
+            doc.text(totalText, rightX, finalY, { align: 'right' });
+            const textWidth = doc.getTextWidth(totalText);
+            const lineStartX = rightX - textWidth;
+            const yLine = finalY + 2;
+            doc.setDrawColor(45,90,39);
+            doc.setLineWidth(1.8);
+            doc.line(lineStartX, yLine, rightX, yLine);
         }
 
         // Descargar
-        doc.save(`factura_${numeroPedido}.pdf`);
+        doc.save(`Factura_Trebol_${servicioNum}.pdf`);
     };
     img.src = logoURL;
 }
@@ -548,7 +638,7 @@ async function cargarPedidos() {
 
             <div class="order-actions d-grid gap-2" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
                 <button class="btn btn-dark fw-bold rounded-pill" 
-                        onclick="prepararFacturaConDescuento(${JSON.stringify(p).replace(/'/g, "&apos;")}, '${numeroPedido}', ${pedidoId})">
+                    onclick="prepararFacturaPorId(${pedidoId}, '${displayNumber}')">
                     <i class="bi bi-file-pdf me-2"></i>FACTURA
                 </button>
                 <button class="btn btn-success fw-bold rounded-pill" 

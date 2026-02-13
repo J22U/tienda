@@ -188,7 +188,10 @@ app.get('/pedidos', async (req, res) => {
 app.put('/pedidos/:id/completar', async (req, res) => {
     try {
         const pool = await poolPromise;
-        await pool.request().input('id', sql.Int, req.params.id).query("UPDATE Pedidos SET Estado = 'Completado' WHERE PedidoID = @id");
+        // Marcar tanto el flag numérico como el estado textual para compatibilidad con frontend
+        await pool.request()
+            .input('id', sql.Int, req.params.id)
+            .query("UPDATE Pedidos SET Completado = 1, Estado = 'Completado' WHERE PedidoID = @id");
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
