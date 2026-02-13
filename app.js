@@ -225,6 +225,21 @@ app.put('/pedidos/:id/total-manual', async (req, res) => {
     }
 });
 
+app.put('/pedidos/:id/descuento', async (req, res) => {
+    const { id } = req.params;
+    const { descuento } = req.body;
+    try {
+        const pool = await poolPromise;
+        await pool.request()
+            .input('id', sql.Int, id)
+            .input('desc', sql.Decimal(5, 2), parseFloat(descuento) || 0)
+            .query('UPDATE Pedidos SET DescuentoPorcentaje = @desc WHERE PedidoID = @id');
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/logout', (req, res) => {
     req.session.destroy((err) => {
         if (err) {
@@ -233,8 +248,22 @@ app.get('/logout', (req, res) => {
         res.redirect('/login'); // Te manda al login tras cerrar
     });
 });
+
+// Middleware para prevenir caché en páginas HTML
 app.use((req, res, next) => {
-    res.set('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
+    // Headers agresivos de no-caché para prevenir back button
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0, max-stale=0, post-check=0, pre-check=0');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    res.set('Surrogate-Control', 'no-store');
+    next();
+});
+
+// Middleware específico para archivos HTML
+app.get(/\.html$/, (req, res, next) => {
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     next();
 });
 

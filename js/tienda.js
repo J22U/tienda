@@ -2,7 +2,10 @@ let carrito = [];
 let productosData = [];
 const BASE_URL = 'https://tienda-1vps.onrender.com';
 
-// 1. CARGAR PRODUCTOS DESDE EL BACKEND
+/* ============================================================================
+   PRODUCTOS - CARGA Y RENDERIZADO
+   ============================================================================ */
+
 async function cargarProductos() {
     try {
         const res = await fetch(`${BASE_URL}/productos`);
@@ -14,22 +17,18 @@ async function cargarProductos() {
         contenedor.innerHTML = ""; 
 
         const htmlProductos = productosData.map(p => {
-            // --- LÓGICA DE IMAGEN CORREGIDA PARA CLOUDINARY Y GALERÍA ---
             let fotoPrincipal = '';
             
-            // Priorizamos ImagenURL (Cloudinary) y luego Galeria
             if (p.ImagenURL) {
                 fotoPrincipal = p.ImagenURL;
             } else if (p.Galeria && p.Galeria.length > 0) {
                 fotoPrincipal = p.Galeria[0].ImagenURL;
             }
             
-            // Verificamos si es URL completa o ruta local
             const srcFinal = (fotoPrincipal && fotoPrincipal.startsWith('http')) 
                 ? fotoPrincipal 
                 : (fotoPrincipal ? `${BASE_URL}${fotoPrincipal}` : 'https://via.placeholder.com/250?text=Sin+Imagen');
 
-            // --- LÓGICA DE AGOTADO ---
             const estaAgotado = p.Stock <= 0;
             const claseAgotado = estaAgotado ? 'product-out-of-stock' : ''; 
             const stockColor = estaAgotado ? 'text-danger' : 'text-success';
@@ -67,7 +66,10 @@ async function cargarProductos() {
     }
 }
 
-// 2. VER DETALLE CORREGIDO
+/* ============================================================================
+   DETALLE DE PRODUCTO
+   ============================================================================ */
+
 function verDetalle(id) {
     const p = productosData.find(item => item.ProductoID === id);
     if (!p) return;
@@ -76,7 +78,6 @@ function verDetalle(id) {
     contenedorImagen.innerHTML = '';
 
     let fotos = [];
-    // Recolectamos todas las fuentes posibles de imágenes
     if (p.ImagenURL) fotos.push(p.ImagenURL);
     if (p.Galeria && p.Galeria.length > 0) {
         p.Galeria.forEach(g => { if(!fotos.includes(g.ImagenURL)) fotos.push(g.ImagenURL); });
@@ -133,7 +134,10 @@ function verDetalle(id) {
     bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDetalleProducto')).show();
 }
 
-// 3. AGREGAR AL CARRITO
+/* ============================================================================
+   CARRITO - AGREGAR Y REMOVER
+   ============================================================================ */
+
 function agregarAlPedido(producto) {
     const inputCant = document.getElementById('detalle-cantidad');
     const cantidad = parseInt(inputCant.value);
@@ -159,26 +163,6 @@ function agregarAlPedido(producto) {
     Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Agregado al pedido', showConfirmButton: false, timer: 1500 });
 }
 
-// 4. BÚSQUEDA
-const buscador = document.getElementById('buscador');
-if(buscador) {
-    buscador.addEventListener('input', (e) => {
-        const termino = e.target.value.toLowerCase();
-        const productosCards = document.querySelectorAll('#contenedor-productos > div');
-
-        productosCards.forEach(card => {
-            const nombreElement = card.querySelector('h5');
-            const marcaElement = card.querySelector('small');
-            if(nombreElement && marcaElement) {
-                const nombreProducto = nombreElement.textContent.toLowerCase();
-                const marcaProducto = marcaElement.textContent.toLowerCase();
-                card.style.display = (nombreProducto.includes(termino) || marcaProducto.includes(termino)) ? 'block' : 'none';
-            }
-        });
-    });
-}
-
-// 5. UI CARRITO
 function actualizarCarritoUI() {
     const lista = document.getElementById('lista-compra');
     const totalLabel = document.getElementById('total-compra');
@@ -209,7 +193,32 @@ function eliminarItem(index) {
     actualizarCarritoUI();
 }
 
-// 6. PROCESAR PAGO
+/* ============================================================================
+   BÚSQUEDA
+   ============================================================================ */
+
+const buscador = document.getElementById('buscador');
+if(buscador) {
+    buscador.addEventListener('input', (e) => {
+        const termino = e.target.value.toLowerCase();
+        const productosCards = document.querySelectorAll('#contenedor-productos > div');
+
+        productosCards.forEach(card => {
+            const nombreElement = card.querySelector('h5');
+            const marcaElement = card.querySelector('small');
+            if(nombreElement && marcaElement) {
+                const nombreProducto = nombreElement.textContent.toLowerCase();
+                const marcaProducto = marcaElement.textContent.toLowerCase();
+                card.style.display = (nombreProducto.includes(termino) || marcaProducto.includes(termino)) ? 'block' : 'none';
+            }
+        });
+    });
+}
+
+/* ============================================================================
+   PROCESAR PAGO
+   ============================================================================ */
+
 async function procesarPago() {
     if (carrito.length === 0) return Swal.fire('Carrito vacío', '', 'warning');
 
@@ -288,6 +297,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const pass = document.getElementById('admin-password').value;
 
             if (email === "admin@agro.com" && pass === "123456") {
+                // Guardar sesión
+                localStorage.setItem('admin_logged', 'true');
+                
                 Swal.fire({
                     title: '¡Acceso Permitido!',
                     text: 'Bienvenido al panel de control.',
@@ -295,7 +307,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     timer: 1500,
                     showConfirmButton: false,
                     willClose: () => {
-                        window.location.href = 'admin.html';
+                        // Redirigir sin permitir back
+                        window.location.replace('admin.html');
                     }
                 });
             } else {
