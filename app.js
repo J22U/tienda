@@ -225,6 +225,19 @@ app.put('/pedidos/:id/total-manual', async (req, res) => {
     }
 });
 
+app.get('/logout', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            return console.log(err);
+        }
+        res.redirect('/login'); // Te manda al login tras cerrar
+    });
+});
+app.use((req, res, next) => {
+    res.set('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
+    next();
+});
+
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'tienda.html')); });
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));

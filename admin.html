@@ -12,6 +12,11 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
+    <script>
+    if(window.history.replaceState) {
+        window.history.replaceState(null, null, window.location.href);
+    }
+</script>
 
     <style>
     /* Estilo para el pedido acumulado */
@@ -224,6 +229,7 @@
         <i class="bi bi-shop me-2"></i> VER TIENDA
         <a href="tienda.html" class="btn btn-dark rounded-pill px-4 fw-bold btn-sm">
     <i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión
+</a>
 </a>
     </a>
     </a>
@@ -1037,6 +1043,18 @@ async function importarBackup(event) {
 }
 
         cargarInventario();
+
+        function isAuthenticated(req, res, next) {
+    if (req.session.user) {
+        return next();
+    }
+    res.redirect('/login'); // Si no hay sesión, al login directo
+}
+
+// Ejemplo de uso en una ruta
+app.get('/admin', isAuthenticated, (req, res) => {
+    res.render('admin');
+});
     </script>
 </body>
 </html>
