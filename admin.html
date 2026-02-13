@@ -1047,15 +1047,35 @@ async function importarBackup(event) {
 
         cargarInventario();
 
-document.getElementById('btn-logout').onclick = function(e) {
-    e.preventDefault();
+document.addEventListener('DOMContentLoaded', function() {
+    const btnLogout = document.getElementById('btn-logout');
 
-    // 1. Borramos la llave del localStorage
-    localStorage.removeItem('admin_logged');
+    if (btnLogout) {
+        btnLogout.onclick = function(e) {
+            e.preventDefault();
 
-    // 2. Redirigimos a la tienda de forma que no pueda volver atrás
-    window.location.replace('tienda.html');
-};
+            Swal.fire({
+                title: '¿Cerrar sesión?',
+                text: "Tendrás que ingresar la clave nuevamente para entrar al panel.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#2d5a27', // Color verde Trébol
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, salir',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true // Pone el botón de confirmar a la derecha
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // 1. Borramos la llave de acceso
+                    localStorage.removeItem('admin_logged');
+
+                    // 2. Redirección blindada (borra el rastro del historial)
+                    window.location.replace('tienda.html');
+                }
+            });
+        };
+    }
+});
     </script>
 </body>
 </html>
