@@ -540,18 +540,13 @@ async function cargarPedidos() {
             const estaCompletado = p.Estado === 'Completado';
             const displayNumber = idx + 1; 
 
-            // --- PROCESAMIENTO DE FECHA (CORRECCIÓN DE DESFASE 5H) ---
-            // Convertimos a string y quitamos la 'Z' o desfases UTC para que JS no reste horas
+            // --- PROCESAMIENTO DE FECHA (CORRECCIÓN DE DESFASE) ---
             const fechaRaw = p.Fecha ? p.Fecha.toString().replace('Z', '').split('+')[0] : new Date();
             const fechaObj = new Date(fechaRaw);
+            const fechaFormateada = fechaObj.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const horaFormateada = fechaObj.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-            const fechaFormateada = fechaObj.toLocaleDateString('es-CO', {
-                day: '2-digit', month: '2-digit', year: 'numeric'
-            });
-            const horaFormateada = fechaObj.toLocaleTimeString('es-CO', {
-                hour: '2-digit', minute: '2-digit', hour12: true
-            });
-
+            // --- CÁLCULOS DE DINERO ---
             const porcentajeDcto = parseFloat(p.DescuentoPorcentaje) || 0;
             const totalBase = Number(p.Total) || 0;
             const totalConDescuento = totalBase - (totalBase * (porcentajeDcto / 100));
@@ -592,14 +587,12 @@ async function cargarPedidos() {
                 
                 <div class="row mb-4">
                     <div class="col-md-6">
-                        <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2" style="color: ${colorTexto};"></i>Detalles del Pedido</h6>
+                        <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2" style="color: ${colorTexto};"></i>Detalles</h6>
                         <div style="background: white; padding: 15px; border-radius: 10px; border-left: 4px solid ${colorTexto};">
                             <small class="text-muted d-block">RECIBIDO EL:</small>
                             <small class="fw-bold d-block mb-2">${fechaFormateada} a las ${horaFormateada}</small>
-                            
                             <small class="text-muted d-block">CONTACTO:</small>
                             <small class="fw-bold d-block"><i class="bi bi-telephone me-2"></i>${p.Telefono || 'N/A'}</small>
-                            <small class="fw-bold d-block"><i class="bi bi-envelope me-2"></i>${p.Correo || 'N/A'}</small>
                             <small class="text-muted d-block mt-2">DIRECCIÓN:</small>
                             <small class="fw-bold d-block"><i class="bi bi-geo-alt me-2"></i>${p.Direccion || 'N/A'}</small>
                         </div>
@@ -621,6 +614,28 @@ async function cargarPedidos() {
                         </div>
                     </div>
                 </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div style="background: white; padding: 20px; border-radius: 10px; border-left: 4px solid ${colorTexto};">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Aplicar Descuento (%)</label>
+                                    <div class="input-group">
+                                        <input type="number" step="0.01" class="form-control" value="${porcentajeDcto}" 
+                                            onchange="guardarDescuentoSimple(${pedidoId}, this.value)">
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <small class="text-muted">Precio Base: $<span id="total-base-${pedidoId}">${totalBase.toFixed(2)}</span></small>
+                                    <h5 id="precio-neto-final-${pedidoId}" class="fw-bold mb-0" style="color: ${colorTexto};">Neto: $${totalConDescuento.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="order-actions d-grid gap-2" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
                     <button class="btn btn-dark fw-bold rounded-pill" onclick="prepararFacturaPorId(${pedidoId}, ${displayNumber})"><i class="bi bi-file-pdf"></i> FACTURA</button>
                     <button class="btn btn-success fw-bold rounded-pill" onclick="completarPedido(${pedidoId})">COMPLETAR</button>
@@ -631,8 +646,12 @@ async function cargarPedidos() {
     </div>
 </div>`;
         }).join('');
-    } catch (err) { console.error(err); } 
-    finally { cargandoPedidosFlag = false; }
+        
+    } catch (err) { 
+        console.error(err); 
+    } finally { 
+        cargandoPedidosFlag = false; 
+    }
 }
 
 function filtrarPedidos(estado) {
