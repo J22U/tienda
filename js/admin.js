@@ -540,11 +540,22 @@ async function cargarPedidos() {
             const estaCompletado = p.Estado === 'Completado';
             const displayNumber = idx + 1; 
 
+            // --- PROCESAMIENTO DE FECHA (CORRECCIÓN DE DESFASE 5H) ---
+            // Convertimos a string y quitamos la 'Z' o desfases UTC para que JS no reste horas
+            const fechaRaw = p.Fecha ? p.Fecha.toString().replace('Z', '').split('+')[0] : new Date();
+            const fechaObj = new Date(fechaRaw);
+
+            const fechaFormateada = fechaObj.toLocaleDateString('es-CO', {
+                day: '2-digit', month: '2-digit', year: 'numeric'
+            });
+            const horaFormateada = fechaObj.toLocaleTimeString('es-CO', {
+                hour: '2-digit', minute: '2-digit', hour12: true
+            });
+
             const porcentajeDcto = parseFloat(p.DescuentoPorcentaje) || 0;
             const totalBase = Number(p.Total) || 0;
             const totalConDescuento = totalBase - (totalBase * (porcentajeDcto / 100));
 
-            // Recuperar productos correctamente
             const productos = (function() {
                 try {
                     if (!p.Productos) return [];
@@ -564,7 +575,8 @@ async function cargarPedidos() {
             <div class="badge bg-secondary text-white rounded-pill" style="min-width:48px;">#${displayNumber}</div>
             <div>
                 <h5 class="fw-bold mb-0" style="color:#2d3436;">${p.NombreCliente || 'Cliente General'}</h5>
-                ${porcentajeDcto > 0 ? `<small class="text-muted text-decoration-line-through">$${totalBase.toLocaleString()}</small>` : ''}
+                <small class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-clock me-1"></i>${fechaFormateada} - ${horaFormateada}</small>
+                ${porcentajeDcto > 0 ? `<div class="mt-1"><small class="text-muted text-decoration-line-through">$${totalBase.toLocaleString()}</small></div>` : ''}
             </div>
         </div>
         <div class="d-flex align-items-center gap-3">
@@ -579,12 +591,15 @@ async function cargarPedidos() {
             
             <div class="row mb-4">
                 <div class="col-md-6">
-                    <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2" style="color: ${colorTexto};"></i>Información de Envío</h6>
+                    <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2" style="color: ${colorTexto};"></i>Detalles del Pedido</h6>
                     <div style="background: white; padding: 15px; border-radius: 10px; border-left: 4px solid ${colorTexto};">
-                        <small class="text-muted d-block">CONTACTO</small>
+                        <small class="text-muted d-block">RECIBIDO EL:</small>
+                        <small class="fw-bold d-block mb-2">${fechaFormateada} a las ${horaFormateada}</small>
+                        
+                        <small class="text-muted d-block">CONTACTO:</small>
                         <small class="fw-bold d-block"><i class="bi bi-telephone me-2"></i>${p.Telefono || 'N/A'}</small>
                         <small class="fw-bold d-block"><i class="bi bi-envelope me-2"></i>${p.Correo || 'N/A'}</small>
-                        <small class="text-muted d-block mt-2">DIRECCIÓN</small>
+                        <small class="text-muted d-block mt-2">DIRECCIÓN:</small>
                         <small class="fw-bold d-block"><i class="bi bi-geo-alt me-2"></i>${p.Direccion || 'N/A'}</small>
                     </div>
                 </div>
