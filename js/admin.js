@@ -533,21 +533,18 @@ async function cargarPedidos() {
         }
 
         document.getElementById('order-count').innerText = `${data.length} recibidos`;
-        
-        // Ordenar: El ID más alto (más reciente) primero
         data.sort((a, b) => b.PedidoID - a.PedidoID);
 
         document.getElementById('lista-pedidos').innerHTML = data.map((p, idx) => {
             const pedidoId = p.PedidoID;
             const estaCompletado = p.Estado === 'Completado';
-            
-            // --- EL NÚMERO QUE SE VE EN PANTALLA ---
             const displayNumber = idx + 1; 
 
             const porcentajeDcto = parseFloat(p.DescuentoPorcentaje) || 0;
             const totalBase = Number(p.Total) || 0;
             const totalConDescuento = totalBase - (totalBase * (porcentajeDcto / 100));
 
+            // Recuperar productos correctamente
             const productos = (function() {
                 try {
                     if (!p.Productos) return [];
@@ -571,7 +568,7 @@ async function cargarPedidos() {
             </div>
         </div>
         <div class="d-flex align-items-center gap-3">
-            <h6 class="fw-bold mb-0" style="color: ${colorTexto}; font-size: 1.25rem;">$${Math.round(totalConDescuento).toLocaleString()}</h6>
+            <h6 id="precio-header-${pedidoId}" class="fw-bold mb-0" style="color: ${colorTexto}; font-size: 1.25rem;">$${totalConDescuento.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h6>
             <i class="bi bi-caret-down-fill text-muted"></i>
         </div>
     </div>
@@ -616,14 +613,14 @@ async function cargarPedidos() {
                             <div class="col-md-6">
                                 <label class="form-label fw-bold small">Aplicar Descuento (%)</label>
                                 <div class="input-group">
-                                    <input type="number" class="form-control" value="${porcentajeDcto}" 
+                                    <input type="number" step="0.01" class="form-control" value="${porcentajeDcto}" 
                                         onchange="guardarDescuentoSimple(${pedidoId}, this.value)">
                                     <span class="input-group-text">%</span>
                                 </div>
                             </div>
                             <div class="col-md-6 text-end">
-                                <small class="text-muted">Precio Base: $${totalBase.toLocaleString()}</small>
-                                <h5 class="fw-bold mb-0" style="color: ${colorTexto};">Neto: $${Math.round(totalConDescuento).toLocaleString()}</h5>
+                                <small class="text-muted">Precio Base: $<span id="total-base-${pedidoId}">${totalBase.toFixed(2)}</span></small>
+                                <h5 id="precio-neto-final-${pedidoId}" class="fw-bold mb-0" style="color: ${colorTexto};">Neto: $${totalConDescuento.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
                             </div>
                         </div>
                     </div>
@@ -631,12 +628,9 @@ async function cargarPedidos() {
             </div>
 
             <div class="order-actions d-grid gap-2" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
-                <button class="btn btn-dark fw-bold rounded-pill" 
-                        onclick="prepararFacturaPorId(${pedidoId}, ${displayNumber})">
-                    <i class="bi bi-file-pdf"></i> FACTURA
-                </button>
-                <button class="btn btn-success fw-bold rounded-pill" onclick="completarPedido(${pedidoId})"><i class="bi bi-check-lg"></i> COMPLETAR</button>
-                <button class="btn btn-outline-danger fw-bold rounded-pill" onclick="eliminarPedido(${pedidoId})"><i class="bi bi-trash"></i> ELIMINAR</button>
+                <button class="btn btn-dark fw-bold rounded-pill" onclick="prepararFacturaPorId(${pedidoId}, ${displayNumber})"><i class="bi bi-file-pdf"></i> FACTURA</button>
+                <button class="btn btn-success fw-bold rounded-pill" onclick="completarPedido(${pedidoId})">COMPLETAR</button>
+                <button class="btn btn-outline-danger fw-bold rounded-pill" onclick="eliminarPedido(${pedidoId})">ELIMINAR</button>
             </div>
         </div>
     </div>
@@ -654,8 +648,27 @@ async function guardarDescuentoSimple(pedidoId, valor) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ descuento: valor })
         });
-        cargarPedidos(); // Recarga la lista para aplicar el cálculo visual
-    } catch (err) { console.error(err); }
+
+        // Capturamos el total base del elemento oculto que pusimos arriba
+        const totalBase = parseFloat(document.getElementById(`total-base-${pedidoId}`).innerText);
+        const porcentaje = parseFloat(valor) || 0;
+        const nuevoNeto = totalBase - (totalBase * (porcentaje / 100));
+
+        // Formateador de moneda con 2 decimales
+        const formateador = new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            minimumFractionDigits: 2
+        });
+
+        // Actualizamos los textos sin recargar la lista
+        document.getElementById(`precio-header-${pedidoId}`).innerText = formateador.format(nuevoNeto);
+        document.getElementById(`precio-neto-final-${pedidoId}`).innerText = `Neto: ${formateador.format(nuevoNeto)}`;
+
+        console.log("Actualizado con decimales:", nuevoNeto);
+    } catch (err) {
+        console.error("Error:", err);
+    }
 }
 
 async function eliminarPedido(id) {
