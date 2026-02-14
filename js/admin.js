@@ -310,168 +310,211 @@ function prepararFacturaConDescuento(p, numeroPedido, pedidoId) {
 // Recupera el pedido desde el servidor por id y llama a la generación de factura
 async function prepararFacturaPorId(pedidoId, numeroPedido) {
     try {
-        const res = await fetch(`${BASE_URL}/pedidos`);
-        if (!res.ok) throw new Error('No se pudo obtener pedidos');
-        const lista = await res.json();
-        const pedido = lista.find(x => Number(x.PedidoID) === Number(pedidoId));
+        Swal.fire({ title: 'Preparando factura...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        // Intentar obtener el pedido por ID (ruta preferida)
+        let pedido = null;
+        let res = await fetch(`${BASE_URL}/pedidos/${pedidoId}`);
+        if (res.ok) {
+            pedido = await res.json();
+        } else if (res.status === 404) {
+            // Si el servidor no tiene la ruta o no encuentra el id, hacer fallback a obtener todos y buscar localmente
+            console.warn(`Pedido ${pedidoId} no encontrado vía /pedidos/:id (404). Intentando /pedidos y buscando localmente.`);
+            const resAll = await fetch(`${BASE_URL}/pedidos`);
+            if (!resAll.ok) {
+                const txt = await resAll.text().catch(() => '');
+                Swal.close();
+                console.error('Error obteniendo lista de pedidos:', resAll.status, txt);
+                Swal.fire('Error', `No se pudo obtener la lista de pedidos (${resAll.status}) ${txt}`, 'error');
+                return;
+            }
+            const lista = await resAll.json();
+            pedido = lista.find(x => Number(x.PedidoID) === Number(pedidoId));
+        } else {
+            const txt = await res.text().catch(() => '');
+            Swal.close();
+            console.error('Error obteniendo pedido:', res.status, txt);
+            Swal.fire('Error', `No se pudo obtener el pedido (${res.status}) ${txt}`, 'error');
+            return;
+        }
+
         if (!pedido) {
+            Swal.close();
             Swal.fire('Error', 'Pedido no encontrado para generar factura', 'error');
             return;
         }
+
+        Swal.close();
         prepararFacturaConDescuento(pedido, numeroPedido, pedidoId);
     } catch (err) {
         console.error('Error preparando factura por id:', err);
-        Swal.fire('Error', 'No se pudo preparar la factura', 'error');
+        Swal.close();
+        Swal.fire('Error', `No se pudo preparar la factura: ${err.message}`, 'error');
     }
 }
 
 async function generarFacturaPDF(p, numeroPedido) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    // LOGO y CABECERA estilo TRÉBOL (verde) con caja "ORDEN DE SERVICIO"
+
     const logoURL = 'https://res.cloudinary.com/donc8a6tc/image/upload/v1770738241/LOGO_TR%C3%89BOL-removebg-preview_uyamlw.png';
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = function() {
-        // Logo izquierda
-        doc.addImage(img, 'PNG', 12, 12, 36, 36);
 
-        // Nombre empresarial a la derecha del logo
-        doc.setFontSize(20);
-        doc.setTextColor(45, 90, 39); // var --primary-green
+    // Render function que dibuja todo; acepta la imagen (puede ser undefined)
+    function renderConLogo(img) {
+        // --- CONFIGURACIÓN DE COLORES Y ESTILOS ---
+        const verdeTrebol = [45, 90, 39]; // Verde institucional
+        const grisOscuro = [45, 52, 54];
+        const grisClaro = [245, 245, 245];
+
+        // --- ENCABEZADO Y LOGOTIPO ---
+        // Rectángulo lateral decorativo (estilo profesional)
+        doc.setFillColor(verdeTrebol[0], verdeTrebol[1], verdeTrebol[2]);
+        doc.rect(0, 0, 10, 297, 'F');
+
+        // Si hay imagen, dibujarla a la izquierda superior (encima del lateral)
+        if (img) {
+            try {
+                // Subir un poco más el logo y reducir tamaño
+                doc.addImage(img, 'PNG', 14, -6, 52, 52);
+            } catch (err) { /* si falla, continuar sin logo */ }
+        }
+
+        // Datos de la Empresa (Derecha superior)
+        doc.setTextColor(verdeTrebol[0], verdeTrebol[1], verdeTrebol[2]);
+        doc.setFontSize(22);
         doc.setFont('helvetica', 'bold');
-        doc.text('TRÉBOL S.A.S', 60, 22);
+        doc.text('TRÉBOL.', 200, 25, { align: 'right' });
+        
         doc.setFontSize(10);
+        doc.setTextColor(grisOscuro[0], grisOscuro[1], grisOscuro[2]);
         doc.setFont('helvetica', 'normal');
-        doc.setTextColor(80, 80, 80);
-        doc.text('Herramientas profesionales', 60, 28);
-        doc.text('NIT: 900.555.123-1', 60, 34);
-        doc.text('El Peñol, Antioquia | Cel: 310 123 4567', 60, 40);
+        doc.text('', 200, 31, { align: 'right' });
+        doc.text('El Peñol, Antioquia | Cel: 322 9568362', 200, 36, { align: 'right' });
+        doc.text('trebol@gmail.com', 200, 41, { align: 'right' });
 
-        // Caja derecha: ORDEN DE SERVICIO (número y fecha)
-        const servicioNum = String(numeroPedido).padStart(4, '0');
-        const fechaPedido = p.Fecha ? new Date(p.Fecha).toLocaleDateString('es-CO') : new Date().toLocaleDateString('es-CO');
-        const boxX = 138, boxY = 12, boxW = 66, boxH = 44;
-        doc.setDrawColor(45, 90, 39);
-        doc.setFillColor(250, 251, 249);
-        doc.roundedRect(boxX, boxY, boxW, boxH, 6, 6, 'FD');
-        const centerX = boxX + boxW / 2;
-        const titleY = boxY + 11;
-        const numY = boxY + 26;
-        const dateY = boxY + 36;
-        doc.setFontSize(8);
-        doc.setTextColor(80,80,80);
-        doc.text('ORDEN DE SERVICIO', centerX, titleY, { align: 'center' });
-        doc.setFontSize(12);
-        doc.setFont('helvetica','bold');
-        doc.setTextColor(45, 90, 39);
-        doc.text(`# ${servicioNum}`, centerX, numY, { align: 'center' });
-        doc.setFontSize(8);
-        doc.setFont('helvetica','normal');
-        doc.setTextColor(100,100,100);
-        doc.text(`Fecha: ${fechaPedido}`, centerX, dateY, { align: 'center' });
+        // --- BLOQUE DE INFORMACIÓN DE FACTURA ---
+        doc.setFillColor(grisClaro[0], grisClaro[1], grisClaro[2]);
+        doc.roundedRect(20, 50, 175, 25, 3, 3, 'F');
+        
+        doc.setFont('helvetica', 'bold');
+        doc.text('FACTURA N°:', 30, 60);
+        doc.setFont('helvetica', 'normal');
+        doc.text(String(numeroPedido).padStart(6, '0'), 65, 60);
+        
+        doc.setFont('helvetica', 'bold');
+        doc.text('FECHA:', 130, 60);
+        doc.setFont('helvetica', 'normal');
+        doc.text(new Date().toLocaleDateString(), 155, 60);
 
-        // DATOS DEL CLIENTE
-        const clienteNombre = p.NombreCliente || p.Cliente || p.Nombre || 'Cliente General';
-        const clienteEmail = p.Correo || p.Email || 'N/A';
-        const clienteTelefono = p.Telefono || p.TelefonoCliente || 'N/A';
-        const clienteDireccion = p.Direccion || p.DireccionEnvio || 'N/A';
+        // --- INFORMACIÓN DEL CLIENTE ---
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(verdeTrebol[0], verdeTrebol[1], verdeTrebol[2]);
+        doc.text('FACTURADO A:', 20, 90);
+        
+        doc.setDrawColor(verdeTrebol[0], verdeTrebol[1], verdeTrebol[2]);
+        doc.line(20, 92, 70, 92);
 
-        doc.setFontSize(10);
-        doc.setFont('helvetica','bold');
-        doc.setTextColor(45,90,39);
-        doc.text('FACTURADO A:', 20, 62);
-        doc.setFont('helvetica','bold');
-        doc.setTextColor(0,0,0);
-        doc.text(clienteNombre, 20, 70);
-        doc.setFontSize(9);
-        doc.text(`Teléfono: ${clienteTelefono}`, 20, 76);
-        doc.text(`Email: ${clienteEmail}`, 20, 82);
-        doc.text(`Dirección: ${clienteDireccion}`, 20, 88);
+        doc.setTextColor(grisOscuro[0], grisOscuro[1], grisOscuro[2]);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Cliente: ${p.NombreCliente || p.Cliente || p.Nombre || 'Cliente'}`, 20, 100);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Teléfono: ${p.Telefono || 'N/A'}`, 20, 106);
+        doc.text(`Email: ${p.Correo || 'N/A'}`, 20, 112);
+        doc.text(`Dirección: ${p.Direccion || 'N/A'}`, 20, 118);
 
-        // TABLA DE PRODUCTOS
-        const tableColumn = ['CANT.', 'DESCRIPCIÓN', 'VALOR UNIT.', 'SUBTOTAL'];
+        // --- TABLA DE PRODUCTOS con DESCRIPCIÓN ---
+        const tableColumn = ["CANT.", "DESCRIPCIÓN", "VALOR UNIT.", "SUBTOTAL"];
         const tableRows = [];
 
-        // Asegurar parsing de productos (puede venir string)
-        let productosParaPDF = [];
+        // Normalizar productos (acepta string JSON o array)
+        let productosArr = [];
         try {
-            if (!p.Productos) productosParaPDF = [];
-            else if (Array.isArray(p.Productos)) productosParaPDF = p.Productos;
-            else if (typeof p.Productos === 'string') productosParaPDF = JSON.parse(p.Productos);
-        } catch (err) { productosParaPDF = []; }
+            if (!p.Productos) productosArr = [];
+            else if (Array.isArray(p.Productos)) productosArr = p.Productos;
+            else if (typeof p.Productos === 'string') productosArr = JSON.parse(p.Productos);
+        } catch (err) { productosArr = []; }
 
-        productosParaPDF.forEach(prod => {
-            const nombreProd = typeof prod === 'string' ? prod : (prod.Nombre || prod.descripcion || prod.Descripcion || prod.Producto || 'Producto');
-            let cantidad = prod.Cantidad || prod.cantidad || prod.qty || prod.CantidadVendida || 1;
-            cantidad = Number(cantidad) || 1;
-            let precio = prod.Precio || prod.precio || prod.PrecioUnitario || prod.ValorUnitario || 0;
-            precio = Number(precio) || 0;
-            const subtotal = cantidad * precio;
+        productosArr.forEach(prod => {
+            const obj = (typeof prod === 'string') ? { Nombre: prod, Cantidad: 1, Precio: 0 } : prod;
+            const nombre = obj.Nombre || obj.Producto || 'Producto';
+            const descripcion = obj.Descripcion || obj.descripcion || obj.Caracteristicas || '';
+            const cant = Number(obj.Cantidad || obj.cantidad || obj.qty || 1) || 1;
+            const precio = Number(obj.Precio || obj.precio || obj.PrecioUnitario || obj.ValorUnitario || 0) || 0;
+            const subtotal = cant * precio;
+
+            const descripcionCompleta = descripcion ? `${nombre}\n${descripcion}` : nombre;
 
             tableRows.push([
-                cantidad,
-                nombreProd,
-                `$ ${precio.toLocaleString()}`,
-                `$ ${subtotal.toLocaleString()}`
+                cant,
+                descripcionCompleta,
+                `$${Number(precio).toLocaleString()}`,
+                `$${Number(subtotal).toLocaleString()}`
             ]);
         });
 
         doc.autoTable({
+            startY: 125,
             head: [tableColumn],
             body: tableRows,
-            startY: 100,
-            theme: 'grid',
-            styles: { font: 'helvetica', fontSize: 9 },
-            headStyles: { fillColor: [45, 90, 39], textColor: [255, 255, 255], halign: 'center' },
-            alternateRowStyles: { fillColor: [250, 250, 250] },
-            tableLineColor: [200,200,200],
-            tableLineWidth: 0.3,
-            columnStyles: { 0: { cellWidth: 18, halign: 'center' }, 1: { cellWidth: 90 }, 2: { cellWidth: 30, halign: 'right' }, 3: { cellWidth: 30, halign: 'right' } }
+            theme: 'striped',
+            headStyles: { fillColor: verdeTrebol, textColor: [255, 255, 255], fontStyle: 'bold' },
+            styles: { fontSize: 9, cellPadding: 3 },
+            columnStyles: {
+                0: { cellWidth: 20, halign: 'center' },
+                2: { halign: 'right' },
+                3: { halign: 'right' }
+            }
         });
 
-        // TOTAL
-        let finalY = doc.lastAutoTable.finalY + 10;
-        // Totales y descuento (si aplica)
-        const subtotalCalc = Number(p.Total) + (Number(p.DescuentoValor) || 0);
+        // --- TOTALES ---
+        let finalY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY + 10 : 200;
+        
         doc.setFontSize(10);
-        doc.setTextColor(80,80,80);
-        doc.text(`Subtotal: $${subtotalCalc.toLocaleString()}`, 140, finalY);
+        doc.setTextColor(grisOscuro[0], grisOscuro[1], grisOscuro[2]);
+        
+        const subtotalGeneral = productosArr.length ? productosArr.reduce((acc, curr) => {
+            const c = Number(curr.Cantidad || curr.cantidad || curr.qty || 1) || 1;
+            const pUnit = Number(curr.Precio || curr.precio || curr.PrecioUnitario || curr.ValorUnitario || 0) || 0;
+            return acc + (c * pUnit);
+        }, 0) : (Number(p.Total) || 0);
+        const descuentoValor = subtotalGeneral - Number(p.Total || 0);
 
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const rightX = pageWidth - 14;
+        doc.text(`Subtotal:`, 140, finalY);
+        doc.text(`$${Number(subtotalGeneral).toLocaleString()}`, 190, finalY, { align: 'right' });
 
-        if (p.DescuentoPorcentaje && Number(p.DescuentoPorcentaje) > 0) {
-            doc.setTextColor(220,20,20); // rojo para descuento
-            doc.text(`Descuento (${Number(p.DescuentoPorcentaje).toFixed(2)}%): - $${Number(p.DescuentoValor).toLocaleString()}`, 140, finalY + 7);
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(45,90,39);
-            const totalText = `TOTAL NETO: $${Number(p.Total).toLocaleString()}`;
-            doc.text(totalText, rightX, finalY + 22, { align: 'right' });
-            const textWidth = doc.getTextWidth(totalText);
-            const lineStartX = rightX - textWidth;
-            const yLine = finalY + 24;
-            doc.setDrawColor(45,90,39);
-            doc.setLineWidth(1.8);
-            doc.line(lineStartX, yLine, rightX, yLine);
-        } else {
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(45,90,39);
-            const totalText = `TOTAL NETO: $${Number(p.Total).toLocaleString()}`;
-            doc.text(totalText, rightX, finalY, { align: 'right' });
-            const textWidth = doc.getTextWidth(totalText);
-            const lineStartX = rightX - textWidth;
-            const yLine = finalY + 2;
-            doc.setDrawColor(45,90,39);
-            doc.setLineWidth(1.8);
-            doc.line(lineStartX, yLine, rightX, yLine);
+        if (descuentoValor > 0) {
+            doc.setTextColor(200, 0, 0); // Rojo para descuento
+            doc.text(`Descuento (${p.DescuentoPorcentaje || 0}%):`, 140, finalY + 7);
+            doc.text(`-$${Number(descuentoValor).toLocaleString()}`, 190, finalY + 7, { align: 'right' });
+            finalY += 7;
         }
 
-        // Descargar
-        doc.save(`Factura_Trebol_${servicioNum}.pdf`);
-    };
+        // Cuadro de Total Neto
+        finalY += 10;
+        doc.setFillColor(verdeTrebol[0], verdeTrebol[1], verdeTrebol[2]);
+        doc.roundedRect(135, finalY - 7, 60, 12, 2, 2, 'F');
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`TOTAL NETO:`, 140, finalY);
+        doc.text(`$${Number(p.Total).toLocaleString()}`, 190, finalY, { align: 'right' });
+
+        // --- PIE DE PÁGINA ---
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text('Esta factura es un documento oficial de venta.', 105, 285, { align: 'center' });
+        doc.text('Gracias por su compra en Trébol S.A.S.', 105, 290, { align: 'center' });
+
+        // Descargar PDF
+        doc.save(`Factura_Trebol_${numeroPedido}.pdf`);
+    }
+
+    // Intentar cargar logo; si falla, renderizar sin él
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() { renderConLogo(img); };
+    img.onerror = function() { renderConLogo(); };
     img.src = logoURL;
 }
 

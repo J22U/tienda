@@ -185,6 +185,17 @@ app.get('/pedidos', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Obtener un pedido por id
+app.get('/pedidos/:id', async (req, res) => {
+    try {
+        const pool = await poolPromise;
+        const { id } = req.params;
+        const result = await pool.request().input('id', sql.Int, id).query('SELECT * FROM Pedidos WHERE PedidoID = @id');
+        if (!result.recordset || result.recordset.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
+        res.json(result.recordset[0]);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.put('/pedidos/:id/completar', async (req, res) => {
     try {
         const pool = await poolPromise;
