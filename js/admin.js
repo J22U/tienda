@@ -569,83 +569,63 @@ async function cargarPedidos() {
             const colorTexto = estaCompletado ? '#28a745' : '#e67e22';
 
             return `
-<div class="order-card-compact mb-4 card shadow-sm" style="border: 3px solid ${colorBorde}; border-radius: 20px;">
-    <div class="order-summary-line order-collapse-trigger p-3 d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapsePedido${pedidoId}" role="button" style="cursor: pointer; background: linear-gradient(135deg, ${estaCompletado ? '#f0fdf4' : '#fffbf5'} 0%, #ffffff 100%); border-radius: 17px 17px 0 0;">
-        <div class="d-flex align-items-center gap-3">
-            <div class="badge bg-secondary text-white rounded-pill" style="min-width:48px;">#${displayNumber}</div>
-            <div>
-                <h5 class="fw-bold mb-0" style="color:#2d3436;">${p.NombreCliente || 'Cliente General'}</h5>
-                <small class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-clock me-1"></i>${fechaFormateada} - ${horaFormateada}</small>
-                ${porcentajeDcto > 0 ? `<div class="mt-1"><small class="text-muted text-decoration-line-through">$${totalBase.toLocaleString()}</small></div>` : ''}
-            </div>
-        </div>
-        <div class="d-flex align-items-center gap-3">
-            <h6 id="precio-header-${pedidoId}" class="fw-bold mb-0" style="color: ${colorTexto}; font-size: 1.25rem;">$${totalConDescuento.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h6>
-            <i class="bi bi-caret-down-fill text-muted"></i>
-        </div>
-    </div>
-
-    <div class="collapse" id="collapsePedido${pedidoId}">
-        <div class="card-body p-4" style="background: #f8f9fa; border-radius: 0 0 17px 17px;">
-            <hr style="border-top: 2px solid ${colorTexto};">
-            
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2" style="color: ${colorTexto};"></i>Detalles del Pedido</h6>
-                    <div style="background: white; padding: 15px; border-radius: 10px; border-left: 4px solid ${colorTexto};">
-                        <small class="text-muted d-block">RECIBIDO EL:</small>
-                        <small class="fw-bold d-block mb-2">${fechaFormateada} a las ${horaFormateada}</small>
-                        
-                        <small class="text-muted d-block">CONTACTO:</small>
-                        <small class="fw-bold d-block"><i class="bi bi-telephone me-2"></i>${p.Telefono || 'N/A'}</small>
-                        <small class="fw-bold d-block"><i class="bi bi-envelope me-2"></i>${p.Correo || 'N/A'}</small>
-                        <small class="text-muted d-block mt-2">DIRECCIÓN:</small>
-                        <small class="fw-bold d-block"><i class="bi bi-geo-alt me-2"></i>${p.Direccion || 'N/A'}</small>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <h6 class="fw-bold mb-3"><i class="bi bi-box-seam me-2" style="color: ${colorTexto};"></i>Productos</h6>
-                    <div style="background: white; padding: 15px; border-radius: 10px; border-left: 4px solid ${colorTexto};">
-                        ${productos.map((prod, pidx) => {
-                            let nombre = prod.Nombre || prod.nombre || 'Producto';
-                            let cantidad = prod.cantidad || prod.Cantidad || 1;
-                            let precio = Number(prod.Precio || prod.precio || 0);
-                            return `
-                            <div class="d-flex justify-content-between align-items-center ${pidx < productos.length - 1 ? 'pb-2 mb-2 border-bottom' : ''}">
-                                <div><small class="fw-bold d-block">${nombre}</small><small class="text-muted">Cant: ${cantidad}</small></div>
-                                <div class="text-end"><small class="fw-bold" style="color: ${colorTexto};">$${(cantidad * precio).toLocaleString()}</small></div>
-                            </div>`;
-                        }).join('')}
-                    </div>
+<div class="order-card-wrapper" data-estado="${p.Estado || 'Pendiente'}">
+    <div class="order-card-compact mb-4 card shadow-sm" style="border: 3px solid ${colorBorde}; border-radius: 20px;">
+        <div class="order-summary-line order-collapse-trigger p-3 d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapsePedido${pedidoId}" role="button" style="cursor: pointer; background: linear-gradient(135deg, ${estaCompletado ? '#f0fdf4' : '#fffbf5'} 0%, #ffffff 100%); border-radius: 17px 17px 0 0;">
+            <div class="d-flex align-items-center gap-3">
+                <div class="badge bg-secondary text-white rounded-pill" style="min-width:48px;">#${displayNumber}</div>
+                <div>
+                    <h5 class="fw-bold mb-0" style="color:#2d3436;">${p.NombreCliente || 'Cliente General'}</h5>
+                    <small class="text-muted" style="font-size: 0.75rem;"><i class="bi bi-clock me-1"></i>${fechaFormateada} - ${horaFormateada}</small>
+                    ${porcentajeDcto > 0 ? `<div class="mt-1"><small class="text-muted text-decoration-line-through">$${totalBase.toLocaleString()}</small></div>` : ''}
                 </div>
             </div>
+            <div class="d-flex align-items-center gap-3">
+                <h6 id="precio-header-${pedidoId}" class="fw-bold mb-0" style="color: ${colorTexto}; font-size: 1.25rem;">$${totalConDescuento.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h6>
+                <i class="bi bi-caret-down-fill text-muted"></i>
+            </div>
+        </div>
 
-            <div class="row mb-4">
-                <div class="col-md-12">
-                    <div style="background: white; padding: 20px; border-radius: 10px; border-left: 4px solid ${colorTexto};">
-                        <div class="row align-items-center">
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold small">Aplicar Descuento (%)</label>
-                                <div class="input-group">
-                                    <input type="number" step="0.01" class="form-control" value="${porcentajeDcto}" 
-                                        onchange="guardarDescuentoSimple(${pedidoId}, this.value)">
-                                    <span class="input-group-text">%</span>
-                                </div>
-                            </div>
-                            <div class="col-md-6 text-end">
-                                <small class="text-muted">Precio Base: $<span id="total-base-${pedidoId}">${totalBase.toFixed(2)}</span></small>
-                                <h5 id="precio-neto-final-${pedidoId}" class="fw-bold mb-0" style="color: ${colorTexto};">Neto: $${totalConDescuento.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h5>
-                            </div>
+        <div class="collapse" id="collapsePedido${pedidoId}">
+            <div class="card-body p-4" style="background: #f8f9fa; border-radius: 0 0 17px 17px;">
+                <hr style="border-top: 2px solid ${colorTexto};">
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2" style="color: ${colorTexto};"></i>Detalles del Pedido</h6>
+                        <div style="background: white; padding: 15px; border-radius: 10px; border-left: 4px solid ${colorTexto};">
+                            <small class="text-muted d-block">RECIBIDO EL:</small>
+                            <small class="fw-bold d-block mb-2">${fechaFormateada} a las ${horaFormateada}</small>
+                            
+                            <small class="text-muted d-block">CONTACTO:</small>
+                            <small class="fw-bold d-block"><i class="bi bi-telephone me-2"></i>${p.Telefono || 'N/A'}</small>
+                            <small class="fw-bold d-block"><i class="bi bi-envelope me-2"></i>${p.Correo || 'N/A'}</small>
+                            <small class="text-muted d-block mt-2">DIRECCIÓN:</small>
+                            <small class="fw-bold d-block"><i class="bi bi-geo-alt me-2"></i>${p.Direccion || 'N/A'}</small>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h6 class="fw-bold mb-3"><i class="bi bi-box-seam me-2" style="color: ${colorTexto};"></i>Productos</h6>
+                        <div style="background: white; padding: 15px; border-radius: 10px; border-left: 4px solid ${colorTexto};">
+                            ${productos.map((prod, pidx) => {
+                                let nombre = prod.Nombre || prod.nombre || 'Producto';
+                                let cantidad = prod.cantidad || prod.Cantidad || 1;
+                                let precio = Number(prod.Precio || prod.precio || 0);
+                                return `
+                                <div class="d-flex justify-content-between align-items-center ${pidx < productos.length - 1 ? 'pb-2 mb-2 border-bottom' : ''}">
+                                    <div><small class="fw-bold d-block">${nombre}</small><small class="text-muted">Cant: ${cantidad}</small></div>
+                                    <div class="text-end"><small class="fw-bold" style="color: ${colorTexto};">$${(cantidad * precio).toLocaleString()}</small></div>
+                                </div>`;
+                            }).join('')}
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="order-actions d-grid gap-2" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
-                <button class="btn btn-dark fw-bold rounded-pill" onclick="prepararFacturaPorId(${pedidoId}, ${displayNumber})"><i class="bi bi-file-pdf"></i> FACTURA</button>
-                <button class="btn btn-success fw-bold rounded-pill" onclick="completarPedido(${pedidoId})">COMPLETAR</button>
-                <button class="btn btn-outline-danger fw-bold rounded-pill" onclick="eliminarPedido(${pedidoId})">ELIMINAR</button>
+                <div class="order-actions d-grid gap-2" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
+                    <button class="btn btn-dark fw-bold rounded-pill" onclick="prepararFacturaPorId(${pedidoId}, ${displayNumber})"><i class="bi bi-file-pdf"></i> FACTURA</button>
+                    <button class="btn btn-success fw-bold rounded-pill" onclick="completarPedido(${pedidoId})">COMPLETAR</button>
+                    <button class="btn btn-outline-danger fw-bold rounded-pill" onclick="eliminarPedido(${pedidoId})">ELIMINAR</button>
+                </div>
             </div>
         </div>
     </div>
@@ -653,6 +633,39 @@ async function cargarPedidos() {
         }).join('');
     } catch (err) { console.error(err); } 
     finally { cargandoPedidosFlag = false; }
+}
+
+function filtrarPedidos(estado) {
+    const tarjetas = document.querySelectorAll('.order-card-wrapper');
+    const botones = {
+        'Todos': document.getElementById('btn-filtro-Todos'),
+        'Pendiente': document.getElementById('btn-filtro-Pendiente'),
+        'Completado': document.getElementById('btn-filtro-Completado')
+    };
+
+    // 1. Resetear estilos de botones
+    Object.keys(botones).forEach(key => {
+        botones[key].classList.remove('btn-dark', 'btn-warning', 'btn-success', 'active');
+        botones[key].classList.add('btn-outline-dark'); 
+        // Nota: cambié a btn-outline-dark para que se vean limpios cuando no están activos
+    });
+
+    // 2. Aplicar color al botón activo
+    const btnActivo = botones[estado];
+    btnActivo.classList.remove('btn-outline-dark');
+    if (estado === 'Todos') btnActivo.classList.add('btn-dark');
+    if (estado === 'Pendiente') btnActivo.classList.add('btn-warning');
+    if (estado === 'Completado') btnActivo.classList.add('btn-success');
+    btnActivo.classList.add('active');
+
+    // 3. Filtrar visualmente
+    tarjetas.forEach(t => {
+        if (estado === 'Todos') {
+            t.style.display = 'block';
+        } else {
+            t.style.display = (t.getAttribute('data-estado') === estado) ? 'block' : 'none';
+        }
+    });
 }
 
 // Función de apoyo para que el descuento se guarde sin recargar toda la página si no quieres
