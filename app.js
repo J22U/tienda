@@ -247,7 +247,7 @@ app.put('/pedidos/:id/total-manual', async (req, res) => {
 
 app.put('/pedidos/:id/descuento', async (req, res) => {
     const { id } = req.params;
-    const { descuento } = req.body;
+    const { descuento } = req.body; 
     try {
         const pool = await poolPromise;
         await pool.request()

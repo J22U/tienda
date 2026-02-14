@@ -534,164 +534,109 @@ async function cargarPedidos() {
 
         document.getElementById('order-count').innerText = `${data.length} recibidos`;
         
+        // Ordenar: El ID más alto (más reciente) primero
+        data.sort((a, b) => b.PedidoID - a.PedidoID);
+
         document.getElementById('lista-pedidos').innerHTML = data.map((p, idx) => {
-            const numeroPedido = p.PedidoID;
             const pedidoId = p.PedidoID;
             const estaCompletado = p.Estado === 'Completado';
-            // Asegurar que `Productos` sea un array (a veces viene como JSON string)
+            
+            // --- EL NÚMERO QUE SE VE EN PANTALLA ---
+            const displayNumber = idx + 1; 
+
+            const porcentajeDcto = parseFloat(p.DescuentoPorcentaje) || 0;
+            const totalBase = Number(p.Total) || 0;
+            const totalConDescuento = totalBase - (totalBase * (porcentajeDcto / 100));
+
             const productos = (function() {
                 try {
                     if (!p.Productos) return [];
                     if (Array.isArray(p.Productos)) return p.Productos;
                     if (typeof p.Productos === 'string') return JSON.parse(p.Productos);
                     return [];
-                } catch (err) {
-                    console.warn('Error parsing Productos for pedido', p.PedidoID, err);
-                    return [];
-                }
+                } catch (err) { return []; }
             })();
+
             const colorBorde = estaCompletado ? '#28a745' : '#e67e22';
             const colorTexto = estaCompletado ? '#28a745' : '#e67e22';
-            const statusClass = estaCompletado ? 'status-completado' : 'status-pendiente';
-            const statusText = estaCompletado ? 'Entregado' : 'Pendiente';
-            const statusIcon = estaCompletado ? 'bi-check-circle-fill' : 'bi-clock-fill';
-
-            const displayNumber = idx + 1;
 
             return `
 <div class="order-card-compact mb-4 card shadow-sm" style="border: 3px solid ${colorBorde}; border-radius: 20px;">
-    <div class="order-summary-line order-collapse-trigger p-3 d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapsePedido${pedidoId}" role="button" aria-expanded="false" aria-controls="collapsePedido${pedidoId}" style="cursor: pointer; background: linear-gradient(135deg, ${estaCompletado ? '#f0fdf4' : '#fffbf5'} 0%, #ffffff 100%); border-radius: 17px 17px 0 0;">
+    <div class="order-summary-line order-collapse-trigger p-3 d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#collapsePedido${pedidoId}" role="button" style="cursor: pointer; background: linear-gradient(135deg, ${estaCompletado ? '#f0fdf4' : '#fffbf5'} 0%, #ffffff 100%); border-radius: 17px 17px 0 0;">
         <div class="d-flex align-items-center gap-3">
-            <div class="badge bg-secondary text-white rounded-pill" style="font-size: 0.95rem; padding: 10px 12px; min-width:48px; text-align:center;">#${displayNumber}</div>
+            <div class="badge bg-secondary text-white rounded-pill" style="min-width:48px;">#${displayNumber}</div>
             <div>
                 <h5 class="fw-bold mb-0" style="color:#2d3436;">${p.NombreCliente || 'Cliente General'}</h5>
+                ${porcentajeDcto > 0 ? `<small class="text-muted text-decoration-line-through">$${totalBase.toLocaleString()}</small>` : ''}
             </div>
         </div>
         <div class="d-flex align-items-center gap-3">
-            <h6 class="fw-bold mb-0" style="color: ${colorTexto}; font-size: 1.25rem;">$${Number(p.Total).toLocaleString()}</h6>
+            <h6 class="fw-bold mb-0" style="color: ${colorTexto}; font-size: 1.25rem;">$${Math.round(totalConDescuento).toLocaleString()}</h6>
             <i class="bi bi-caret-down-fill text-muted"></i>
         </div>
     </div>
 
     <div class="collapse" id="collapsePedido${pedidoId}">
         <div class="card-body p-4" style="background: #f8f9fa; border-radius: 0 0 17px 17px;">
-            <hr style="border-top: 2px solid ${colorTexto}; margin-bottom: 20px;">
+            <hr style="border-top: 2px solid ${colorTexto};">
             
             <div class="row mb-4">
                 <div class="col-md-6">
                     <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2" style="color: ${colorTexto};"></i>Información de Envío</h6>
                     <div style="background: white; padding: 15px; border-radius: 10px; border-left: 4px solid ${colorTexto};">
-                        <div class="mb-3">
-                            <small class="text-muted d-block">CONTACTO</small>
-                            <small class="fw-bold d-block"><i class="bi bi-telephone me-2"></i>${p.Telefono || 'N/A'}</small>
-                            <small class="fw-bold d-block"><i class="bi bi-envelope me-2"></i>${p.Correo || 'N/A'}</small>
-                        </div>
-                        <div>
-                            <small class="text-muted d-block">DIRECCIÓN Y FECHA DE PEDIDO</small>
-                            <small class="fw-bold d-block"><i class="bi bi-geo-alt me-2"></i>${p.Direccion || 'N/A'}</small>
-                            <small class="fw-bold d-block"><i class="bi bi-calendar me-2"></i>${new Date(p.Fecha).toLocaleString('es-CO')}</small>
-                        </div>
+                        <small class="text-muted d-block">CONTACTO</small>
+                        <small class="fw-bold d-block"><i class="bi bi-telephone me-2"></i>${p.Telefono || 'N/A'}</small>
+                        <small class="fw-bold d-block"><i class="bi bi-envelope me-2"></i>${p.Correo || 'N/A'}</small>
+                        <small class="text-muted d-block mt-2">DIRECCIÓN</small>
+                        <small class="fw-bold d-block"><i class="bi bi-geo-alt me-2"></i>${p.Direccion || 'N/A'}</small>
                     </div>
                 </div>
 
                 <div class="col-md-6">
                     <h6 class="fw-bold mb-3"><i class="bi bi-box-seam me-2" style="color: ${colorTexto};"></i>Productos</h6>
                     <div style="background: white; padding: 15px; border-radius: 10px; border-left: 4px solid ${colorTexto};">
-                        ${productos && productos.length ? productos.map((prod, pidx) => {
-                            // Normalizar producto (puede venir como string o como objeto con distintas keys)
-                            let nombre = typeof prod === 'string' ? prod : (prod.Nombre || prod.nombre || prod.Producto || 'Producto');
-                            // Detectar cantidad en varios campos posibles
-                            let cantidad = 1;
-                            const possibleQtyKeys = ['Cantidad','CantidadVendida','cantidad','qty','quantity','CantidadProducto','CantidadPedida','cantidad_vendida'];
-                            if (typeof prod === 'object' && prod !== null) {
-                                for (const k of possibleQtyKeys) {
-                                    if (prod[k] != null) {
-                                        const n = Number(prod[k]);
-                                        if (!Number.isNaN(n)) { cantidad = n; break; }
-                                    }
-                                }
-                            }
-
-                            // Si no hay cantidad numérica, intentar extraerla del nombre (ej. "15x Kit carburador")
-                            try {
-                                const m = String(nombre).trim().match(/^\s*(\d+)\s*[xX]\s*(.+)$/);
-                                if (m) {
-                                    const parsedN = Number(m[1]);
-                                    if (!Number.isNaN(parsedN)) {
-                                        cantidad = parsedN;
-                                        nombre = m[2];
-                                    }
-                                }
-                            } catch (e) {
-                                // ignore
-                            }
-
-                            // Precio en varias keys posibles
-                            let precio = 0;
-                            if (typeof prod === 'object' && prod !== null) {
-                                precio = prod.Precio || prod.PrecioUnitario || prod.precio || prod.PrecioVenta || 0;
-                            }
-                            precio = Number(precio) || 0;
-
-                            const subtotal = cantidad * precio;
-
+                        ${productos.map((prod, pidx) => {
+                            let nombre = prod.Nombre || prod.nombre || 'Producto';
+                            let cantidad = prod.cantidad || prod.Cantidad || 1;
+                            let precio = Number(prod.Precio || prod.precio || 0);
                             return `
                             <div class="d-flex justify-content-between align-items-center ${pidx < productos.length - 1 ? 'pb-2 mb-2 border-bottom' : ''}">
-                                <div>
-                                    <small class="fw-bold d-block text-dark">${nombre}</small>
-                                    <small class="text-muted">Cantidad: <strong>${cantidad}</strong></small>
-                                </div>
-                                <div class="text-end">
-                                    <small class="text-muted d-block">$${precio.toLocaleString()}</small>
-                                    <small class="fw-bold" style="color: ${colorTexto};">$${subtotal.toLocaleString()}</small>
-                                </div>
+                                <div><small class="fw-bold d-block">${nombre}</small><small class="text-muted">Cant: ${cantidad}</small></div>
+                                <div class="text-end"><small class="fw-bold" style="color: ${colorTexto};">$${(cantidad * precio).toLocaleString()}</small></div>
                             </div>`;
-                        }).join('') : '<p class="text-muted text-center">Sin productos</p>'}
+                        }).join('')}
                     </div>
                 </div>
             </div>
 
             <div class="row mb-4">
                 <div class="col-md-12">
-                    <h6 class="fw-bold mb-3"><i class="bi bi-percent me-2" style="color: ${colorTexto};"></i>Ajustes Finales</h6>
                     <div style="background: white; padding: 20px; border-radius: 10px; border-left: 4px solid ${colorTexto};">
-                        <div class="row">
+                        <div class="row align-items-center">
                             <div class="col-md-6">
-                                <label class="form-label fw-bold small">Descuento (%)</label>
+                                <label class="form-label fw-bold small">Aplicar Descuento (%)</label>
                                 <div class="input-group">
-                                    <input type="number" class="form-control" min="0" max="100" value="${p.DescuentoPorcentaje || 0}" 
-                                           placeholder="0"
-                                           onchange="guardarDescuentoServidor(${pedidoId}, this.value)"
-                                           oninput="aplicarDescuentoVisual(${pedidoId}, ${Number(p.Total)}, this.value)">
-                                    <span class="input-group-text fw-bold">%</span>
+                                    <input type="number" class="form-control" value="${porcentajeDcto}" 
+                                        onchange="guardarDescuentoSimple(${pedidoId}, this.value)">
+                                    <span class="input-group-text">%</span>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold small">Total Final (\$)</label>
-                                <input type="number" id="input-total-${pedidoId}" class="form-control form-control-lg fw-bold" 
-                                       value="${Number(p.Total)}"
-                                       style="color: ${colorTexto}; font-size: 1.2rem;"
-                                       onblur="guardarTotalManual(${pedidoId}, this.value)">
+                            <div class="col-md-6 text-end">
+                                <small class="text-muted">Precio Base: $${totalBase.toLocaleString()}</small>
+                                <h5 class="fw-bold mb-0" style="color: ${colorTexto};">Neto: $${Math.round(totalConDescuento).toLocaleString()}</h5>
                             </div>
                         </div>
-                        <small id="nuevo-total-${pedidoId}" class="text-muted d-block mt-2">Total actualizado: <strong style="color: ${colorTexto};">$${Number(p.Total).toLocaleString()}</strong></small>
                     </div>
                 </div>
             </div>
 
             <div class="order-actions d-grid gap-2" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
                 <button class="btn btn-dark fw-bold rounded-pill" 
-                    onclick="prepararFacturaPorId(${pedidoId}, '${displayNumber}')">
-                    <i class="bi bi-file-pdf me-2"></i>FACTURA
+                        onclick="prepararFacturaPorId(${pedidoId}, ${displayNumber})">
+                    <i class="bi bi-file-pdf"></i> FACTURA
                 </button>
-                <button class="btn btn-success fw-bold rounded-pill" 
-                        onclick="completarPedido(${pedidoId})">
-                    <i class="bi bi-check-lg me-2"></i>COMPLETAR
-                </button>
-                <button class="btn btn-outline-danger fw-bold rounded-pill" 
-                        onclick="eliminarPedido(${pedidoId})">
-                    <i class="bi bi-trash me-2"></i>Eliminar
-                </button>
+                <button class="btn btn-success fw-bold rounded-pill" onclick="completarPedido(${pedidoId})"><i class="bi bi-check-lg"></i> COMPLETAR</button>
+                <button class="btn btn-outline-danger fw-bold rounded-pill" onclick="eliminarPedido(${pedidoId})"><i class="bi bi-trash"></i> ELIMINAR</button>
             </div>
         </div>
     </div>
@@ -699,6 +644,18 @@ async function cargarPedidos() {
         }).join('');
     } catch (err) { console.error(err); } 
     finally { cargandoPedidosFlag = false; }
+}
+
+// Función de apoyo para que el descuento se guarde sin recargar toda la página si no quieres
+async function guardarDescuentoSimple(pedidoId, valor) {
+    try {
+        await fetch(`${BASE_URL}/pedidos/${pedidoId}/descuento`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ descuento: valor })
+        });
+        cargarPedidos(); // Recarga la lista para aplicar el cálculo visual
+    } catch (err) { console.error(err); }
 }
 
 async function eliminarPedido(id) {
@@ -846,6 +803,19 @@ function limpiarHistorial() {
     // Reemplazar múltiples veces para sobrescribir el historial
     for (let i = 0; i < 5; i++) {
         window.history.replaceState({ page: i }, null, window.location.href);
+    }
+}
+
+async function guardarDescuentoEnBD(pedidoId, valor) {
+    try {
+        await fetch(`${BASE_URL}/pedidos/${pedidoId}/descuento`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ descuento: valor })
+        });
+        console.log("Porcentaje guardado. Al refrescar, el JS calculará el neto solo.");
+    } catch (err) {
+        console.error("Error al guardar descuento:", err);
     }
 }
 
