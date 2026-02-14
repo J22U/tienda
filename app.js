@@ -198,13 +198,19 @@ app.get('/pedidos/:id', async (req, res) => {
 
 app.put('/pedidos/:id/completar', async (req, res) => {
     try {
+        const { id } = req.params;
         const pool = await poolPromise;
-        // Marcar tanto el flag numérico como el estado textual para compatibilidad con frontend
+        
+        // CORRECCIÓN: Usamos 'Estado' porque 'Completado' no existe en tu tabla
         await pool.request()
-            .input('id', sql.Int, req.params.id)
-            .query("UPDATE Pedidos SET Completado = 1, Estado = 'Completado' WHERE PedidoID = @id");
+            .input('id', sql.Int, id)
+            .query("UPDATE Pedidos SET Estado = 'Completado' WHERE PedidoID = @id");
+            
         res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) { 
+        console.error("Error:", err.message);
+        res.status(500).json({ error: err.message }); 
+    }
 });
 
 // ELIMINAR PEDIDO (Nueva ruta que faltaba)

@@ -537,7 +537,7 @@ async function cargarPedidos() {
         document.getElementById('lista-pedidos').innerHTML = data.map((p, idx) => {
             const numeroPedido = p.PedidoID;
             const pedidoId = p.PedidoID;
-            const estaCompletado = p.Completado === 1;
+            const estaCompletado = p.Estado === 'Completado';
             // Asegurar que `Productos` sea un array (a veces viene como JSON string)
             const productos = (function() {
                 try {
