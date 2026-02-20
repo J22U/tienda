@@ -287,6 +287,197 @@ app.get(/\.html$/, (req, res, next) => {
     next();
 });
 
+// ==========================================
+// RUTAS DE BACKUP Y RESTAURACIÓN
+// ==========================================
+
+// Endpoint para obtener todos los datos (backup completo)
+app.get('/backup', async (req, res) => {
+    try {
+        const pool = await poolPromise;
+        
+        // Obtener productos con sus imágenes
+        const productosResult = await pool.request().query(`
+            SELECT p.*, 
+            (SELECT TOP 1 ImagenURL FROM ProductoImagenes WHERE ProductoID = p.ProductoID) as FotoReal
+            FROM Productos p
+        `);
+        
+        // Obtener pedidos
+        const pedidosResult = await pool.request().query('SELECT * FROM Pedidos ORDER BY Fecha DESC');
+        
+        const backup = {
+            fecha: new Date().toISOString(),
+            version: '1.0',
+            productos: productosResult.recordset,
+            pedidos: pedidosResult.recordset
+        };
+        
+        res.setHeader('Content-Disposition', `attachment; filename=backup_trebol_${new Date().toISOString().slice(0,10)}.json`);
+        res.setHeader('Content-Type', 'application/json');
+        res.json(backup);
+    } catch (err) { 
+        res.status(500).json({ error: err.message }); 
+    }
+});
+
+// Endpoint para restaurar/importar productos
+app.post('/restore', async (req, res) => {
+    const { productos, opciones } = req.body;
+    const pool = await poolPromise;
+    const transaction = new sql.Transaction(pool);
+    
+    const opcionActualizar = opciones?.actualizarExistentes || false;
+    const opcionActualizarStock = opciones?.actualizarSoloStock || false;
+    
+    try {
+        await transaction.begin();
+        
+        let creados = 0;
+        let actualizados = 0;
+        let omitidos = 0;
+        
+        for (const p of productos) {
+            // Verificar si existe por SKU o ID
+            let existe = null;
+            
+            if (p.CodigoSKU) {
+                const checkSku = await transaction.request()
+                    .input('sku', sql.NVarChar, p.CodigoSKU)
+                    .query('SELECT ProductoID FROM Productos WHERE CodigoSKU = @sku');
+                existe = checkSku.recordset[0];
+            }
+            
+            if (existe) {
+                if (opcionActualizar) {
+                    // Actualizar producto existente completamente
+                    await transaction.request()
+                        .input('id', sql.Int, existe.ProductoID)
+                        .input('n', sql.NVarChar, p.Nombre)
+                        .input('m', sql.NVarChar, p.Marca)
+                        .input('s', sql.NVarChar, p.CodigoSKU)
+                        .input('p', sql.Decimal(18, 2), parseFloat(p.Precio) || 0)
+                        .input('st', sql.Int, parseInt(p.Stock) || 0)
+                        .input('c', sql.NVarChar, p.Caracteristicas || '')
+                        .query(`UPDATE Productos SET Nombre=@n, Marca=@m, CodigoSKU=@s, Precio=@p, Stock=@st, Caracteristicas=@c WHERE ProductoID=@id`);
+                    actualizados++;
+                } else if (opcionActualizarStock) {
+                    // Solo actualizar stock
+                    await transaction.request()
+                        .input('id', sql.Int, existe.ProductoID)
+                        .input('st', sql.Int, parseInt(p.Stock) || 0)
+                        .query(`UPDATE Productos SET Stock = @st WHERE ProductoID=@id`);
+                    actualizados++;
+                } else {
+                    omitidos++;
+                }
+            } else {
+                // Crear nuevo producto
+                const result = await transaction.request()
+                    .input('n', sql.NVarChar, p.Nombre)
+                    .input('m', sql.NVarChar, p.Marca)
+                    .input('s', sql.NVarChar, p.CodigoSKU || `SKU-${Date.now()}`)
+                    .input('p', sql.Decimal(18, 2), parseFloat(p.Precio) || 0)
+                    .input('st', sql.Int, parseInt(p.Stock) || 0)
+                    .input('c', sql.NVarChar, p.Caracteristicas || '')
+                    .query(`
+                        INSERT INTO Productos (Nombre, Marca, CodigoSKU, Precio, Stock, Caracteristicas) 
+                        VALUES (@n, @m, @s, @p, @st, @c);
+                        SELECT SCOPE_IDENTITY() AS ProductoID;
+                    `);
+                
+                const nuevoId = result.recordset[0].ProductoID;
+                
+                // Guardar imagen si existe
+                if (p.FotoReal || p.ImagenURL) {
+                    const url = p.FotoReal || p.ImagenURL;
+                    await transaction.request()
+                        .input('id', sql.Int, nuevoId)
+                        .input('url', sql.NVarChar, url)
+                        .query('INSERT INTO ProductoImagenes (ProductoID, ImagenURL) VALUES (@id, @url)');
+                }
+                creados++;
+            }
+        }
+        
+        await transaction.commit();
+        res.json({ 
+            success: true, 
+            message: `Backup restaurado: ${creados} creados, ${actualizados} actualizados, ${omitidos} omitidos`
+        });
+    } catch (err) {
+        if (transaction) await transaction.rollback();
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Endpoint para restaurar pedidos
+app.post('/restore-pedidos', async (req, res) => {
+    const { pedidos, opciones } = req.body;
+    const pool = await poolPromise;
+    const transaction = new sql.Transaction(pool);
+    
+    const opcionReemplazar = opciones?.reemplazarExistentes || false;
+    
+    try {
+        await transaction.begin();
+        
+        let creados = 0;
+        let omitidos = 0;
+        
+        if (opcionReemplazar) {
+            // Eliminar todos los pedidos existentes
+            await transaction.request().query('DELETE FROM Pedidos');
+        }
+        
+        for (const p of pedidos) {
+            // Verificar si ya existe el pedido por fecha y cliente
+            let existe = null;
+            
+            if (p.Fecha && p.NombreCliente) {
+                const checkDup = await transaction.request()
+                    .input('nc', sql.NVarChar, p.NombreCliente.substring(0, 100))
+                    .input('fe', sql.DateTime, new Date(p.Fecha))
+                    .query('SELECT PedidoID FROM Pedidos WHERE NombreCliente = @nc AND Fecha = @fe');
+                existe = checkDup.recordset[0];
+            }
+            
+            if (existe && !opcionReemplazar) {
+                omitidos++;
+            } else {
+                // Crear nuevo pedido
+                const productosJson = typeof p.Productos === 'string' ? p.Productos : JSON.stringify(p.Productos || []);
+                
+                await transaction.request()
+                    .input('nc', sql.NVarChar, p.NombreCliente || p.Nombre || 'Cliente')
+                    .input('co', sql.NVarChar, p.Correo || '')
+                    .input('te', sql.NVarChar, p.Telefono || '')
+                    .input('do', sql.NVarChar, p.Documento || '')
+                    .input('di', sql.NVarChar, p.Direccion || '')
+                    .input('pr', sql.NVarChar, productosJson)
+                    .input('to', sql.Decimal(18, 2), parseFloat(p.Total) || 0)
+                    .input('fe', sql.DateTime, p.Fecha ? new Date(p.Fecha) : new Date())
+                    .input('es', sql.NVarChar, p.Estado || 'Pendiente')
+                    .input('tm', sql.Decimal(18, 2), p.TotalManual ? parseFloat(p.TotalManual) : null)
+                    .input('dp', sql.Decimal(5, 2), p.DescuentoPorcentaje ? parseFloat(p.DescuentoPorcentaje) : null)
+                    .query(`
+                        INSERT INTO Pedidos (NombreCliente, Correo, Telefono, Documento, Direccion, Productos, Total, Fecha, Estado, TotalManual, DescuentoPorcentaje) 
+                        VALUES (@nc, @co, @te, @do, @di, @pr, @to, @fe, @es, @tm, @dp)
+                    `);
+                creados++;
+            }
+        }
+        
+        await transaction.commit();
+        res.json({ 
+            success: true, 
+            message: `Pedidos restaurados: ${creados} creados, ${omitidos} omitidos`
+        });
+    } catch (err) {
+        if (transaction) await transaction.rollback();
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'tienda.html')); });
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));

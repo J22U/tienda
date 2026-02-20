@@ -747,31 +747,64 @@ async function completarPedido(id) {
 }
 
 /* ============================================================================
-   BACKUP E IMPORTACIÓN
+   BACKUP E IMPORTACIÓN - MEJORADO
    ============================================================================ */
 
-function exportarInventario() {
-    const datos = (typeof productosLocal !== 'undefined') ? productosLocal : [];
-    
-    if (datos.length === 0) {
-        Swal.fire("Aviso", "No hay productos para exportar", "info");
-        return;
-    }
+// Función mejorada para exportar usando el endpoint del servidor
+async function exportarInventario() {
+    try {
+        Swal.fire({
+            title: 'Generando Backup...',
+            html: 'Por favor espere',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
 
-    const texto = JSON.stringify(datos, null, 4);
-    const paquete = new Blob([texto], { type: "application/json" });
-    const urlTemporal = URL.createObjectURL(paquete);
-    
-    const enlace = document.createElement("a");
-    enlace.href = urlTemporal;
-    enlace.download = `backup_trebol_${new Date().toISOString().slice(0,10)}.json`;
-    
-    document.body.appendChild(enlace);
-    enlace.click();
-    document.body.removeChild(enlace);
-    URL.revokeObjectURL(urlTemporal);
+        // Usar el endpoint del servidor que incluye productos y pedidos
+        const res = await fetch(`${BASE_URL}/backup`);
+        
+        if (!res.ok) {
+            throw new Error('Error al generar backup');
+        }
+
+        const backup = await res.json();
+        
+        // Convertir a JSON y descargar
+        const texto = JSON.stringify(backup, null, 4);
+        const paquete = new Blob([texto], { type: "application/json" });
+        const urlTemporal = URL.createObjectURL(paquete);
+        
+        const enlace = document.createElement("a");
+        enlace.href = urlTemporal;
+        const fecha = new Date().toISOString().slice(0,10);
+        const tienePedidos = backup.pedidos && backup.pedidos.length > 0;
+        const nombreArchivo = tienePedidos 
+            ? `backup_completo_trebol_${fecha}.json` 
+            : `backup_trebol_${fecha}.json`;
+        enlace.download = nombreArchivo;
+        
+        document.body.appendChild(enlace);
+        enlace.click();
+        document.body.removeChild(enlace);
+        URL.revokeObjectURL(urlTemporal);
+
+        const msg = tienePedidos 
+            ? `Backup completo: ${backup.productos.length} productos y ${backup.pedidos.length} pedidos`
+            : `Backup: ${backup.productos.length} productos`;
+
+        Swal.fire({
+            title: '¡Backup Descargado!',
+            text: msg,
+            icon: 'success'
+        });
+
+    } catch (err) {
+        console.error(err);
+        Swal.fire('Error', 'No se pudo generar el backup. Verifique la conexión.', 'error');
+    }
 }
 
+// Función mejorada para importar/restore con opciones
 async function importarBackup(event) {
     const archivo = event.target.files[0];
     if (!archivo) return;
@@ -779,69 +812,177 @@ async function importarBackup(event) {
     const lector = new FileReader();
     lector.onload = async (e) => {
         try {
-            const productosBackup = JSON.parse(e.target.result);
+            const datosBackup = JSON.parse(e.target.result);
             
-            const confirm = await Swal.fire({
-                title: '¿Restaurar Inventario?',
-                text: `Se procesarán ${productosBackup.length} productos. Los que ya existan (mismo SKU) se omitirán para evitar duplicados.`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#27ae60',
-                confirmButtonText: 'Iniciar Restauración'
-            });
-
-            if (!confirm.isConfirmed) return;
-
-            Swal.fire({
-                title: 'Restaurando...',
-                html: 'Producto: <b></b>',
-                allowOutsideClick: false,
-                didOpen: () => Swal.showLoading()
-            });
-
-            let creados = 0;
-            let omitidos = 0;
-
-            for (const p of productosBackup) {
-                Swal.getHtmlContainer().querySelector('b').innerText = p.Nombre;
-
-                const existe = productosLocal.some(local => local.CodigoSKU === p.CodigoSKU);
-
-                if (!existe) {
-                    await fetch(`${BASE_URL}/productos`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            Nombre: p.Nombre,
-                            Marca: p.Marca,
-                            Precio: p.Precio,
-                            Stock: p.Stock,
-                            CodigoSKU: p.CodigoSKU || `REC-${Date.now()}`,
-                            Caracteristicas: p.Caracteristicas || ""
-                        })
-                    });
-                    creados++;
-                } else {
-                    omitidos++;
-                }
+            // Determinar qué contiene el backup
+            const tieneProductos = datosBackup.productos && Array.isArray(datosBackup.productos);
+            const tienePedidos = datosBackup.pedidos && Array.isArray(datosBackup.pedidos);
+            
+            if (!tieneProductos && !tienePedidos) {
+                throw new Error('Archivo de backup no válido');
             }
 
+            // Mostrar modal de opciones
+            const { value: opciones } = await Swal.fire({
+                title: 'Opciones de Restauración',
+                html: `
+                    <div class="text-start">
+                        <p class="mb-2"><strong>Contenido del backup:</strong></p>
+                        <ul class="mb-3">
+                            ${tieneProductos ? `<li>${datosBackup.productos.length} productos</li>` : ''}
+                            ${tienePedidos ? `<li>${datosBackup.pedidos.length} pedidos</li>` : ''}
+                        </ul>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Productos:</label>
+                            <select id="opcion-productos" class="form-select">
+                                <option value="solo-crear">Solo crear nuevos (omitir existentes)</option>
+                                <option value="actualizar-todo">Actualizar existentes</option>
+                                <option value="actualizar-stock">Solo actualizar stock</option>
+                            </select>
+                        </div>
+                        
+                        ${tienePedidos ? `
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Pedidos:</label>
+                            <select id="opcion-pedidos" class="form-select">
+                                <option value="agregar">Agregar nuevos</option>
+                                <option value="reemplazar">Reemplazar todos</option>
+                            </select>
+                        </div>
+                        ` : ''}
+                    </div>
+                `,
+                preConfirm: () => {
+                    return {
+                        productos: document.getElementById('opcion-productos').value,
+                        pedidos: tienePedidos ? document.getElementById('opcion-pedidos').value : null
+                    };
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Iniciar Restauración',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#27ae60'
+            });
+
+            if (!opciones) {
+                event.target.value = '';
+                return;
+            }
+
+            // Procesar productos
+            if (tieneProductos) {
+                await procesarRestauracionProductos(datosBackup.productos, opciones.productos);
+            }
+
+            // Procesar pedidos
+            if (tienePedidos && opciones.pedidos) {
+                await procesarRestauracionPedidos(datosBackup.pedidos, opciones.pedidos);
+            }
+
+            // Recargar datos
+            cargarInventario();
+            cargarPedidos();
+
             await Swal.fire({
-                title: 'Proceso Finalizado',
-                text: `Éxito: ${creados} | Omitidos por duplicidad: ${omitidos}`,
+                title: '¡Restauración Completada!',
+                text: 'Los datos han sido restaurados correctamente',
                 icon: 'success'
             });
 
-            cargarInventario();
-
         } catch (err) {
             console.error(err);
-            Swal.fire('Error', 'El archivo no es válido o hubo un problema con el servidor.', 'error');
+            Swal.fire('Error', err.message || 'El archivo no es válido o hubo un problema.', 'error');
         } finally {
             event.target.value = '';
         }
     };
     lector.readAsText(archivo);
+}
+
+// Procesar restauración de productos en el servidor
+async function procesarRestauracionProductos(productos, opcion) {
+    let opcionesBackend = {};
+    
+    switch (opcion) {
+        case 'actualizar-todo':
+            opcionesBackend = { actualizarExistentes: true };
+            break;
+        case 'actualizar-stock':
+            opcionesBackend = { actualizarSoloStock: true };
+            break;
+        default:
+            opcionesBackend = { actualizarExistentes: false };
+    }
+
+    const total = productos.length;
+
+    // Mostrar progreso
+    Swal.fire({
+        title: 'Restaurando Productos...',
+        html: `Procesando: <b id="prod-actual">0</b> / ${total}`,
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    // Enviar al servidor en batches de 50 para mejor rendimiento
+    const batchSize = 50;
+    for (let i = 0; i < productos.length; i += batchSize) {
+        const batch = productos.slice(i, i + batchSize);
+        
+        const res = await fetch(`${BASE_URL}/restore`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                productos: batch,
+                opciones: opcionesBackend
+            })
+        });
+
+        if (!res.ok) {
+            throw new Error('Error al restaurar productos');
+        }
+
+        const progress = Math.min(i + batchSize, total);
+        document.getElementById('prod-actual').innerText = progress;
+    }
+
+    Swal.close();
+}
+
+// Procesar restauración de pedidos en el servidor
+async function procesarRestauracionPedidos(pedidos, opcion) {
+    const opcionesBackend = {
+        reemplazarExistentes: opcion === 'reemplazar'
+    };
+
+    const total = pedidos.length;
+
+    Swal.fire({
+        title: 'Restaurando Pedidos...',
+        html: `Procesando: <b id="ped-actual">0</b> / ${total}`,
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    // Enviar todos los pedidos de una vez (más eficiente)
+    const res = await fetch(`${BASE_URL}/restore-pedidos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            pedidos: pedidos,
+            opciones: opcionesBackend
+        })
+    });
+
+    if (!res.ok) {
+        throw new Error('Error al restaurar pedidos');
+    }
+
+    const resultado = await res.json();
+    Swal.close();
+    
+    return resultado;
 }
 
 /* ============================================================================
