@@ -201,10 +201,28 @@ app.put('/pedidos/:id/completar', async (req, res) => {
         const { id } = req.params;
         const pool = await poolPromise;
         
-        // CORRECCIÓN: Usamos 'Estado' porque 'Completado' no existe en tu tabla
+        // Cambiar estado a Completado
         await pool.request()
             .input('id', sql.Int, id)
             .query("UPDATE Pedidos SET Estado = 'Completado' WHERE PedidoID = @id");
+            
+        res.json({ success: true });
+    } catch (err) { 
+        console.error("Error:", err.message);
+        res.status(500).json({ error: err.message }); 
+    }
+});
+
+// Nueva ruta para marcar pedido como Pendiente (revertir)
+app.put('/pedidos/:id/pendiente', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const pool = await poolPromise;
+        
+        // Cambiar estado a Pendiente
+        await pool.request()
+            .input('id', sql.Int, id)
+            .query("UPDATE Pedidos SET Estado = 'Pendiente' WHERE PedidoID = @id");
             
         res.json({ success: true });
     } catch (err) { 

@@ -638,7 +638,10 @@ async function cargarPedidos() {
 
                 <div class="order-actions d-grid gap-2" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
                     <button class="btn btn-dark fw-bold rounded-pill" onclick="prepararFacturaPorId(${pedidoId}, ${displayNumber})"><i class="bi bi-file-pdf"></i> FACTURA</button>
-                    <button class="btn btn-success fw-bold rounded-pill" onclick="completarPedido(${pedidoId})">COMPLETAR</button>
+                    ${estaCompletado 
+                        ? `<button class="btn btn-warning fw-bold rounded-pill" onclick="marcarPendiente(${pedidoId})"><i class="bi bi-arrow-counterclockwise"></i> PENDIENTE</button>`
+                        : `<button class="btn btn-success fw-bold rounded-pill" onclick="completarPedido(${pedidoId})"><i class="bi bi-check-lg"></i> ENTREGAR</button>`
+                    }
                     <button class="btn btn-outline-danger fw-bold rounded-pill" onclick="eliminarPedido(${pedidoId})">ELIMINAR</button>
                 </div>
             </div>
@@ -740,7 +743,18 @@ async function completarPedido(id) {
     try {
         const res = await fetch(`${BASE_URL}/pedidos/${id}/completar`, { method: 'PUT' });
         if (res.ok) { 
-            Swal.fire('¡Excelente!', 'Pedido entregado', 'success');
+            Swal.fire('¡Excelente!', 'Pedido marcado como ENTREGADO', 'success');
+            cargarPedidos(); 
+        }
+    } catch (err) { console.error(err); }
+}
+
+// Nueva función para marcar pedido como Pendiente (revertir)
+async function marcarPendiente(id) {
+    try {
+        const res = await fetch(`${BASE_URL}/pedidos/${id}/pendiente`, { method: 'PUT' });
+        if (res.ok) { 
+            Swal.fire('¡Listo!', 'Pedido marcado como PENDIENTE', 'success');
             cargarPedidos(); 
         }
     } catch (err) { console.error(err); }
