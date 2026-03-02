@@ -375,7 +375,7 @@ async function generarFacturaPDF(p, numeroPedido) {
         if (img) {
             try {
                 // Subir un poco más el logo y reducir tamaño
-                doc.addImage(img, 'PNG', 14, -6, 52, 52);
+                doc.addImage(img, 'PNG', 14, 0, 52, 52);
             } catch (err) { /* si falla, continuar sin logo */ }
         }
 
