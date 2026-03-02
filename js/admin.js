@@ -357,9 +357,10 @@ async function generarFacturaPDF(p, numeroPedido) {
     const doc = new jsPDF();
 
     const logoURL = 'https://res.cloudinary.com/donc8a6tc/image/upload/v1770738241/LOGO_TR%C3%89BOL-removebg-preview_uyamlw.png';
+    const qrURL = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent('https://tienda-1vps.onrender.com')}`;
 
     // Render function que dibuja todo; acepta la imagen (puede ser undefined)
-    function renderConLogo(img) {
+    function renderConLogo(img, qr) {
         // --- CONFIGURACIÓN DE COLORES Y ESTILOS ---
         const verdeTrebol = [45, 90, 39]; // Verde institucional
         const grisOscuro = [45, 52, 54];
@@ -378,6 +379,17 @@ async function generarFacturaPDF(p, numeroPedido) {
             } catch (err) { /* si falla, continuar sin logo */ }
         }
 
+        // Si hay QR, dibujarlo a la derecha del logo
+        if (qr) {
+            try {
+                // QR a la derecha del logo
+                doc.addImage(qr, 'PNG', 75, 6, 40, 40);
+                // Texto debajo del QR
+                doc.setFontSize(7);
+                doc.setTextColor(verdeTrebol[0], verdeTrebol[1], verdeTrebol[2]);
+            } catch (err) { /* si falla, continuar sin QR */ }
+        }
+
         // Datos de la Empresa (Derecha superior)
         doc.setTextColor(verdeTrebol[0], verdeTrebol[1], verdeTrebol[2]);
         doc.setFontSize(22);
@@ -389,14 +401,16 @@ async function generarFacturaPDF(p, numeroPedido) {
         doc.setFont('helvetica', 'normal');
         doc.text('', 200, 31, { align: 'right' });
         doc.text('El Peñol, Antioquia | Cel: 322 9568362', 200, 36, { align: 'right' });
-        doc.text('trebol@gmail.com', 200, 41, { align: 'right' });
+        doc.text('Luis David Rojas | Cc: 1038415279', 200, 41, { align: 'right' });
+        doc.text('trebol@gmail.com', 200, 46, { align: 'right' });
+        
 
         // --- BLOQUE DE INFORMACIÓN DE FACTURA ---
         doc.setFillColor(grisClaro[0], grisClaro[1], grisClaro[2]);
         doc.roundedRect(20, 50, 175, 25, 3, 3, 'F');
         
         doc.setFont('helvetica', 'bold');
-        doc.text('FACTURA N°:', 30, 60);
+        doc.text('CUENTA DE COBRO N°:', 20, 60);
         doc.setFont('helvetica', 'normal');
         doc.text(String(numeroPedido).padStart(6, '0'), 65, 60);
         
@@ -503,18 +517,32 @@ async function generarFacturaPDF(p, numeroPedido) {
         // --- PIE DE PÁGINA ---
         doc.setFontSize(8);
         doc.setTextColor(150, 150, 150);
-        doc.text('Esta factura es un documento oficial de venta.', 105, 285, { align: 'center' });
-        doc.text('Gracias por su compra en Trébol S.A.S.', 105, 290, { align: 'center' });
+        doc.text('Este es un documento oficial de venta.', 105, 285, { align: 'center' });
+        doc.text('Gracias por su compra en Trébol.', 105, 290, { align: 'center' });
 
         // Descargar PDF
         doc.save(`Factura_Trebol_${numeroPedido}.pdf`);
     }
 
-    // Intentar cargar logo; si falla, renderizar sin él
+    // Cargar logo y QR en paralelo
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.onload = function() { renderConLogo(img); };
-    img.onerror = function() { renderConLogo(); };
+    img.onload = function() { 
+        // También cargar el QR
+        const qrImg = new Image();
+        qrImg.crossOrigin = 'anonymous';
+        qrImg.onload = function() { renderConLogo(img, qrImg); };
+        qrImg.onerror = function() { renderConLogo(img, null); };
+        qrImg.src = qrURL;
+    };
+    img.onerror = function() { 
+        // Si el logo falla, intentar solo con QR
+        const qrImg = new Image();
+        qrImg.crossOrigin = 'anonymous';
+        qrImg.onload = function() { renderConLogo(null, qrImg); };
+        qrImg.onerror = function() { renderConLogo(null, null); };
+        qrImg.src = qrURL;
+    };
     img.src = logoURL;
 }
 
