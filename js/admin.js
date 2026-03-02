@@ -538,7 +538,7 @@ async function cargarPedidos() {
         document.getElementById('lista-pedidos').innerHTML = data.map((p, idx) => {
             const pedidoId = p.PedidoID;
             const estaCompletado = p.Estado === 'Completado';
-            const displayNumber = idx + 1; 
+            const displayNumber = data.length - idx;
 
             // --- PROCESAMIENTO DE FECHA (CORRECCIÓN DE DESFASE) ---
             const fechaRaw = p.Fecha ? p.Fecha.toString().replace('Z', '').split('+')[0] : new Date();
