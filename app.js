@@ -4,19 +4,18 @@ const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const cloudinary = require('cloudinary').v2; // Agregado
-const { CloudinaryStorage } = require('multer-storage-cloudinary'); // Agregado
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 require('dotenv').config();
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Configuración de Cloudinary (Usa tus credenciales)
 cloudinary.config({
     cloud_name: 'donc8a6tc',
     api_key: '781626543592578',
-    api_secret: 'jxp0bDLONGpIyMxm5TPtl1tkVhU' // Reemplaza esto con tu API Secret real
+    api_secret: 'jxp0bDLONGpIyMxm5TPtl1tkVhU'
 });
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -32,13 +31,26 @@ const config = {
 
 const poolPromise = new sql.ConnectionPool(config)
     .connect()
-    .then(pool => {
+    .then(async pool => {
         console.log('¡Conectado a SQL Server!');
+        
+        // Verificar y crear columna DescuentoPorcentaje si no existe
+        try {
+            await pool.request().query(`
+                IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Productos' AND COLUMN_NAME = 'DescuentoPorcentaje')
+                BEGIN
+                    ALTER TABLE Productos ADD DescuentoPorcentaje decimal(5,2) NULL
+                END
+            `);
+            console.log('Columna DescuentoPorcentaje verificada/creada en Productos');
+        } catch (err) {
+            console.warn('Nota: No se pudo verificar columna DescuentoPorcentaje:', err.message);
+        }
+        
         return pool;
     })
     .catch(err => console.error('Error al conectar:', err));
 
-// Nuevo almacenamiento configurado para Cloudinary
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
@@ -97,8 +109,7 @@ app.post('/productos', upload.single('imagenes'), async (req, res) => {
 
         const nuevoId = result.recordset[0].ProductoID;
         if (req.file) {
-            // Cloudinary devuelve la URL completa en req.file.path
-            const url = req.file.path; 
+            const url = req.file.path;
             await pool.request()
                 .input('id', sql.Int, nuevoId)
                 .input('url', sql.NVarChar, url)
@@ -106,6 +117,22 @@ app.post('/productos', upload.single('imagenes'), async (req, res) => {
         }
         res.json({ success: true, id: nuevoId });
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// Ruta para aplicar descuento a producto
+app.put('/productos/:id/descuento', async (req, res) => {
+    const { id } = req.params;
+    const { descuento } = req.body;
+    try {
+        const pool = await poolPromise;
+        await pool.request()
+            .input('id', sql.Int, id)
+            .input('desc', sql.Decimal(5, 2), parseFloat(descuento) || 0)
+            .query('UPDATE Productos SET DescuentoPorcentaje = @desc WHERE ProductoID = @id');
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 app.put('/productos/:id', upload.single('imagenes'), async (req, res) => {
@@ -130,7 +157,7 @@ app.put('/productos/:id', upload.single('imagenes'), async (req, res) => {
             .query(`UPDATE Productos SET Nombre=@n, Marca=@m, CodigoSKU=@s, Precio=@p, Stock=@st, Caracteristicas=@c WHERE ProductoID=@id`);
 
         if (req.file) {
-            const url = req.file.path; // URL de Cloudinary
+            const url = req.file.path;
             await pool.request().input('id', sql.Int, id).query('DELETE FROM ProductoImagenes WHERE ProductoID=@id');
             await pool.request().input('id', sql.Int, id).input('url', sql.NVarChar, url).query('INSERT INTO ProductoImagenes (ProductoID, ImagenURL) VALUES (@id, @url)');
         }
@@ -157,18 +184,48 @@ app.post('/pedidos', async (req, res) => {
     const transaction = new sql.Transaction(pool);
     try {
         await transaction.begin();
+        
+        // Primero verificar stock y calcular precios con descuento
         for (const item of productos) {
-            const stockCheck = await transaction.request().input('id', sql.Int, item.ProductoID).query('SELECT Stock, Nombre FROM Productos WHERE ProductoID = @id');
+            const stockCheck = await transaction.request()
+                .input('id', sql.Int, item.ProductoID)
+                .query('SELECT Stock, Nombre, Precio, ISNULL(DescuentoPorcentaje, 0) as DescuentoPorcentaje FROM Productos WHERE ProductoID = @id');
+            
             const pActual = stockCheck.recordset[0];
-            if (!pActual || pActual.Stock < item.cantidad) throw new Error(`Stock insuficiente: ${pActual?.Nombre}`);
+            if (!pActual || pActual.Stock < item.cantidad) {
+                throw new Error(`Stock insuficiente: ${pActual?.Nombre}`);
+            }
+
+            // Calcular precio con descuento del producto
+            const precioBase = parseFloat(pActual.Precio) || 0;
+            const descuento = parseFloat(pActual.DescuentoPorcentaje) || 0;
+            const precioConDescuento = precioBase - (precioBase * descuento / 100);
+
+            // Actualizar el producto en el pedido con el precio con descuento
+            item.Precio = precioConDescuento;
+            item.PrecioOriginal = precioBase;
+            item.DescuentoAplicado = descuento;
         }
+        
+        // Insertar el pedido
         await transaction.request()
-            .input('nc', sql.NVarChar, nombre).input('co', sql.NVarChar, correo).input('te', sql.NVarChar, telefono).input('do', sql.NVarChar, documento).input('di', sql.NVarChar, direccion)
-            .input('pr', sql.NVarChar, JSON.stringify(productos)).input('to', sql.Decimal(18, 2), total)
+            .input('nc', sql.NVarChar, nombre)
+            .input('co', sql.NVarChar, correo)
+            .input('te', sql.NVarChar, telefono)
+            .input('do', sql.NVarChar, documento)
+            .input('di', sql.NVarChar, direccion)
+            .input('pr', sql.NVarChar, JSON.stringify(productos))
+            .input('to', sql.Decimal(18, 2), total)
             .query(`INSERT INTO Pedidos (NombreCliente, Correo, Telefono, Documento, Direccion, Productos, Total, Fecha, Estado) VALUES (@nc, @co, @te, @do, @di, @pr, @to, GETDATE(), 'Pendiente')`);
+        
+        // Actualizar stock
         for (const prod of productos) {
-            await transaction.request().input('cant', sql.Int, prod.cantidad).input('pId', sql.Int, prod.ProductoID).query(`UPDATE Productos SET Stock = Stock - @cant WHERE ProductoID = @pId`);
+            await transaction.request()
+                .input('cant', sql.Int, prod.cantidad)
+                .input('pId', sql.Int, prod.ProductoID)
+                .query(`UPDATE Productos SET Stock = Stock - @cant WHERE ProductoID = @pId`);
         }
+        
         await transaction.commit();
         res.json({ success: true });
     } catch (err) {
@@ -185,7 +242,6 @@ app.get('/pedidos', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Obtener un pedido por id
 app.get('/pedidos/:id', async (req, res) => {
     try {
         const pool = await poolPromise;
@@ -200,12 +256,9 @@ app.put('/pedidos/:id/completar', async (req, res) => {
     try {
         const { id } = req.params;
         const pool = await poolPromise;
-        
-        // Cambiar estado a Completado
         await pool.request()
             .input('id', sql.Int, id)
             .query("UPDATE Pedidos SET Estado = 'Completado' WHERE PedidoID = @id");
-            
         res.json({ success: true });
     } catch (err) { 
         console.error("Error:", err.message);
@@ -213,17 +266,13 @@ app.put('/pedidos/:id/completar', async (req, res) => {
     }
 });
 
-// Nueva ruta para marcar pedido como Pendiente (revertir)
 app.put('/pedidos/:id/pendiente', async (req, res) => {
     try {
         const { id } = req.params;
         const pool = await poolPromise;
-        
-        // Cambiar estado a Pendiente
         await pool.request()
             .input('id', sql.Int, id)
             .query("UPDATE Pedidos SET Estado = 'Pendiente' WHERE PedidoID = @id");
-            
         res.json({ success: true });
     } catch (err) { 
         console.error("Error:", err.message);
@@ -231,7 +280,6 @@ app.put('/pedidos/:id/pendiente', async (req, res) => {
     }
 });
 
-// ELIMINAR PEDIDO (Nueva ruta que faltaba)
 app.delete('/pedidos/:id', async (req, res) => {
     try {
         const pool = await poolPromise;
@@ -239,14 +287,12 @@ app.delete('/pedidos/:id', async (req, res) => {
         await pool.request()
             .input('id', sql.Int, id)
             .query('DELETE FROM Pedidos WHERE PedidoID = @id');
-        
         res.json({ success: true, message: 'Pedido eliminado correctamente' });
     } catch (err) {
         console.error("Error al eliminar pedido:", err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
-
 
 app.put('/pedidos/:id/total-manual', async (req, res) => {
     const { id } = req.params;
@@ -283,13 +329,12 @@ app.get('/logout', (req, res) => {
         if (err) {
             return console.log(err);
         }
-        res.redirect('/login'); // Te manda al login tras cerrar
+        res.redirect('/login');
     });
 });
 
-// Middleware para prevenir caché en páginas HTML
+// Middleware para prevenir caché
 app.use((req, res, next) => {
-    // Headers agresivos de no-caché para prevenir back button
     res.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0, max-stale=0, post-check=0, pre-check=0');
     res.set('Pragma', 'no-cache');
     res.set('Expires', '0');
@@ -297,7 +342,6 @@ app.use((req, res, next) => {
     next();
 });
 
-// Middleware específico para archivos HTML
 app.get(/\.html$/, (req, res, next) => {
     res.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
     res.set('Pragma', 'no-cache');
@@ -309,19 +353,16 @@ app.get(/\.html$/, (req, res, next) => {
 // RUTAS DE BACKUP Y RESTAURACIÓN
 // ==========================================
 
-// Endpoint para obtener todos los datos (backup completo)
 app.get('/backup', async (req, res) => {
     try {
         const pool = await poolPromise;
         
-        // Obtener productos con sus imágenes
         const productosResult = await pool.request().query(`
             SELECT p.*, 
             (SELECT TOP 1 ImagenURL FROM ProductoImagenes WHERE ProductoID = p.ProductoID) as FotoReal
             FROM Productos p
         `);
         
-        // Obtener pedidos
         const pedidosResult = await pool.request().query('SELECT * FROM Pedidos ORDER BY Fecha DESC');
         
         const backup = {
@@ -339,7 +380,6 @@ app.get('/backup', async (req, res) => {
     }
 });
 
-// Endpoint para restaurar/importar productos
 app.post('/restore', async (req, res) => {
     const { productos, opciones } = req.body;
     const pool = await poolPromise;
@@ -356,7 +396,6 @@ app.post('/restore', async (req, res) => {
         let omitidos = 0;
         
         for (const p of productos) {
-            // Verificar si existe por SKU o ID
             let existe = null;
             
             if (p.CodigoSKU) {
@@ -368,7 +407,6 @@ app.post('/restore', async (req, res) => {
             
             if (existe) {
                 if (opcionActualizar) {
-                    // Actualizar producto existente completamente
                     await transaction.request()
                         .input('id', sql.Int, existe.ProductoID)
                         .input('n', sql.NVarChar, p.Nombre)
@@ -380,7 +418,6 @@ app.post('/restore', async (req, res) => {
                         .query(`UPDATE Productos SET Nombre=@n, Marca=@m, CodigoSKU=@s, Precio=@p, Stock=@st, Caracteristicas=@c WHERE ProductoID=@id`);
                     actualizados++;
                 } else if (opcionActualizarStock) {
-                    // Solo actualizar stock
                     await transaction.request()
                         .input('id', sql.Int, existe.ProductoID)
                         .input('st', sql.Int, parseInt(p.Stock) || 0)
@@ -390,7 +427,6 @@ app.post('/restore', async (req, res) => {
                     omitidos++;
                 }
             } else {
-                // Crear nuevo producto
                 const result = await transaction.request()
                     .input('n', sql.NVarChar, p.Nombre)
                     .input('m', sql.NVarChar, p.Marca)
@@ -406,7 +442,6 @@ app.post('/restore', async (req, res) => {
                 
                 const nuevoId = result.recordset[0].ProductoID;
                 
-                // Guardar imagen si existe
                 if (p.FotoReal || p.ImagenURL) {
                     const url = p.FotoReal || p.ImagenURL;
                     await transaction.request()
@@ -429,7 +464,6 @@ app.post('/restore', async (req, res) => {
     }
 });
 
-// Endpoint para restaurar pedidos
 app.post('/restore-pedidos', async (req, res) => {
     const { pedidos, opciones } = req.body;
     const pool = await poolPromise;
@@ -444,12 +478,10 @@ app.post('/restore-pedidos', async (req, res) => {
         let omitidos = 0;
         
         if (opcionReemplazar) {
-            // Eliminar todos los pedidos existentes
             await transaction.request().query('DELETE FROM Pedidos');
         }
         
         for (const p of pedidos) {
-            // Verificar si ya existe el pedido por fecha y cliente
             let existe = null;
             
             if (p.Fecha && p.NombreCliente) {
@@ -463,7 +495,6 @@ app.post('/restore-pedidos', async (req, res) => {
             if (existe && !opcionReemplazar) {
                 omitidos++;
             } else {
-                // Crear nuevo pedido
                 const productosJson = typeof p.Productos === 'string' ? p.Productos : JSON.stringify(p.Productos || []);
                 
                 await transaction.request()

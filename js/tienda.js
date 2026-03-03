@@ -34,17 +34,27 @@ async function cargarProductos() {
             const stockColor = estaAgotado ? 'text-danger' : 'text-success';
             const stockTexto = estaAgotado ? '¡SIN EXISTENCIAS!' : `${p.Stock} disponibles`;
 
+            // Calcular precio con descuento
+            const descuento = parseFloat(p.DescuentoPorcentaje) || 0;
+            const precioBase = Number(p.Precio) || 0;
+            const precioConDescuento = precioBase - (precioBase * descuento / 100);
+            const tieneOferta = descuento > 0;
+
             return `
                 <div class="col-md-4 col-lg-3">
                     <div class="card product-card ${claseAgotado} h-100">
-                        <div class="img-container" onclick="${estaAgotado ? '' : `verDetalle(${p.ProductoID})`}">
+                        <div class="img-container position-relative" onclick="${estaAgotado ? '' : `verDetalle(${p.ProductoID})`}">
+                            ${tieneOferta ? `<div class="position-absolute top-0 end-0 bg-danger text-white px-2 py-1 rounded-start fw-bold" style="font-size: 0.8rem; z-index: 10;">-${descuento}%</div>` : ''}
                             <img src="${srcFinal}" onerror="this.src='https://via.placeholder.com/250?text=Error+al+cargar'" 
                                  style="${estaAgotado ? 'filter: grayscale(1); opacity: 0.6;' : ''}">
                         </div>
                         <div class="p-4 text-center">
                             <small class="text-uppercase fw-bold text-muted">${p.Marca || 'Genérico'}</small>
                             <h5 class="fw-bold mb-1 ${estaAgotado ? 'text-muted' : ''}">${p.Nombre}</h5>
-                            <div class="price-tag mb-1">$${Number(p.Precio).toLocaleString()}</div>
+                            ${tieneOferta ? 
+                            `<div class="price-tag mb-1 text-decoration-line-through text-muted" style="font-size: 0.9rem;">$${precioBase.toLocaleString()}</div>
+                            <div class="price-tag mb-1" style="background: #e74c3c; display: inline-block; padding: 4px 12px; border-radius: 20px; color: white; font-weight: bold;">$${precioConDescuento.toLocaleString()}</div>` : 
+                            `<div class="price-tag mb-1">$${precioBase.toLocaleString()}</div>`}
                             
                             <div class="small fw-bold ${stockColor} mb-3">
                                 <i class="bi ${estaAgotado ? 'bi-x-circle' : 'bi-box-seam'} me-1"></i>${stockTexto}
@@ -113,8 +123,23 @@ function verDetalle(id) {
         contenedorImagen.innerHTML = `<img src="${singleSrc}" class="img-fluid" style="max-height: 350px; object-fit: contain;" onerror="this.src='https://via.placeholder.com/400?text=Error+al+cargar'">`;
     }
 
+    // Calcular precio con descuento para el modal
+    const descuento = parseFloat(p.DescuentoPorcentaje) || 0;
+    const precioBase = Number(p.Precio) || 0;
+    const precioConDescuento = precioBase - (precioBase * descuento / 100);
+    const tieneOferta = descuento > 0;
+
     document.getElementById('detalle-nombre').innerText = p.Nombre;
-    document.getElementById('detalle-precio').innerText = `$${Number(p.Precio).toLocaleString()}`;
+    
+    if (tieneOferta) {
+        document.getElementById('detalle-precio').innerHTML = `
+            <span class="text-decoration-line-through text-muted">$${precioBase.toLocaleString()}</span>
+            <span class="text-danger fw-bold ms-2">$${precioConDescuento.toLocaleString()}</span>
+            <span class="badge bg-danger ms-1">-${descuento}%</span>`;
+    } else {
+        document.getElementById('detalle-precio').innerText = `$${precioBase.toLocaleString()}`;
+    }
+    
     document.getElementById('detalle-caracteristicas').innerText = p.Caracteristicas || 'Sin descripción';
     
     const stockLabel = document.getElementById('detalle-stock-numero');
@@ -129,6 +154,10 @@ function verDetalle(id) {
     const btn = document.getElementById('detalle-btn-agregar');
     btn.disabled = p.Stock <= 0;
     btn.innerText = p.Stock <= 0 ? "SIN STOCK" : "AÑADIR AL PEDIDO";
+    
+    // Guardar el precio con descuento en el producto para el carrito
+    p.PrecioConDescuento = precioConDescuento;
+    p.TieneOferta = tieneOferta;
     btn.onclick = () => agregarAlPedido(p);
 
     bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDetalleProducto')).show();
@@ -155,7 +184,14 @@ function agregarAlPedido(producto) {
         }
         itemExistente.cantidad += cantidad;
     } else {
-        carrito.push({ ...producto, cantidad });
+        // Usar el precio con descuento si hay oferta
+        const precioFinal = producto.TieneOferta ? producto.PrecioConDescuento : producto.Precio;
+        carrito.push({ 
+            ProductoID: producto.ProductoID,
+            cantidad, 
+            Nombre: producto.Nombre,
+            Precio: precioFinal
+        });
     }
 
     actualizarCarritoUI();
@@ -297,7 +333,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const pass = document.getElementById('admin-password').value;
 
             if (email === "admin@agro.com" && pass === "123456") {
-                // Guardar sesión
                 localStorage.setItem('admin_logged', 'true');
                 
                 Swal.fire({
@@ -307,7 +342,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     timer: 1500,
                     showConfirmButton: false,
                     willClose: () => {
-                        // Redirigir sin permitir back
                         window.location.replace('admin.html');
                     }
                 });

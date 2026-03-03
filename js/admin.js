@@ -49,11 +49,17 @@ function renderizarProducto(p) {
             <div class="desc-text">${p.Caracteristicas || 'Sin descripción.'}</div>
         </div>
         <div class="text-end px-2" style="min-width: 100px;">
-            <div class="price-badge">$${Number(p.Precio || 0).toLocaleString()}</div>
+            ${p.DescuentoPorcentaje && p.DescuentoPorcentaje > 0 ? 
+            `<div class="price-badge" style="text-decoration: line-through; color: #999; font-size: 0.8rem;">$${Number(p.Precio || 0).toLocaleString()}</div>
+            <div class="price-badge" style="background: #e74c3c;">$${Number((p.Precio || 0) * (1 - (p.DescuentoPorcentaje / 100))).toLocaleString()} <small style="font-size: 0.6rem;">-${p.DescuentoPorcentaje}%</small></div>` : 
+            `<div class="price-badge">$${Number(p.Precio || 0).toLocaleString()}</div>`}
             <small class="fw-bold ${p.Stock < 10 ? 'text-danger' : 'text-success'}">${p.Stock || 0} unds</small>
         </div>
-        <div class="d-flex">
+        <div class="d-flex flex-column gap-1">
             <button class="action-btn btn-edit" onclick='prepararEdicion(${prodJson})'><i class="bi bi-pencil-fill"></i></button>
+            <button class="action-btn ${p.DescuentoPorcentaje && p.DescuentoPorcentaje > 0 ? 'btn-warning' : 'btn-success'}" onclick="aplicarDescuentoProducto(${p.ProductoID}, ${p.DescuentoPorcentaje || 0})" title="${p.DescuentoPorcentaje && p.DescuentoPorcentaje > 0 ? 'Quitar oferta' : 'Poner en oferta'}">
+                <i class="bi ${p.DescuentoPorcentaje && p.DescuentoPorcentaje > 0 ? 'bi-x-circle' : 'bi-percent'}"></i>
+            </button>
             <button class="action-btn btn-delete" onclick="eliminarProducto(${p.ProductoID})"><i class="bi bi-trash-fill"></i></button>
         </div>
     </div>`;
@@ -1059,6 +1065,51 @@ async function guardarDescuentoEnBD(pedidoId, valor) {
         console.log("Porcentaje guardado. Al refrescar, el JS calculará el neto solo.");
     } catch (err) {
         console.error("Error al guardar descuento:", err);
+    }
+}
+
+/* ============================================================================
+   APLICAR DESCUENTO A PRODUCTO
+   ============================================================================ */
+
+async function aplicarDescuentoProducto(productoId, descuentoActual) {
+    const { value: porcentaje } = await Swal.fire({
+        title: descuentoActual > 0 ? 'Quitar oferta' : 'Aplicar oferta',
+        html: descuentoActual > 0 
+            ? '<p>El producto tiene un descuento del ' + descuentoActual + '%</p><p>¿Deseas quitarla?</p>'
+            : '<p>Ingresa el porcentaje de descuento:</p>',
+        input: 'number',
+        inputValue: descuentoActual > 0 ? 0 : '',
+        inputPlaceholder: 'Porcentaje (ej: 10)',
+        showCancelButton: true,
+        confirmButtonText: descuentoActual > 0 ? 'Quitar oferta' : 'Aplicar',
+        cancelButtonText: 'Cancelar',
+        inputValidator: (value) => {
+            if (!descuentoActual > 0 && (!value || value <= 0 || value > 100)) {
+                return 'Ingresa un valor entre 1 y 100';
+            }
+        }
+    });
+
+    if (porcentaje === undefined) return;
+
+    try {
+        const res = await fetch(`${BASE_URL}/productos/${productoId}/descuento`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ descuento: parseFloat(porcentaje) || 0 })
+        });
+
+        if (res.ok) {
+            Swal.fire('¡Listo!', porcentaje > 0 ? `Descuento del ${porcentaje}% aplicado` : 'Oferta removida', 'success');
+            cargarInventario();
+            cargarAgotados();
+        } else {
+            throw new Error('Error al guardar descuento');
+        }
+    } catch (err) {
+        console.error(err);
+        Swal.fire('Error', 'No se pudo aplicar el descuento', 'error');
     }
 }
 
