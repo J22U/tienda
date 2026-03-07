@@ -499,12 +499,12 @@ async function generarFacturaPDF(p, numeroPedido) {
         }, 0) : (Number(p.Total) || 0);
         const descuentoValor = subtotalGeneral - Number(p.Total || 0);
 
-        doc.text(`Subtotal:`, 140, finalY);
+        doc.text(`Subtotal:`, 135, finalY);
         doc.text(`$${Number(subtotalGeneral).toLocaleString()}`, 190, finalY, { align: 'right' });
 
         if (descuentoValor > 0) {
             doc.setTextColor(200, 0, 0); // Rojo para descuento
-            doc.text(`Descuento (${p.DescuentoPorcentaje || 0}%):`, 140, finalY + 7);
+            doc.text(`Descuento (${p.DescuentoPorcentaje || 0}%):`, 135, finalY + 7);
             doc.text(`-$${Number(descuentoValor).toLocaleString()}`, 190, finalY + 7, { align: 'right' });
             finalY += 7;
         }
@@ -517,7 +517,7 @@ async function generarFacturaPDF(p, numeroPedido) {
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.text(`TOTAL NETO:`, 140, finalY);
+        doc.text(`TOTAL NETO:`, 135, finalY);
         doc.text(`$${Number(p.Total).toLocaleString()}`, 190, finalY, { align: 'right' });
 
         // --- PIE DE PÁGINA ---
