@@ -274,11 +274,90 @@ async function procesarPago() {
 }
 
 /* ============================================================================
+   SESSION MANAGEMENT - PWA vs Browser
+   ============================================================================ */
+
+// Detect if running as installed PWA
+function isPWA() {
+    return window.matchMedia('(display-mode: standalone)').matches || 
+           window.matchMedia('(display-mode: fullscreen)').matches ||
+           window.matchMedia('(display-mode: minimal-ui)').matches ||
+           window.navigator.standalone === true;
+}
+
+// Session configuration
+const SESSION_CONFIG = {
+    // PWA: indefinite session (stored without expiration)
+    // Browser: 3 hours in milliseconds
+    browserSessionDuration: 3 * 60 * 60 * 1000 // 3 hours
+};
+
+// Save admin session
+function saveAdminSession() {
+    const isPWAMode = isPWA();
+    const sessionData = {
+        logged: true,
+        isPWA: isPWAMode,
+        timestamp: Date.now()
+    };
+    
+    localStorage.setItem('admin_session', JSON.stringify(sessionData));
+    localStorage.setItem('admin_logged', 'true');
+    
+    console.log(`[Session] Saved as ${isPWAMode ? 'PWA (indefinite)' : 'browser (3h)'}`);
+}
+
+// Check if session is valid
+function isSessionValid() {
+    const sessionStr = localStorage.getItem('admin_session');
+    if (!sessionStr) return false;
+    
+    try {
+        const session = JSON.parse(sessionStr);
+        
+        // If PWA, session is always valid until manually logged out
+        if (session.isPWA) {
+            return session.logged === true;
+        }
+        
+        // For browser, check expiration
+        if (session.logged && session.timestamp) {
+            const elapsed = Date.now() - session.timestamp;
+            return elapsed < SESSION_CONFIG.browserSessionDuration;
+        }
+        
+        return false;
+    } catch (e) {
+        return false;
+    }
+}
+
+// Auto-login if session is valid (called on page load)
+function autoLoginIfValid() {
+    if (isSessionValid()) {
+        const isPWA_mode = isPWA();
+        console.log(`[Session] Auto-login successful (${isPWA_mode ? 'PWA' : 'browser'})`);
+        // Redirect to admin panel
+        window.location.href = 'admin.html';
+    }
+}
+
+// Clear session on logout
+function clearAdminSession() {
+    localStorage.removeItem('admin_session');
+    localStorage.removeItem('admin_logged');
+    console.log('[Session] Session cleared');
+}
+
+/* ============================================================================
    LOGIN ADMIN
    ============================================================================ */
 
 document.addEventListener('DOMContentLoaded', function() {
     cargarProductos();
+
+    // Check for existing valid session first
+    autoLoginIfValid();
 
     const formLogin = document.getElementById('form-login-admin');
     if (formLogin) {
@@ -288,6 +367,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const pass = document.getElementById('admin-password').value;
 
             if (email === "admin@agro.com" && pass === "123456") {
+                // Save session based on PWA/browser mode
+                saveAdminSession();
+                
                 Swal.fire({
                     title: '¡Acceso Permitido!',
                     text: 'Bienvenido al panel de control.',

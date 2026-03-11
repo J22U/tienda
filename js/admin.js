@@ -239,8 +239,14 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (result.isConfirmed) {
-                // Limpiar todos los datos de sesión
-                localStorage.clear();
+                // Limpiar todos los datos de sesión usando la función centralizada
+                if (typeof clearAdminSession === 'function') {
+                    clearAdminSession();
+                } else {
+                    // Fallback: limpiar manualmente
+                    localStorage.removeItem('admin_session');
+                    localStorage.removeItem('admin_logged');
+                }
                 sessionStorage.clear();
                 
                 // Esperar un poco antes de redirigir
