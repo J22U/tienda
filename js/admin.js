@@ -1144,11 +1144,26 @@ socket.on('connect', () => {
         if (!indicador) {
             indicador = document.createElement('div');
             indicador.id = 'socket-status';
-            indicador.style.cssText = 'font-weight: bold; margin-left: 10px; font-size: 0.85rem;';
-            indicador.innerHTML = '<span style="color: #27ae60;">● EN VIVO</span>';
-            headerSection.querySelector('h1').appendChild(indicador);
+            indicador.innerHTML = '<span class="status-dot en-vivo"></span><span class="status-text" style="color: #27ae60;">EN VIVO</span>';
+            
+            // Buscar o crear el grupo de título
+            let titleGroup = headerSection.querySelector('.header-title-group');
+            if (!titleGroup) {
+                // Si no existe, envolver el h1 con el indicador
+                const h1 = headerSection.querySelector('h1');
+                if (h1) {
+                    titleGroup = document.createElement('div');
+                    titleGroup.className = 'header-title-group';
+                    h1.parentNode.insertBefore(titleGroup, h1);
+                    titleGroup.appendChild(h1);
+                }
+            }
+            
+            if (titleGroup) {
+                titleGroup.appendChild(indicador);
+            }
         } else {
-            indicador.innerHTML = '<span style="color: #27ae60;">● EN VIVO</span>';
+            indicador.innerHTML = '<span class="status-dot en-vivo"></span><span class="status-text" style="color: #27ae60;">EN VIVO</span>';
         }
     }
 });
@@ -1160,7 +1175,7 @@ socket.on('disconnect', () => {
     // Actualizar indicador
     const indicador = document.getElementById('socket-status');
     if (indicador) {
-        indicador.innerHTML = '<span style="color: #e74c3c;">● OFFLINE</span>';
+        indicador.innerHTML = '<span class="status-dot offline"></span><span class="status-text" style="color: #e74c3c;">OFFLINE</span>';
     }
 });
 
