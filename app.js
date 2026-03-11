@@ -244,13 +244,11 @@ app.post('/pedidos', async (req, res) => {
         // NOTIFICACIONES EN TIEMPO REAL
         // ==========================================
         
-        // Calcular el número de pedido para mostrar (misma lógica que en pantalla admin)
-        // El pedido más reciente = 1, el segundo = 2, etc.
-        // Contamos cuántos pedidos tienen PedidoID >= al nuevo pedido
+        // Calcular el número de pedido para mostrar (basado en el total de pedidos existentes)
+        // El pedido más reciente = 1, el segundo más reciente = 2, etc.
         const countResult = await pool.request()
-            .input('pid', sql.Int, nuevoPedidoId)
-            .query('SELECT COUNT(*) as TotalMayores FROM Pedidos WHERE PedidoID >= @pid');
-        const numeroPedidoDisplay = countResult.recordset[0].TotalMayores;
+            .query('SELECT COUNT(*) as TotalPedidos FROM Pedidos');
+        const numeroPedidoDisplay = countResult.recordset[0].TotalPedidos;
         
         // Emitir evento Socket.io a todos los clientes conectados
         io.emit('nuevo-pedido', {
