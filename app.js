@@ -22,6 +22,17 @@ const io = new Server(server, {
 app.use(express.json());
 app.use(cors());
 
+// Configuración MIME types para PWA
+app.use((req, res, next) => {
+    if (req.url.endsWith('.json')) {
+        res.setHeader('Content-Type', 'application/manifest+json');
+    }
+    if (req.url.endsWith('.js') && req.url.includes('sw.js')) {
+        res.setHeader('Content-Type', 'application/javascript');
+    }
+    next();
+});
+
 cloudinary.config({
     cloud_name: 'donc8a6tc',
     api_key: '781626543592578',
