@@ -1121,3 +1121,124 @@ async function aplicarDescuentoProducto(productoId, descuentoActual) {
 cargarInventario();
 cargarPedidos();
 cargarAgotados();
+
+/* ============================================================================
+   NOTIFICACIONES EN TIEMPO REAL CON SOCKET.IO
+   ============================================================================ */
+
+// Inicializar conexión Socket.io
+const socket = io();
+
+// Estado de conexión
+let socketConectado = false;
+
+// Listener para conexión establecida
+socket.on('connect', () => {
+    console.log('🔌 Conectado a Socket.io - Notificaciones activas');
+    socketConectado = true;
+    
+    // Mostrar indicador visual de conexión en el header
+    const headerSection = document.querySelector('.header-section');
+    if (headerSection) {
+        let indicador = document.getElementById('socket-status');
+        if (!indicador) {
+            indicador = document.createElement('div');
+            indicador.id = 'socket-status';
+            indicador.className = 'badge bg-success ms-2';
+            indicador.innerHTML = '<i class="bi bi-wifi"></i> EN VIVO';
+            headerSection.querySelector('h1').appendChild(indicador);
+        }
+    }
+});
+
+socket.on('disconnect', () => {
+    console.log('🔌 Desconectado de Socket.io');
+    socketConectado = false;
+    
+    // Actualizar indicador
+    const indicador = document.getElementById('socket-status');
+    if (indicador) {
+        indicador.className = 'badge bg-danger ms-2';
+        indicador.innerHTML = '<i class="bi bi-wifi-off"></i> OFFLINE';
+    }
+});
+
+// Listener para nuevo pedido
+socket.on('nuevo-pedido', (data) => {
+    console.log('🔔 Nuevo pedido recibido:', data);
+    
+    // Reproducir sonido de notificación (opcional)
+    try {
+        const audio = new Audio('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/sounds/notification.mp3');
+        audio.volume = 0.3;
+        audio.play().catch(() => {}); // Ignorar errores si el navegador bloquea autoplay
+    } catch (e) {}
+    
+    // Mostrar notificación del navegador si está permitido
+    if (Notification.permission === 'granted') {
+        new Notification('🛒 Nuevo Pedido - Trébol', {
+            body: `Pedido #${data.PedidoID} de ${data.NombreCliente}\nTotal: $${Number(data.Total).toLocaleString()}\n${data.productos} producto(s)`,
+            icon: 'https://res.cloudinary.com/donc8a6tc/image/upload/v1770738241/LOGO_TR%C3%89BOL-removebg-preview_uyamlw.png',
+            tag: 'nuevo-pedido',
+            requireInteraction: true
+        });
+    }
+    
+    // Mostrar alerta visual en la página
+    Swal.fire({
+        title: '🛒 ¡NUEVO PEDIDO!',
+        html: `
+            <div class="text-start">
+                <p class="mb-1"><strong>Pedido #${data.PedidoID}</strong></p>
+                <p class="mb-1">Cliente: <strong>${data.NombreCliente}</strong></p>
+                <p class="mb-1">Total: <strong class="text-success">$${Number(data.Total).toLocaleString()}</strong></p>
+                <p class="mb-0">Productos: <strong>${data.productos}</strong></p>
+            </div>
+        `,
+        icon: 'success',
+        timer: 8000,
+        showClass: { popup: 'animate__animated animate__bounceIn' },
+        hideClass: { popup: 'animate__animated animate__fadeOutUp' },
+        confirmButtonColor: '#27ae60',
+        confirmButtonText: '¡Entendido!'
+    }).then(() => {
+        // Auto-recargar pedidos si estamos en esa pestaña
+        const tabPedidos = document.getElementById('tab-pedidos');
+        if (tabPedidos && tabPedidos.classList.contains('active')) {
+            cargarPedidos();
+        }
+    });
+    
+    // También actualizar el contador de pedidos
+    const orderCount = document.getElementById('order-count');
+    if (orderCount) {
+        const actual = parseInt(orderCount.innerText) || 0;
+        orderCount.innerText = `${actual + 1} recibidos`;
+        orderCount.classList.add('animate__animated', 'animate__pulse');
+        setTimeout(() => orderCount.classList.remove('animate__animated', 'animate__pulse'), 1000);
+    }
+});
+
+// Solicitar permiso para notificaciones del navegador
+if ('Notification' in window && Notification.permission === 'default') {
+    // Mostrar botón para activar notificaciones
+    setTimeout(() => {
+        Swal.fire({
+            title: '🔔 ¿Activar Notificaciones?',
+            html: 'Recibe alertas en tu celular cuando lleguen nuevos pedidos',
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'Activar',
+            cancelButtonText: 'Ahora no',
+            confirmButtonColor: '#27ae60'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        Swal.fire('¡Notificaciones Activadas!', 'Recibirás alertas de nuevos pedidos', 'success');
+                    }
+                });
+            }
+        });
+    }, 3000); // Esperar 3 segundos después de cargar
+}

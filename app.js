@@ -6,9 +6,19 @@ const path = require('path');
 const fs = require('fs');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const http = require('http');
+const { Server } = require('socket.io');
 require('dotenv').config();
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
+});
+
 app.use(express.json());
 app.use(cors());
 
@@ -208,7 +218,7 @@ app.post('/pedidos', async (req, res) => {
         }
         
         // Insertar el pedido
-        await transaction.request()
+        const resultPedido = await transaction.request()
             .input('nc', sql.NVarChar, nombre)
             .input('co', sql.NVarChar, correo)
             .input('te', sql.NVarChar, telefono)
@@ -216,7 +226,9 @@ app.post('/pedidos', async (req, res) => {
             .input('di', sql.NVarChar, direccion)
             .input('pr', sql.NVarChar, JSON.stringify(productos))
             .input('to', sql.Decimal(18, 2), total)
-            .query(`INSERT INTO Pedidos (NombreCliente, Correo, Telefono, Documento, Direccion, Productos, Total, Fecha, Estado) VALUES (@nc, @co, @te, @do, @di, @pr, @to, GETDATE(), 'Pendiente')`);
+            .query(`INSERT INTO Pedidos (NombreCliente, Correo, Telefono, Documento, Direccion, Productos, Total, Fecha, Estado) VALUES (@nc, @co, @te, @do, @di, @pr, @to, GETDATE(), 'Pendiente'); SELECT SCOPE_IDENTITY() AS PedidoID;`);
+        
+        const nuevoPedidoId = resultPedido.recordset[0].PedidoID;
         
         // Actualizar stock
         for (const prod of productos) {
@@ -227,7 +239,23 @@ app.post('/pedidos', async (req, res) => {
         }
         
         await transaction.commit();
-        res.json({ success: true });
+        
+        // ==========================================
+        // NOTIFICACIONES EN TIEMPO REAL
+        // ==========================================
+        
+        // Emitir evento Socket.io a todos los clientes conectados
+        io.emit('nuevo-pedido', {
+            PedidoID: nuevoPedidoId,
+            NombreCliente: nombre,
+            Total: total,
+            productos: productos.length,
+            Fecha: new Date()
+        });
+        
+        console.log(`🔔 Nuevo pedido #${nuevoPedidoId} - Notificación enviada`);
+        
+        res.json({ success: true, pedidoId: nuevoPedidoId });
     } catch (err) {
         if (transaction) await transaction.rollback();
         res.status(500).json({ success: false, error: err.message });
@@ -532,6 +560,8 @@ app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'tienda.html')); 
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
+// Iniciar servidor con Socket.io
+server.listen(PORT, () => {
     console.log(`Servidor corriendo en el puerto ${PORT}`);
+    console.log(`🔌 Socket.io listo para notificaciones en tiempo real`);
 });
