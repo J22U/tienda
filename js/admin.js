@@ -756,6 +756,17 @@ async function guardarDescuentoSimple(pedidoId, valor) {
 }
 
 async function eliminarPedido(id) {
+    // Confirmación de seguridad antes de eliminar
+    const result = await Swal.fire({
+        title: '¿Eliminar pedido?',
+        text: 'Esta acción no se puede deshacer',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ff7675',
+        cancelButtonText: 'Cancelar'
+    });
+    if (!result.isConfirmed) return;
+
     try {
         const res = await fetch(`${BASE_URL}/pedidos/${id}`, { method: 'DELETE' });
         
