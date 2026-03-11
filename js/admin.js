@@ -1144,9 +1144,11 @@ socket.on('connect', () => {
         if (!indicador) {
             indicador = document.createElement('div');
             indicador.id = 'socket-status';
-            indicador.className = 'badge bg-success ms-2';
-            indicador.innerHTML = '<i class="bi bi-wifi"></i> EN VIVO';
+            indicador.style.cssText = 'font-weight: bold; margin-left: 10px; font-size: 0.85rem;';
+            indicador.innerHTML = '<span style="color: #27ae60;">● EN VIVO</span>';
             headerSection.querySelector('h1').appendChild(indicador);
+        } else {
+            indicador.innerHTML = '<span style="color: #27ae60;">● EN VIVO</span>';
         }
     }
 });
@@ -1158,14 +1160,16 @@ socket.on('disconnect', () => {
     // Actualizar indicador
     const indicador = document.getElementById('socket-status');
     if (indicador) {
-        indicador.className = 'badge bg-danger ms-2';
-        indicador.innerHTML = '<i class="bi bi-wifi-off"></i> OFFLINE';
+        indicador.innerHTML = '<span style="color: #e74c3c;">● OFFLINE</span>';
     }
 });
 
 // Listener para nuevo pedido
 socket.on('nuevo-pedido', (data) => {
     console.log('🔔 Nuevo pedido recibido:', data);
+    
+    // Usar NumeroDisplay para mostrar el mismo número que en pantalla
+    const numeroPedido = data.NumeroDisplay || data.PedidoID;
     
     // Reproducir sonido de notificación (opcional)
     try {
@@ -1177,7 +1181,7 @@ socket.on('nuevo-pedido', (data) => {
     // Mostrar notificación del navegador si está permitido
     if (Notification.permission === 'granted') {
         new Notification('🛒 Nuevo Pedido - Trébol', {
-            body: `Pedido #${data.PedidoID} de ${data.NombreCliente}\nTotal: $${Number(data.Total).toLocaleString()}\n${data.productos} producto(s)`,
+            body: `Pedido #${numeroPedido} de ${data.NombreCliente}\nTotal: $${Number(data.Total).toLocaleString()}\n${data.productos} producto(s)`,
             icon: 'https://res.cloudinary.com/donc8a6tc/image/upload/v1770738241/LOGO_TR%C3%89BOL-removebg-preview_uyamlw.png',
             tag: 'nuevo-pedido',
             requireInteraction: true
@@ -1189,7 +1193,7 @@ socket.on('nuevo-pedido', (data) => {
         title: '🛒 ¡NUEVO PEDIDO!',
         html: `
             <div class="text-start">
-                <p class="mb-1"><strong>Pedido #${data.PedidoID}</strong></p>
+                <p class="mb-1"><strong>Pedido #${numeroPedido}</strong></p>
                 <p class="mb-1">Cliente: <strong>${data.NombreCliente}</strong></p>
                 <p class="mb-1">Total: <strong class="text-success">$${Number(data.Total).toLocaleString()}</strong></p>
                 <p class="mb-0">Productos: <strong>${data.productos}</strong></p>
