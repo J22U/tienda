@@ -89,13 +89,20 @@
                 </a>
                 
                 <!-- 🔔 TOGGLE SWITCH para notificaciones admin -->
-                <div class="notification-toggle me-2">
+<div class="notification-toggle me-2 d-flex gap-2">
                   <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" id="toggle-notificaciones" checked>
                     <label class="form-check-label fw-bold small text-success" for="toggle-notificaciones">
                       <i class="bi bi-bell-fill me-1"></i>Notificaciones <span id="toggle-status">ACTIVAS</span>
                     </label>
                   </div>
+                  <!-- 🆕 TEST BUTTON -->
+                  <button class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold" onclick="window.OneSignalInit.testNotification()" title="Test Push">
+                    <i class="bi bi-play-circle"></i> Test
+                  </button>
+                  <button class="btn btn-outline-info btn-sm rounded-pill px-2" onclick="window.OneSignalInit.getSubscriptionStatus().then(s => console.log('Status:', s))" title="Debug Status">
+                    <i class="bi bi-bug"></i>
+                  </button>
                 </div>
 
                 <button type="button" id="btn-logout" class="btn btn-danger rounded-pill px-4 fw-bold btn-sm">

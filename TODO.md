@@ -8,8 +8,8 @@
 ## Phase 2: Server Resilience [✅ COMPLETE]
 - [x] Edit app.js → Graceful handling (no more error spam!)
 
-## Phase 3: UX Improvements  
-- [ ] Add test button to admin.html
+## Phase 3: UX Improvements [✅ COMPLETE]
+- [x] Add test buttons to admin.html (Test Push + Debug Status)
 
 ## Phase 4: Deploy + Verify
 - [ ] Add ONESIGNAL_REST_API_KEY to .env
