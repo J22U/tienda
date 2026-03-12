@@ -152,10 +152,6 @@
                 </div>
             </div>
             <div class="d-flex gap-2 flex-wrap">
-                <!-- Botón de Notificaciones Push -->
-                <button type="button" id="btn-onesignal-status" class="btn btn-warning rounded-pill px-4 fw-bold btn-sm" onclick="solicitarPermisoNotificaciones()">
-                    <i class="bi bi-bell"></i> Activar
-                </button>
                 <a href="tienda.html?view=store" class="btn btn-dark rounded-pill px-4 fw-bold btn-sm">
                     <i class="bi bi-shop me-2"></i> VER TIENDA
                 </a>
@@ -340,28 +336,7 @@
                         serviceWorkerPath: '/OneSignalSDKWorker.js',
                         serviceWorkerParam: { scope: '/' },
                         notifyButton: {
-                            enable: true,
-                            position: 'bottom-right',
-                            size: 'medium',
-                            theme: 'default',
-                            offset: {
-                                bottom: '20px',
-                                right: '20px'
-                            },
-                            text: {
-                                'tip.state.unsubscribed': 'Activar notificaciones',
-                                'tip.state.subscribed': 'Notificaciones activadas',
-                                'tip.state.blocked': 'Notificaciones bloqueadas',
-                                'message.prenotify': '🔔 Click para activar',
-                                'message.action.subscribed': '¡Gracias por activar las notificaciones!',
-                                'message.action.resubscribed': 'Notificaciones reactivadas',
-                                'message.action.unsubscribed': 'Notificaciones desactivadas',
-                                'dialog.main.title': 'Notificaciones Trébol',
-                                'dialog.main.button.subscribe': 'ACTIVAR',
-                                'dialog.main.button.unsubscribe': 'DESACTIVAR',
-                                'dialog.blocked.title': 'Desbloquear notificaciones',
-                                'dialog.blocked.message': 'Sigue las instrucciones para activar notificaciones'
-                            }
+                            enable: false
                         },
                         welcomeNotification: {
                             "title": "🔔 Trébol Notificaciones",
