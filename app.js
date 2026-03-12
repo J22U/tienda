@@ -42,12 +42,14 @@ function sendPushNotification(pedidoData) {
     const postData = JSON.stringify(notification);
     
     const options = {
-        hostname: 'api.onesignal.com', 
-        path: '/api/v1/notifications', // <-- CAMBIO AQUÍ: Debe incluir /api/v1/
+        hostname: 'onesignal.com', // Volvemos al hostname estable
+        path: '/api/v1/notifications', 
         method: 'POST',
         headers: {
             'Content-Type': 'application/json; charset=utf-8',
-            'Authorization': `key ${ONESIGNAL_REST_API_KEY}` 
+            // EL SECRETO: Aunque la llave empiece por os_v2, 
+            // la API v1 EXIGE que uses "Basic"
+            'Authorization': `Basic ${ONESIGNAL_REST_API_KEY}` 
         }
     };
 
