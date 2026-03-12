@@ -162,8 +162,8 @@ app.get('/productos', async (req, res) => {
         const pool = await poolPromise;
         const result = await pool.request().query(`
             SELECT p.*, 
-            (SELECT TOP 1 ImagenURL FROM ProductoImagenes WHERE ProductoID = p.ProductoID ORDER BY ImagenID) as FotoReal,
-            (SELECT STRING_AGG(CAST(ImagenURL AS NVARCHAR(MAX)), '|') FROM ProductoImagenes WHERE ProductoID = p.ProductoID ORDER BY ImagenID) as GaleriaCompleta
+            (SELECT TOP 1 ImagenURL FROM ProductoImagenes WHERE ProductoID = p.ProductoID) as FotoReal,
+            (SELECT STRING_AGG(CAST(ImagenURL AS NVARCHAR(MAX)), '|') FROM (SELECT TOP 100 ImagenURL FROM ProductoImagenes WHERE ProductoID = p.ProductoID ORDER BY ImagenID) AS Imagenes) as GaleriaCompleta
             FROM Productos p
         `);
 
