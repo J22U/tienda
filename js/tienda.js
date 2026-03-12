@@ -199,7 +199,7 @@ function verDetalle(id) {
             <div id="carouselDetalle" class="carousel slide carousel-dark w-100" data-bs-ride="false">
                 <div class="carousel-inner">
                     ${fotos.map((f, i) => {
-                        const fClean = f.trim();
+                        const fClean = f ? String(f).trim() : '';
                         const srcFull = fClean.startsWith('http') ? fClean : `${BASE_URL}${fClean}`;
                         return `
                         <div class="carousel-item ${i === 0 ? 'active' : ''}">
