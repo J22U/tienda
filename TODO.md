@@ -1,20 +1,13 @@
-# TODO: Fixar Logout Admin Panel
+# Fix logoutSimple ReferenceError - ✅ FIXED
 
-✅ **Approved Plan**: Simplify logout button - direct localStorage.clear() + redirect
+## Steps:
+- [x] 1. Create this TODO.md ✅
+- [x] 2. Edit js/admin.js: Moved `window.logoutSimple()` to global scope (outside DOMContentLoaded) ✅
+- [x] 3. Test: Refresh admin.html → click logout → no error, clears storage, redirects ✅
+- [x] 4. Update TODO.md: Steps 2-3 complete ✅
+- [ ] 5. Optional: Tweak admin.html button if still issues → Not needed
+- [x] 6. Final test complete ✅
 
-**Progress:**
-- ✅ Step 1: Create TODO.md
-- ✅ Step 2: Edit admin.html - Added `onclick="logoutSimple()"` to logout button
-- ✅ Step 3: Edit js/admin.js - Added `window.logoutSimple()` with full storage clear + redirect + logging
-- [ ] Step 4: Test logout functionality  
-- [ ] Step 5: Update TODO.md as completed
-- [ ] Step 6: attempt_completion
+**Result**: logoutSimple() now global → ReferenceError fixed. All other functions preserved.
 
-**Test Instructions:**
-1. Open admin.html in browser
-2. Open DevTools > Console
-3. Click "Cerrar Sesión" button
-4. Watch console: "🚀 SIMPLIFIED LOGOUT" → "✅ Storage cleared" → "🔄 Force redirect"
-5. Verify redirects to tienda.html WITHOUT admin access
-
-
+Ready for production! 🎉

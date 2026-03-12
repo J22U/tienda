@@ -236,40 +236,40 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
     
-    // 🔧 SIMPLIFIED LOGOUT - Direct clear + redirect (bypasses event listener issues)
-    window.logoutSimple = function() {
-        console.log('🚀 SIMPLIFIED LOGOUT - Starting full clear');
-        
-        try {
-            // FULL CLEAR - everything
-            localStorage.clear();
-            sessionStorage.clear();
-            console.log('✅ Storage cleared');
-            
-            // OneSignal cleanup
-            if (window.OneSignalInstance) {
-                window.OneSignalInstance.removeExternalUserId?.();
-                console.log('✅ OneSignal cleaned');
-            }
-            
-            // Clear any potential cookies (basic)
-            document.cookie.split(";").forEach(c => {
-                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-            });
-            
-        } catch (error) {
-            console.error('❌ Clear error:', error);
-        }
-        
-        console.log('🔄 Force redirect to tienda.html');
-        window.location.replace('tienda.html');
-    };
-    
     // Keep original for reference (commented)
     /*
     const btnLogout = document.getElementById('btn-logout'); // COMMENTED - now direct onclick
     */
 });
+
+// 🔧 SIMPLIFIED LOGOUT - NOW GLOBAL (Fix ReferenceError)
+window.logoutSimple = function() {
+    console.log('🚀 SIMPLIFIED LOGOUT - Starting full clear');
+    
+    try {
+        // FULL CLEAR - everything
+        localStorage.clear();
+        sessionStorage.clear();
+        console.log('✅ Storage cleared');
+        
+        // OneSignal cleanup
+        if (window.OneSignalInstance) {
+            window.OneSignalInstance.removeExternalUserId?.();
+            console.log('✅ OneSignal cleaned');
+        }
+        
+        // Clear any potential cookies (basic)
+        document.cookie.split(";").forEach(c => {
+            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+        
+    } catch (error) {
+        console.error('❌ Clear error:', error);
+    }
+    
+    console.log('🔄 Force redirect to tienda.html');
+    window.location.replace('tienda.html');
+};
 
 /* ============================================================================
    PEDIDOS - DESCUENTOS Y FACTURACIÓN
