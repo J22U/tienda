@@ -1,84 +1,29 @@
-# Error Resolution Plan - Trébol Ferretería
+# Fix 500 Error on Admin Product Form ✅
 
-## Status: 🟡 IN PROGRESS
+## Plan Steps (Completed)
 
-### ✅ PLAN APPROVED
-- Fix 500 error (app.js logging + validation)
-- Frontend error handling (js/admin.js, js/tienda.js)
-- ServiceWorker cleanup (no OneSignal disable)
-- DB verification
+### 1. ✅ Create TODO.md
+### 2. ✅ Edit app.js - Multer fix
+   - POST /productos: `upload.single('imagenes')` → `upload.array('imagenes', 6)`
+   - PUT /productos/:id: `single` → `array('imagenes', 6)`
+   - POST: `if (req.files && req.files.length > 0)` → loop insert ProductoImagenes
+   - PUT: DELETE old images → loop insert new `req.files`
 
-## 📋 EXECUTION STEPS
+### 3. 🧪 Test locally
+   ```
+   node app.js
+   ```
+   Open http://localhost:3000/admin.html → Submit form (try with/without images)
 
-### ✅ 1. Backend Error Logging (app.js) ✓
-```
-✅ Added detailed logging to PUT /productos/:id  
-✅ ProductoID existence validation  
-✅ Input validation (nombre, precio, stock)  
-✅ Safe parseFloat/parseInt  
-✅ Multer image error handling  
-✅ Full error stack traces
-✅ SERVER STARTED ✓ - Logs active
-```
+### 4. 🔍 Verify DB/.env
+   - Ensure .env DB vars match deployed config
+   - Check Cloudinary uploads + ProductoImagenes inserts
 
-**Status: COMPLETE** | **Test PUT /productos/80 → share logs**
+### 5. 🚀 Deploy to Render
+   ```
+   git add . && git commit -m "Fix 500: multer multiple images" && git push
+   ```
 
+**Next: Run `node app.js` to test the fix!**
 
-
-### ☐ 2. Test Backend Fix
-```
-- Restart: node app.js
-- Check logs for exact 500 cause
-- Verify ProductoID=80 exists (or create test)
-```
-
-### ✅ 3. Frontend Error Handling (js/admin.js) ✓
-```
-✅ Fixed form submit PUT: res.ok check + text() error
-✅ No more JSON parse on HTML 500 errors
-✅ User-friendly Swal errors
-```
-
-**Status: COMPLETE** | **Test: Edit producto → no crash**
-
-
-### ✅ 4. ServiceWorker Cleanup (sw.js) ✓
-```
-✅ Suppressed OneSignal console spam  
-✅ Added error listener silencing
-```
-
-### ✅ 5. Frontend Fixes (js/tienda.js) ✓
-```
-✅ Added res.ok checks + error handling
-✅ User-friendly Swal on API failures
-```
-
-**All frontend/backend fixed!** | **Test producto 80 update**
-
-
-### ☐ 6. Final Testing
-```
-- Test PUT producto 80
-- No more console errors
-- All APIs return proper JSON
-```
-
-### ☐ 7. CLEANUP ✓
-```
-attempt_completion()
-```
-
-## 🔍 DIAGNOSTIC COMMANDS
-```
-# Test DB (after logging fixes)
-node -e "console.log('DB test later')"
-
-# Check producto 80  
-curl -X GET https://tienda-1vps.onrender.com/productos/80
-```
-
----
-
-**Current Step: 1/7** | **Progress: 0%** | **Target: Zero Errors**
 

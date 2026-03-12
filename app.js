@@ -176,7 +176,7 @@ app.get('/productos', async (req, res) => {
     }
 });
 
-app.post('/productos', upload.single('imagenes'), async (req, res) => {
+app.post('/productos', upload.array('imagenes', 6), async (req, res) => {
     const nombre = req.body.Nombre || req.body.nombre;
     const marca = req.body.Marca || req.body.marca;
     const sku = req.body.CodigoSKU || req.body.sku;
@@ -200,12 +200,13 @@ app.post('/productos', upload.single('imagenes'), async (req, res) => {
             `);
 
         const nuevoId = result.recordset[0].ProductoID;
-        if (req.file) {
-            const url = req.file.path;
-            await pool.request()
-                .input('id', sql.Int, nuevoId)
-                .input('url', sql.NVarChar, url)
-                .query('INSERT INTO ProductoImagenes (ProductoID, ImagenURL) VALUES (@id, @url)');
+        if (req.files && req.files.length > 0) {
+            for (const file of req.files) {
+                await pool.request()
+                    .input('id', sql.Int, nuevoId)
+                    .input('url', sql.NVarChar, file.path)
+                    .query('INSERT INTO ProductoImagenes (ProductoID, ImagenURL) VALUES (@id, @url)');
+            }
         }
         res.json({ success: true, id: nuevoId });
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
@@ -227,7 +228,7 @@ app.put('/productos/:id/descuento', async (req, res) => {
     }
 });
 
-app.put('/productos/:id', upload.single('imagenes'), async (req, res) => {
+app.put('/productos/:id', upload.array('imagenes', 6), async (req, res) => {
     const { id } = req.params;
     
     console.log('🔧 PUT /productos/:id - START', { id, bodyKeys: Object.keys(req.body || {}), hasFile: !!req.file });
@@ -295,21 +296,23 @@ app.put('/productos/:id', upload.single('imagenes'), async (req, res) => {
 
         console.log('✅ UPDATE rows:', result.rowsAffected[0]);
 
-        // IMAGE (if present)
-        if (req.file) {
-            console.log('🖼️ Image:', req.file.path);
+        // IMAGES (if present - multiple)
+        if (req.files && req.files.length > 0) {
+            console.log(`🖼️ Images: ${req.files.length}`, req.files.map(f => f.path));
             try {
                 await pool.request().input('id', sql.Int, intId)
                     .query('DELETE FROM ProductoImagenes WHERE ProductoID=@id');
                     
-                await pool.request()
-                    .input('id', sql.Int, intId)
-                    .input('url', sql.NVarChar(500), req.file.path)
-                    .query('INSERT INTO ProductoImagenes (ProductoID, ImagenURL) VALUES (@id, @url)');
+                for (const file of req.files) {
+                    await pool.request()
+                        .input('id', sql.Int, intId)
+                        .input('url', sql.NVarChar(500), file.path)
+                        .query('INSERT INTO ProductoImagenes (ProductoID, ImagenURL) VALUES (@id, @url)');
+                }
                     
-                console.log('✅ Image OK');
+                console.log('✅ Images OK');
             } catch (imgErr) {
-                console.error('⚠️ Image failed but continued:', imgErr.message);
+                console.error('⚠️ Images failed but continued:', imgErr.message);
             }
         }
         
