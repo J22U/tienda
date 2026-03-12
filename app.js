@@ -231,7 +231,7 @@ app.put('/productos/:id/descuento', async (req, res) => {
 app.put('/productos/:id', upload.array('imagenes', 6), async (req, res) => {
     const { id } = req.params;
     
-    console.log('🔧 PUT /productos/:id - START', { id, bodyKeys: Object.keys(req.body || {}), hasFile: !!req.file });
+    console.log('🔧 PUT /productos/:id - START', { id, bodyKeys: Object.keys(req.body || {}), hasFiles: req.files ? req.files.length : 0 });
     
     try {
         if (!id || isNaN(parseInt(id))) {
