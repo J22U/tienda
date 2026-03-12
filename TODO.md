@@ -1,19 +1,16 @@
-# OneSignal Push Notification Fix - TODO
+# OneSignal Notification Fix - TODO
 
-## ✅ Step 1: Create TODO.md [COMPLETED]
+✅ 1. Create .env template with OneSignal config instructions
+✅ 2. Update app.js: Use .env variables, add key validation, better error logging
 
-## ✅ COMPLETE: OneSignal REST API Key Fixed! 🎉
+## [ ] 3. Add REST API Key to .env and restart server
+## [ ] 4. Test new order notification
+## [ ] 5. Complete task
 
-**Final config:**
-- ✅ **User Auth Key** (`os_v2_app_...`) with `Basic` auth ✅
-- ✅ `included_segments: ["Total Subscriptions"]` 
-- ✅ High priority (`priority: 10`) + green accent ✅
-- ✅ All improvements preserved
+**Instructions:**
+1. Go to OneSignal Dashboard → Settings → Keys & IDs
+2. Copy **REST API Key** (starts with N-...)
+3. Edit `.env`: Replace `YOUR_REST_API_KEY_HERE` 
+4. Restart server: Ctrl+C then `node app.js`
+5. Test: Create new order from tienda.html → check console for ✅ OneSignal response
 
-## 🟢 Ready to test:
-1. `node app.js`
-2. `tienda.html` → Subscribe notifications
-3. Create order → Console shows `{"recipients":"1","success":true}`
-4. Push arrives instantly 📱🔔
-
-**OneSignal 401 error RESOLVED.** Server push notifications working! ✅

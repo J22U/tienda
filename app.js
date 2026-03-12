@@ -12,17 +12,20 @@ const https = require('https');
 require('dotenv').config();
 
 // OneSignal Configuration
-const ONESIGNAL_CONFIG = {
-    appId: 'a6a0e0fc-4caf-4ce6-adff-5856c98bfffe',
-apiKey: 'os_v2_app_u2qob7cmv5gonlp7lblmtc777ykziv3kknkev7monxinj74lj5usa557qudrwnwejsfvmfrawialxhw7hv5pt3kize3linydtwakcoy'
-};
+// OneSignal Configuration (from .env - REST API Key required)
+const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID || 'a6a0e0fc-4caf-4ce6-adff-5856c98bfffe';
+const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY || null;
+
+if (!ONESIGNAL_REST_API_KEY || ONESIGNAL_REST_API_KEY === 'YOUR_REST_API_KEY_HERE') {
+    console.warn('⚠️ OneSignal REST API Key missing! Add to .env file.');
+}
 
 // Function to send push notification via OneSignal
 function sendPushNotification(pedidoData) {
     const { numeroPedido, nombreCliente, total, productos } = pedidoData;
     
     const notification = {
-        app_id: ONESIGNAL_CONFIG.appId,
+        app_id: ONESIGNAL_APP_ID,
         included_segments: ["Total Subscriptions"],
         headings: { es: '🛒 Nuevo Pedido - Trébol' },
         contents: { 
@@ -40,8 +43,7 @@ function sendPushNotification(pedidoData) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json; charset=utf-8',
-            // PRUEBA 1: "Key" con K mayúscula (algunos servidores v1 son sensibles al case)
-            'Authorization': `Key ${ONESIGNAL_CONFIG.apiKey}` 
+            'Authorization': `key ${ONESIGNAL_REST_API_KEY}` 
         }
     };
     const req = https.request(options, (res) => {
@@ -52,7 +54,10 @@ function sendPushNotification(pedidoData) {
         });
     });
 
-    req.on('error', (error) => { console.error('❌ OneSignal error:', error); });
+    req.on('error', (error) => { 
+        console.error('❌ OneSignal request failed:', error.message); 
+        console.error('   REST API Key preview:', ONESIGNAL_REST_API_KEY ? ONESIGNAL_REST_API_KEY.substring(0, 10) + '...' : 'MISSING');
+    });
     req.write(postData);
     req.end();
 }
@@ -427,13 +432,16 @@ app.post('/pedidos', async (req, res) => {
         });
         
         // Enviar notificación push via OneSignal (solo si está configurada)
-        if (ONESIGNAL_CONFIG.apiKey && ONESIGNAL_CONFIG.apiKey !== 'YOUR_REST_API_KEY') {
+        if (ONESIGNAL_REST_API_KEY && ONESIGNAL_REST_API_KEY !== 'YOUR_REST_API_KEY_HERE') {
+            console.log('📱 Enviando push notification via OneSignal...');
             sendPushNotification({
                 numeroPedido: numeroPedidoDisplay,
                 nombreCliente: nombre,
                 total: total,
                 productos: productos.length
             });
+        } else {
+            console.log('⏭️ Skipping OneSignal - No valid REST API key in .env');
         }
         
         console.log(`🔔 Nuevo pedido #${numeroPedidoDisplay} (ID: ${nuevoPedidoId}) - Notificación enviada`);
