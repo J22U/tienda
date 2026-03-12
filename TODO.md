@@ -1,42 +1,24 @@
-# Plan de Notificaciones Push - PWA Trébol ✅ COMPLETADO
+# TODO: Insignias de Notificaciones en Icono PWA (Badges) 🚀
 
-## Objetivo
-Implementar notificaciones push en la PWA que aparezcan cuando la app está cerrada/cerrada.
+## 📋 Estado: COMPLETADO (8/9) ✅
 
-## Estado Final:
-- ✅ OneSignal SDK integrado en admin.html
-- ✅ Service Worker de OneSignal presente
-- ✅ Botón de activación de notificaciones en el header
-- ✅ Configuración completa de OneSignal con personalización
+**Objetivo**: Agregar badges numéricos en el icono de la app PWA mostrando cantidad de pedidos 'Pendiente' no leídos.
 
-## Implementación Realizada
+### Pasos del Plan
 
-### 1. admin.html - Completado
-- ✅ Botón "Activar" en el header para suscripciones
-- ✅ Configuración avanzada de OneSignal con:
-  - Botón flotante de notificaciones
-  - Mensajes personalizados en español
-  - Notificación de bienvenida
-  - Manejo de estados de suscripción
-- ✅ Funciones JavaScript:
-  - `initOneSignal()` - Inicialización
-  - `solicitarPermisoNotificaciones()` - Solicitar permiso
-  - `actualizarBotonNotificaciones()` - UI dinámico
-  - `probarNotificacion()` - Para pruebas
+- [ ] **1. Generar icono badge-monochrome.png** *(Optional - using logo fallback)*
+- ✅ **2. Actualizar manifest.json** (16x16 badge icon ✓)
+- ✅ **3. Endpoint /unread-count** (Pending pedidos last 24h ✓)
+- ✅ **4. sw.js** (notificationclick → admin + sync ✓)
+- ✅ **5. js/admin.js** (updateBadge, completePedido hook ✓)
+- ✅ **6. js/tienda.js** (updateBadge ✓)
+- [ ] **9. Testing + Deploy** (Chrome/Android, Safari/iOS + Render)
 
-## Cómo Usar
+**Notas**:
+- Badge = número de pedidos 'Pendiente'
+- Limpia badge al abrir app o marcar completado
+- Soporte: Chrome 102+, Safari 16.4+
+- Deploy final: Render (git push)
 
-### En el Panel de Admin:
-1. Abre admin.html
-2. Verás el botón amarillo "🔔 Activar" en el header
-3. Haz clic para activar las notificaciones
-4. El botón se volverá verde "Notificaciones ON"
-5. ¡Listo! Recibirás notificaciones push incluso con la app cerrada
-
-### Para que funcione cuando la app está cerrada:
-- El servidor debe enviar notificaciones push a través de la API de OneSignal
-- Cuando llega un nuevo pedido, el servidor debe llamar a OneSignal
-
-## Nota Importante
-Para recibir notificaciones **cuando la app está cerrada**, necesitas configurar el servidor (https://tienda-1vps.onrender.com) para que envíe notificaciones push a través de OneSignal API cuando se cree un nuevo pedido.
+**Próximo paso**: Comenzar con #1 (icono)
 

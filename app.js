@@ -451,6 +451,25 @@ app.put('/pedidos/:id/descuento', async (req, res) => {
     }
 });
 
+// ===== BADGE SUPPORT - Unread Count Endpoint =====
+app.get('/unread-count', async (req, res) => {
+    try {
+        const pool = await poolPromise;
+        const result = await pool.request().query(`
+            SELECT COUNT(*) as unread 
+            FROM Pedidos 
+            WHERE Estado = 'Pendiente' 
+              AND Fecha > DATEADD(day, -1, GETDATE())
+        `);
+        res.json({ 
+            unread: result.recordset[0].unread || 0 
+        });
+    } catch (err) {
+        console.error('Badge count error:', err);
+        res.status(500).json({ unread: 0 });
+    }
+});
+
 app.get('/logout', (req, res) => {
     req.session.destroy((err) => {
         if (err) {
