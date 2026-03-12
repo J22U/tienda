@@ -187,7 +187,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const fotoInput = document.getElementById('imagenes');
             if (fotoInput.files.length > 0) {
-                formData.append('imagenes', fotoInput.files[0]);
+                if (fotoInput.files.length > 6) {
+                    Swal.fire('Límite alcanzado', 'Máximo 6 imágenes por producto', 'warning');
+                    return;
+                }
+                for(let i = 0; i < fotoInput.files.length; i++) {
+                    formData.append('imagenes[]', fotoInput.files[i]);
+                }
             }
 
             try {
