@@ -1,61 +1,45 @@
-// Service Worker para Trébol Repuestos
-// Esta app siempre requiere internet - solo registra para permitir instalación PWA
+/* Trébol Repuestos - OneSignal Compatible Service Worker v2 */
+importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js?v=16.0.0');
 
-// OneSignal no se carga directamente para evitar errores de red
-// La funcionalidad de notificaciones se maneja desde el servidor
-
-const CACHE_NAME = 'trebol-v1';
-
-// Assets mínimos para instalación (sin offline)
-const PRECACHE_ASSETS = [
-    '/',
-    '/tienda.html',
-    '/manifest.json'
+/* Minimal PWA caching - NO fetch interference with OneSignal */
+const CACHE_NAME = 'trebol-pwa-v2';
+const PRECACHE_URLS = [
+  '/',
+  '/tienda.html', 
+  '/admin.html',
+  '/manifest.json',
+  '/css/tienda.css',
+  '/css/admin.css'
 ];
 
-// Install event - precache básico
-self.addEventListener('install', (event) => {
-    event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then((cache) => {
-                console.log('[SW] Service Worker instalado');
-                return cache.addAll(PRECACHE_ASSETS);
-            })
-            .then(() => self.skipWaiting())
-    );
+/* Install: Basic precache + OneSignal setup */
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => Promise.all(
+        PRECACHE_URLS.map(url => 
+          fetch(url).then(res => cache.put(url, res))
+            .catch(() => console.log(`[SW] Cache failed: ${url}`))
+        )
+      ))
+      .then(() => self.skipWaiting())
+  );
 });
 
-// Activate event
-self.addEventListener('activate', (event) => {
-    event.waitUntil(
-        caches.keys().then((cacheNames) => {
-            return Promise.all(
-                cacheNames.map((cacheName) => {
-                    if (cacheName !== CACHE_NAME) {
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
-        }).then(() => self.clients.claim())
-    );
+/* Activate: Cleanup old caches */
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(cacheNames => 
+      Promise.all(
+        cacheNames.map(name => 
+          name !== CACHE_NAME && caches.delete(name)
+        )
+      )
+    )
+  );
+  self.clients.claim();
 });
 
-// Suppress OneSignal console spam
-self.addEventListener('error', (event) => {
-    if (event.filename && event.filename.includes('OneSignal')) {
-        console.warn('[SW] OneSignal error suppressed (server-side notifications active)');
-        event.stopImmediatePropagation();
-    }
-});
-
-// Network only fetch
-self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        fetch(event.request)
-            .then((response) => response)
-            .catch(() => new Response(JSON.stringify({ error: 'Sin conexión' }), {
-                status: 503, headers: { 'Content-Type': 'application/json' }
-            }))
-    );
-});
+/* NO fetch handler - Let OneSignal handle notifications */
+console.log('[SW] Trébol PWA + OneSignal Service Worker loaded ✅');
 

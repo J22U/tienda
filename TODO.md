@@ -1,29 +1,24 @@
-# Fix 500 Error on Admin Product Form ✅
+# ✅ TODO - Fix 500 Error + ServiceWorker (Updated 2024)
 
-## Plan Steps (Completed)
+## ✅ Step 1: Fix Backend FormData (app.js) - COMPLETE
+- ✅ Added `express.urlencoded({ extended: true })` BEFORE multer/Cloudinary
+- ✅ FormData now parses `req.body.Nombre`, `Precio`, etc.
+- ✅ Multiple image uploads on PUT /productos/:id now work
+- **Local test**: Edit product 80 → add images → 200 OK
 
-### 1. ✅ Create TODO.md
-### 2. ✅ Edit app.js - Multer fix
-   - POST /productos: `upload.single('imagenes')` → `upload.array('imagenes', 6)`
-   - PUT /productos/:id: `single` → `array('imagenes', 6)`
-   - POST: `if (req.files && req.files.length > 0)` → loop insert ProductoImagenes
-   - PUT: DELETE old images → loop insert new `req.files`
+## ✅ Step 2: Fix ServiceWorker Conflict (sw.js) - COMPLETE
+- ✅ OneSignalSDK imported + PWA caching
+- ✅ REMOVED fetch handler blocking messaging
+- ✅ Test: Clear SW data → reload → no Log.ts errors
 
-### 3. 🧪 Test locally
-   ```
-   node app.js
-   ```
-   Open http://localhost:3000/admin.html → Submit form (try with/without images)
+## ⏳ Step 3: Deploy & Full Test - PENDING
+- Push to Render.com (`git add . && git commit -m "fix: formdata 500 + sw" && git push`)
+- Test admin panel: Edit product → multiple images → success
+- Test PWA: Install → notifications → no SW errors
+- Check Render logs: No 500s on /productos/:id
 
-### 4. 🔍 Verify DB/.env
-   - Ensure .env DB vars match deployed config
-   - Check Cloudinary uploads + ProductoImagenes inserts
+## ⏳ Step 4: Verify & Complete - PENDING
+- Clear browser data → test end-to-end
+- attempt_completion
 
-### 5. 🚀 Deploy to Render
-   ```
-   git add . && git commit -m "Fix 500: multer multiple images" && git push
-   ```
-
-**Next: Run `node app.js` to test the fix!**
-
-
+**Priority**: Deploy Step 1 to Render FIRST (test images immediately)
