@@ -12,6 +12,8 @@ let OneSignalInstance = null;
 async function initOneSignal() {
   if (OneSignalInitialized) {
     console.log('✅ OneSignal already initialized');
+    // 🔄 AUTO-RECOVERY: Re-check subscription status
+    checkAndRecoverSubscription();
     return OneSignalInstance;
   }
 
@@ -22,15 +24,11 @@ async function initOneSignal() {
       try {
         OneSignalInstance = OneSignal;
         
-        // ✅ CRITICAL: Set External ID for admin notifications AFTER init
-        OneSignal.push(function() {
-          if (isAdminPage()) {
-            OneSignal.setExternalUserId("admin_trebol");
-            console.log('🔑 Admin External ID set: admin_trebol');
-            localStorage.setItem('onesignal_admin_id', 'admin_trebol');
-            showAdminPrompt(); // Auto-prompt for admins
-          }
-        });
+        // 🔄 ENHANCED: Always check/recover admin subscription FIRST
+        await checkAndRecoverSubscription();
+        
+        // ✅ CRITICAL: Set External ID IMMEDIATELY after init (toggle-aware)
+        setupExternalIdListener();
         
         await OneSignal.init({
           appId: ONESIGNAL_APP_ID,
@@ -38,18 +36,17 @@ async function initOneSignal() {
           serviceWorkerPath: './OneSignalSDKWorker.js',
           serviceWorkerParam: { scope: '/' },
           notifyButton: {
-            enable: false, // ✅ DISABLED: No bell button for clients
+            enable: false,
             size: 'medium',
             position: 'bottom-right',
             showCredit: false
           },
           welcomeNotification: {
-            // ✅ DISABLED: No welcome for auto-subscribe admin
             disable: true
           },
           promptOptions: {
             slidedown: {
-              enabled: false, // ✅ DISABLED: No prompts for clients
+              enabled: false,
               autoPrompt: false,
               timeDelay: 10000,
               pageViews: 1
@@ -254,7 +251,7 @@ function initAdminNotificationToggle() {
   const statusEl = document.getElementById('toggle-status');
   if (!toggle || !isAdminPage()) return;
 
-  // Load saved state
+  // Load saved state (default ON for admins)
   const savedState = localStorage.getItem('admin_notifications_enabled') !== 'false';
   toggle.checked = savedState;
   updateToggleUI(savedState);
@@ -265,15 +262,26 @@ function initAdminNotificationToggle() {
     updateToggleUI(enabled);
     
     if (OneSignalInstance) {
+      // 🔥 FIXED: Always setExternalUserId when ON (even if not subscribed)
       if (enabled) {
         await OneSignalInstance.setExternalUserId("admin_trebol");
-        console.log('🔑 Admin notifications ENABLED');
+        console.log('🔑 Admin notifications ENABLED + External ID set');
+        // Trigger recovery check
+        await checkAndRecoverSubscription();
       } else {
         await OneSignalInstance.removeExternalUserId();
         console.log('🔓 Admin notifications DISABLED');
       }
     }
   });
+
+  // 🔄 Initial sync on load
+  if (savedState && OneSignalInstance) {
+    setTimeout(async () => {
+      await OneSignalInstance.setExternalUserId("admin_trebol");
+      console.log('🔄 Toggle sync: External ID restored on load');
+    }, 1000);
+  }
 }
 
 function updateToggleUI(enabled) {
@@ -294,28 +302,84 @@ function updateToggleUI(enabled) {
   }
 }
 
-// Auto-init on DOM ready + toggle
+// 🔥 NEW UTILITIES: Auto-recovery + persistent external ID
+
+/**
+ * Check LS state and auto-recover broken subscriptions
+ */
+async function checkAndRecoverSubscription() {
+  if (!isAdminPage()) return;
+  
+  const savedState = localStorage.getItem('onesignal_subscription_state');
+  const toggleEnabled = localStorage.getItem('admin_notifications_enabled') !== 'false';
+  const hasExternalId = localStorage.getItem('onesignal_admin_id') === 'admin_trebol';
+  
+  console.log('🔍 Recovery check:', { toggleEnabled, hasExternalId, savedState: savedState ? 'exists' : 'none' });
+  
+  if (toggleEnabled && OneSignalInstance) {
+    // Always ensure external ID is set when toggle ON
+    await OneSignalInstance.setExternalUserId("admin_trebol");
+    localStorage.setItem('onesignal_admin_id', 'admin_trebol');
+    console.log('🔑 External ID ENFORCED: admin_trebol');
+    
+    // Check current status
+    const status = await getSubscriptionStatus();
+    if (!status.subscribed || status.permission !== 'granted') {
+      console.log('🔄 Auto-recovery: Re-prompting...');
+      await requestNotificationPermission();
+    }
+  }
+}
+
+/**
+ * Listen for subscription changes → always re-attach external ID if toggle ON
+ */
+function setupExternalIdListener() {
+  if (!OneSignalInstance || !isAdminPage()) return;
+  
+  // Listen for subscription changes
+  OneSignalInstance.User.PushSubscription.addEventListener('stateChange', async (event) => {
+    console.log('📱 Push subscription changed:', event);
+    
+    // Always re-attach external ID when subscribed AND toggle enabled
+    const toggleEnabled = localStorage.getItem('admin_notifications_enabled') !== 'false';
+    if (event.isSubscribed && toggleEnabled && isAdminPage()) {
+      await OneSignalInstance.setExternalUserId("admin_trebol");
+      console.log('🔄 Re-attached external ID on subscription change');
+    }
+    
+    await getSubscriptionStatus().then(updateNotificationUI);
+    localStorage.setItem('onesignal_subscription_state', JSON.stringify(event));
+  });
+  
+  console.log('🔗 External ID listener active');
+}
+
+// Auto-init + enhanced toggle
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    initOneSignal();
+  document.addEventListener('DOMContentLoaded', async () => {
+    await initOneSignal();
     initAdminNotificationToggle();
+    await checkAndRecoverSubscription(); // 🔄 Recovery on load
   });
 } else {
   initOneSignal();
   initAdminNotificationToggle();
+  checkAndRecoverSubscription();
 }
 
-// Export for global use
+// Export enhanced API
 window.OneSignalInit = { 
   initOneSignal, 
   updateNotificationUI, 
   requestNotificationPermission, 
   unsubscribeNotifications, 
   testNotification,
-  getSubscriptionStatus,  // 🆕 Diagnostics
-  showAdminPrompt,        // 🆕 Admin auto-prompt
-  isAdminPage             // 🆕 Admin detection
+  getSubscriptionStatus,
+  showAdminPrompt,
+  isAdminPage,
+  checkAndRecoverSubscription,  // 🆕 Recovery
+  setupExternalIdListener       // 🆕 Listener
 };
 
-// Expose for backward compatibility
 window.initOneSignal = initOneSignal;
