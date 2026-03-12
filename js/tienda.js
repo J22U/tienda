@@ -278,6 +278,7 @@ function agregarAlPedido(producto) {
             return;
         }
         itemExistente.cantidad += cantidad;
+        itemExistente.stock = producto.Stock; // Preserve stock for editing
     } else {
         // Usar el precio con descuento si hay oferta
         const precioFinal = producto.TieneOferta ? producto.PrecioConDescuento : producto.Precio;
@@ -285,7 +286,8 @@ function agregarAlPedido(producto) {
             ProductoID: producto.ProductoID,
             cantidad, 
             Nombre: producto.Nombre,
-            Precio: precioFinal
+            Precio: precioFinal,
+            stock: producto.Stock // Add stock for quantity limits
         });
     }
 
@@ -306,12 +308,32 @@ function actualizarCarritoUI() {
         total += item.Precio * item.cantidad;
         itemsCount += item.cantidad;
         return `
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                    <span class="fw-bold">${item.Nombre}</span><br>
-                    <small>${item.cantidad} x $${Number(item.Precio).toLocaleString()}</small>
+            <li class="list-group-item py-3">
+                <div class="d-flex align-items-center justify-content-between w-100">
+                    <div class="flex-grow-1 me-3">
+                        <strong>${item.Nombre}</strong>
+                        <div class="text-muted small">$${Number(item.Precio).toLocaleString()} c/u</div>
+                    </div>
+                    <div class="quantity-controls d-flex align-items-center gap-1">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="decrementar(${i})" ${item.stock <= 1 ? 'disabled' : ''}>
+                            <i class="bi bi-dash"></i>
+                        </button>
+                        <input type="number" class="form-control qty-input text-center" style="width: 70px;" 
+                               value="${item.cantidad}" min="1" max="${item.stock}"
+                               onchange="actualizarCantidad(${i}, this.value)"
+                               data-index="${i}">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="incrementar(${i})" ${item.cantidad >= item.stock ? 'disabled' : ''}>
+                            <i class="bi bi-plus"></i>
+                        </button>
+                        <span class="text-muted small ms-2">/ ${item.stock} stock</span>
+                    </div>
+                    <button class="btn btn-sm ms-2 text-danger" onclick="eliminarItem(${i})">
+                        <i class="bi bi-trash"></i>
+                    </button>
                 </div>
-                <button class="btn btn-sm text-danger" onclick="eliminarItem(${i})"><i class="bi bi-trash"></i></button>
+                <div class="mt-2 pt-2 border-top">
+                    <strong class="text-success">Subtotal: $${(item.Precio * item.cantidad).toLocaleString()}</strong>
+                </div>
             </li>`;
     }).join('');
 
@@ -321,6 +343,45 @@ function actualizarCarritoUI() {
 
 function eliminarItem(index) {
     carrito.splice(index, 1);
+    actualizarCarritoUI();
+}
+
+// Nuevas funciones para editar cantidades
+function incrementar(index) {
+    const item = carrito[index];
+    if (item.cantidad < item.stock) {
+        item.cantidad++;
+        actualizarCarritoUI();
+    } else {
+        Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'Stock máximo', timer: 1500 });
+    }
+}
+
+function decrementar(index) {
+    const item = carrito[index];
+    if (item.cantidad > 1) {
+        item.cantidad--;
+        actualizarCarritoUI();
+    }
+}
+
+function actualizarCantidad(index, nuevaCant) {
+    const item = carrito[index];
+    const cant = parseInt(nuevaCant);
+    
+    if (isNaN(cant) || cant < 1) {
+        Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: 'Mínimo 1', timer: 1500 });
+        actualizarCarritoUI(); // Reset to valid
+        return;
+    }
+    
+    if (cant > item.stock) {
+        Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: `Máx: ${item.stock}`, timer: 1500 });
+        actualizarCarritoUI();
+        return;
+    }
+    
+    item.cantidad = cant;
     actualizarCarritoUI();
 }
 

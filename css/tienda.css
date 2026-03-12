@@ -336,6 +336,19 @@ footer h5::after {
     color: white; 
 }
 
+#lista-compra .list-group-item {
+    border: none;
+    margin-bottom: 8px;
+    border-radius: 15px;
+    background: #fafbfc;
+    padding: 12px 8px !important;
+}
+
+#lista-compra {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
 .login-input { 
     background-color: #f1f1f1 !important; 
     border: none !important; 
@@ -345,4 +358,76 @@ footer h5::after {
 
 .text-danger {
     color: #dc3545 !important;
+}
+
+/* ============================================================================
+   CONTROLES DE CANTIDAD CARRITO
+   ============================================================================ */
+
+.quantity-controls {
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    border: none;
+    min-width: auto;
+    gap: 2px;
+}
+
+.quantity-controls span {
+    display: none !important;
+}
+
+.qty-input {
+    font-size: 0.875rem;
+    font-weight: 600;
+    height: 32px;
+    width: 55px;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 6px !important;
+    padding: 2px 4px !important;
+}
+
+.qty-input:focus {
+    border-color: var(--primary-green) !important;
+    box-shadow: 0 0 0 0.2rem rgba(45, 90, 39, 0.25) !important;
+}
+
+.quantity-controls button {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.875rem;
+}
+
+.quantity-controls button:hover:not(:disabled) {
+    background-color: var(--primary-green) !important;
+    color: white !important;
+    border-color: var(--primary-green) !important;
+}
+
+.quantity-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Mejora responsive para móvil */
+@media (max-width: 768px) {
+    .quantity-controls {
+        flex-direction: row;
+        gap: 2px;
+        padding: 4px 8px;
+        min-width: auto;
+    }
+    
+    .qty-input {
+        width: 60px !important;
+    }
+    
+    li.list-group-item {
+        padding: 1rem !important;
+    }
 }
