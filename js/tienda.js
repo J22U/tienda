@@ -537,10 +537,10 @@ formLogin.addEventListener('submit', async (e) => {
             const email = document.getElementById('admin-email').value;
             const pass = document.getElementById('admin-password').value;
 
-            if (email === "admin@agro.com" && pass === "123456") {
-                const USER_ID = "admin_trebol";
+if (email === "admin@agro.com" && pass === "123456") {
+                console.log('🔐 Login correcto - configurando sesión');
                 
-                // 🆕 1. Local session
+                // 1. Local session INMEDIATA (crítico para redirect)
                 localStorage.setItem('admin_logged', 'true');
                 const sessionData = {
                     logged: true,
@@ -549,33 +549,39 @@ formLogin.addEventListener('submit', async (e) => {
                 };
                 localStorage.setItem('admin_session', JSON.stringify(sessionData));
                 
-                // 🆕 2. Sync server-side session
-                try {
-                    const serverRes = await fetch(`${BASE_URL}/api/admin-session`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'login', userId: USER_ID })
-                    });
-                    const serverData = await serverRes.json();
-                    if (serverData.success) {
-                        localStorage.setItem('server_session_token', serverData.token);
-                        console.log('✅ Server session synced:', USER_ID);
+                // 2. Background sync (no bloquea redirect)
+                (async () => {
+                    const USER_ID = "admin_trebol";
+                    localStorage.setItem('onesignal_user_id', USER_ID);
+                    
+                    try {
+                        // Server session
+                        const serverRes = await fetch(`${BASE_URL}/api/admin-session`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'login', userId: USER_ID })
+                        });
+                        const serverData = await serverRes.json();
+                        if (serverData.success) {
+                            localStorage.setItem('server_session_token', serverData.token);
+                            console.log('✅ Server session OK');
+                        }
+                    } catch (e) {
+                        console.warn('Server sync failed:', e);
                     }
-                } catch (e) {
-                    console.warn('Server sync failed:', e);
-                }
+                    
+                    // OneSignal background
+                    if (window.OneSignalInit) {
+                        await window.OneSignalInit.initOneSignal();
+                    }
+                })();
                 
-                // 🆕 3. OneSignal con userId persistido
-                localStorage.setItem('onesignal_user_id', USER_ID);
-                if (window.OneSignalInit) {
-                    await window.OneSignalInit.initOneSignal();
-                }
-                
+                // 🔄 REDIRECT INMEDIATO (no espera fetch)
                 Swal.fire({
                     title: '¡Acceso Permitido!',
-                    text: 'Bienvenido al panel de control.',
+                    text: 'Redirigiendo al panel...',
                     icon: 'success',
-                    timer: 1500,
+                    timer: 1000,
                     showConfirmButton: false,
                     willClose: () => {
                         window.location.replace('admin.html');
