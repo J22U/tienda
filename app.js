@@ -14,7 +14,7 @@ require('dotenv').config();
 // OneSignal Configuration
 const ONESIGNAL_CONFIG = {
     appId: 'a6a0e0fc-4caf-4ce6-adff-5856c98bfffe',
-apiKey: 'app_u2qob7cmv5gonlp7lblmtc7773jqeixqniouweverhitgz2logi7nvshqd5vdjwylsthbvje3vrlpxepvmvjhedbfcuqiy5zkratuva'
+apiKey: 'os_v2_app_u2qob7cmv5gonlp7lblmtc777zhweepv62neiy5ercmc32meslfspgf3arokfen2tosqmwy3m545fpuksttlqhadjchvxylpxfxj5bq'
 };
 
 // Function to send push notification via OneSignal
@@ -60,7 +60,7 @@ function sendPushNotification(pedidoData) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-'Authorization': `Key ${ONESIGNAL_CONFIG.apiKey}`
+'Authorization': `Basic ${ONESIGNAL_CONFIG.apiKey}`
         }
     };
     

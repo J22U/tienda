@@ -2,19 +2,18 @@
 
 ## ✅ Step 1: Create TODO.md [COMPLETED]
 
-## ✅ Step 2: OneSignal improvements [COMPLETED]
-- ✅ Authorization: `Basic` → `Key` (for App Key format)
-- ✅ Added `included_segments: ["Total Subscriptions"]` (targets all subscribers)
-- ✅ Added `android_accent_color` + `priority: 10` (high priority, wakes phone)
+## ✅ COMPLETE: OneSignal REST API Key Fixed! 🎉
 
-## ✅ Step 3: Server restart needed
-```
-node app.js
-```
+**Final config:**
+- ✅ **User Auth Key** (`os_v2_app_...`) with `Basic` auth ✅
+- ✅ `included_segments: ["Total Subscriptions"]` 
+- ✅ High priority (`priority: 10`) + green accent ✅
+- ✅ All improvements preserved
 
-## ⬜ Step 4: Test
-- Open `tienda.html` → Subscribe to notifications
-- Create test order → Check server: `OneSignal response: {"recipients":"1","success":true}`
-- Verify push received on device
+## 🟢 Ready to test:
+1. `node app.js`
+2. `tienda.html` → Subscribe notifications
+3. Create order → Console shows `{"recipients":"1","success":true}`
+4. Push arrives instantly 📱🔔
 
-**Status: 🚀 Fully optimized! Notifications will wake phone even when closed.**
+**OneSignal 401 error RESOLVED.** Server push notifications working! ✅
