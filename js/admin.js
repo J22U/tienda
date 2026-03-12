@@ -161,7 +161,17 @@ function limpiarForm() {
    FORMULARIO - GUARDAR PRODUCTO
    ============================================================================ */
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+    // 🚀 ONESIGNAL: Ensure admin subscription + UI ready
+    try {
+        await window.OneSignalInit?.initOneSignal();
+        await window.OneSignalInit?.showAdminPrompt();
+        await window.OneSignalInit?.updateNotificationUI();
+        console.log('🔔 OneSignal admin integration ready');
+    } catch (e) {
+        console.warn('OneSignal not available:', e);
+    }
+    
     // PROTECCIÓN DE HISTORIAL - Prevenir back button
     window.history.pushState(null, null, window.location.href);
     window.addEventListener('popstate', function() {
@@ -169,9 +179,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     const formProducto = document.getElementById('form-producto');
-    
-    if (formProducto) {
-        formProducto.addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('prod-id').value;
             const url = editando ? `${BASE_URL}/productos/${id}` : `${BASE_URL}/productos`;

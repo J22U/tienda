@@ -22,6 +22,16 @@ async function initOneSignal() {
       try {
         OneSignalInstance = OneSignal;
         
+        // ✅ CRITICAL: Set External ID for admin notifications AFTER init
+        OneSignal.push(function() {
+          if (isAdminPage()) {
+            OneSignal.setExternalUserId("admin_trebol");
+            console.log('🔑 Admin External ID set: admin_trebol');
+            localStorage.setItem('onesignal_admin_id', 'admin_trebol');
+            showAdminPrompt(); // Auto-prompt for admins
+          }
+        });
+        
         await OneSignal.init({
           appId: ONESIGNAL_APP_ID,
           allowLocalhostAsSecureOrigin: true,
@@ -42,7 +52,7 @@ async function initOneSignal() {
             slidedown: {
               enabled: true,
               autoPrompt: true,
-              timeDelay: 10000, // 10s
+              timeDelay: 10000,
               pageViews: 1
             }
           }
@@ -50,11 +60,20 @@ async function initOneSignal() {
 
         OneSignalInitialized = true;
         console.log('✅ OneSignal v16 initialized:', OneSignal);
+        
+        // 🎯 DIAGNOSTICS: Log subscription status
+        getSubscriptionStatus().then(status => {
+          console.log('📊 OneSignal Status:', status);
+          if (status.externalId === 'admin_trebol') {
+            console.log('🎉 Admin subscription ready for server notifications');
+          }
+        });
 
         // Listen for subscription changes
         OneSignal.User.PushSubscription.addEventListener('stateChange', (event) => {
           console.log('📱 Push subscription changed:', event);
-          updateNotificationUI();
+          getSubscriptionStatus().then(updateNotificationUI);
+          localStorage.setItem('onesignal_subscription_state', JSON.stringify(event));
         });
 
         // Update UI immediately
@@ -166,6 +185,58 @@ async function testNotification() {
   }
 }
 
+// 🆕 UTILITY FUNCTIONS
+
+/**
+ * Detect if current page is admin panel
+ */
+function isAdminPage() {
+  return window.location.pathname.includes('admin.html') || 
+         document.title.toLowerCase().includes('admin');
+}
+
+/**
+ * Get complete subscription status + diagnostics
+ */
+async function getSubscriptionStatus() {
+  if (!OneSignalInstance) {
+    return { ready: false, permission: 'unknown', subscribed: false, externalId: null };
+  }
+  
+  try {
+    const permission = await OneSignalInstance.Notifications.permission;
+    const subStatus = await OneSignalInstance.User.PushSubscription.optInStatus();
+    const userId = OneSignalInstance.User.Id;
+    const externalId = localStorage.getItem('onesignal_admin_id');
+    
+    const status = {
+      ready: true,
+      permission,
+      subscribed: subStatus === 1,
+      userId: userId || 'unknown',
+      externalId: externalId || 'not_set',
+      needsAdminPrompt: isAdminPage() && subStatus !== 1 && permission !== 'denied'
+    };
+    
+    console.log('🔍 OneSignal Status:', status);
+    return status;
+  } catch (e) {
+    console.error('Status check failed:', e);
+    return { ready: false, error: e.message };
+  }
+}
+
+/**
+ * Force admin subscription prompt (for admin.html)
+ */
+async function showAdminPrompt() {
+  const status = await getSubscriptionStatus();
+  if (status.needsAdminPrompt) {
+    console.log('🔔 Auto-prompting admin subscription...');
+    await requestNotificationPermission();
+  }
+}
+
 // Auto-init on DOM ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initOneSignal);
@@ -174,7 +245,16 @@ if (document.readyState === 'loading') {
 }
 
 // Export for global use
-window.OneSignalInit = { initOneSignal, updateNotificationUI, requestNotificationPermission, unsubscribeNotifications, testNotification };
+window.OneSignalInit = { 
+  initOneSignal, 
+  updateNotificationUI, 
+  requestNotificationPermission, 
+  unsubscribeNotifications, 
+  testNotification,
+  getSubscriptionStatus,  // 🆕 Diagnostics
+  showAdminPrompt,        // 🆕 Admin auto-prompt
+  isAdminPage             // 🆕 Admin detection
+};
 
 // Expose for backward compatibility
 window.initOneSignal = initOneSignal;

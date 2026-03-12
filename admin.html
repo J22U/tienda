@@ -93,7 +93,19 @@
                 <a href="tienda.html?view=store" class="btn btn-dark rounded-pill px-4 fw-bold btn-sm">
                     <i class="bi bi-shop me-2"></i> VER TIENDA
                 </a>
-                <!-- Notification button removed per user request -->
+                
+                <!-- 🔔 ONESIGNAL STATUS INDICATOR -->
+                <button type="button" id="btn-onesignal-status" 
+                        class="btn btn-warning rounded-pill fw-bold btn-sm px-3 me-2">
+                    <i class="bi bi-bell"></i> Activar Notificaciones
+                </button>
+                
+                <button type="button" id="btn-test-notification" 
+                        class="btn btn-outline-info btn-sm rounded-pill px-3 fw-bold" 
+                        onclick="window.OneSignalInit.testNotification()" 
+                        title="Test push notification">
+                    <i class="bi bi-play-circle"></i> Test
+                </button>
 
                 <button type="button" id="btn-logout" class="btn btn-danger rounded-pill px-4 fw-bold btn-sm">
                     <i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión
@@ -253,7 +265,17 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Socket.io for real-time notifications -->
     <script src="/socket.io/socket.io.js"></script>
-    <!-- OneSignal already handled in head session script -->
+    
+    <!-- 🔔 ONESIGNAL: Load after DOM for UI updates -->
+    <script src="js/onesignal-init.js"></script>
+    <script>
+      // Auto-prompt admin subscription + update UI
+      document.addEventListener('DOMContentLoaded', async function() {
+        await window.OneSignalInit.initOneSignal();
+        await window.OneSignalInit.showAdminPrompt();  // 🚀 Auto-subscribe admins
+        await window.OneSignalInit.updateNotificationUI(); // Update status indicator
+      });
+    </script>
     <script src="js/admin.js"></script>
 </body>
 </html>

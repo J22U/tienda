@@ -61,14 +61,33 @@ function sendPushNotification(pedidoData) {
         let data = '';
         res.on('data', (chunk) => { data += chunk; });
         res.on('end', () => {
-            console.log('✅ OneSignal response:', data);
+            try {
+                const response = JSON.parse(data);
+                console.log('✅ OneSignal response:', JSON.stringify(response, null, 2));
+                
+                // 🎯 ENHANCED DIAGNOSTICS
+                if (response.id) {
+                    console.log(`🎉 Push delivered! ID: ${response.id}`);
+                } else if (response.errors && response.errors.length > 0) {
+                    console.error('❌ OneSignal Errors:', response.errors);
+                    if (response.errors.includes('All included players are not subscribed')) {
+                        console.error('🔍 TARGET PLAYERS: ["admin_trebol"] ← No subscriptions found');
+                        console.error('💡 Fix: Visit admin.html → Accept notification prompt → Refresh');
+                    }
+                } else if (response.recipients === 0) {
+                    console.warn('⚠️ 0 recipients. Admin "admin_trebol" not subscribed.');
+                }
+                
+            } catch (parseErr) {
+                console.error('❌ Invalid OneSignal JSON:', data);
+            }
         });
     });
 
     req.on('error', (error) => { 
         console.error('❌ OneSignal request failed:', error.message); 
-    console.error('   Rich API Key preview:', ONESIGNAL_REST_API_KEY ? ONESIGNAL_REST_API_KEY.substring(0, 10) + '...' : 'MISSING');
-
+        console.error('   API Key:', ONESIGNAL_REST_API_KEY ? ONESIGNAL_REST_API_KEY.substring(0, 10) + '...' : 'MISSING');
+        console.error('   Target: ["admin_trebol"]');
     });
     req.write(postData);
     req.end();

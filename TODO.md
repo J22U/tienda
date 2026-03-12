@@ -1,35 +1,59 @@
-# OneSignal Manual Review & Improvements - Trébol Repuestos
+# 🛒 Trébol OneSignal Push Notification Fix
+## Status: 🔄 In Progress (0/7 completed)
 
-## Status: ✅ In Progress (BLACKBOXAI)
+### 📋 Step-by-Step Plan
 
-### Plan Steps:
-- [x] **Step 1**: Create TODO.md ✓
-- [x] **Step 2**: Create clean `js/onesignal-init.js` for unified client SDK init ✓
-- [x] **Step 3**: Update `admin.html` (add button, include init.js) ✓
+**✅ Phase 1 Complete**: Create this TODO.md ✓
 
-- [x] **Step 4**: Update `tienda.html` (remove duplicate init, include init.js) ✓
+**1. [ ] Update js/onesignal-init.js**  
+   - Fix init order: setExternalUserId AFTER init via OneSignal.push()  
+   - Add isAdminPage() detection + auto-prompt for admins  
+   - Add getSubscriptionStatus() diagnostics  
+   - localStorage persistence  
 
-- [x] **Step 5**: Migrate `app.js` backend to new rich API format ✓
+**2. [ ] Update admin.html**  
+   - Add subscription status badge (#status-bell)  
+   - Auto-trigger subscription on load  
 
-- [ ] **Step 6**: Security: Remove hardcoded App ID fallback, add rotation note
-- [ ] **Step 7**: Test: Verify subscription + push on new order
-- [ ] **Step 8**: Complete & attempt_completion
+**3. [ ] Update js/admin.js**  
+   - Integrate OneSignalInit.updateNotificationUI()  
+   - Add testNotification() button  
 
-## ✅ All Steps Complete!
+**4. [ ] Update app.js**  
+   - Enhanced sendPushNotification() error logging  
+   - Parse OneSignal response.errors  
 
-OneSignal reviewed & upgraded per manual:
-- Clean client SDK (js/onesignal-init.js)
-- Rich API backend (/notifications, Basic auth)
-- Security: Strict .env, rotation note
-- UI: Admin status/test buttons
+**5. [ ] Test Locally**  
+   - Clear OneSignal state (DevTools → Application → Storage)  
+   - admin.html → Accept prompt → Verify console "admin_trebol"  
+   - Create test order → Receive push  
 
-**Manual Compliance**: ✅ App ID/REST key secure, v16 SW, migration done.
+**6. [ ] Deploy & Test Production**  
+   - git push → Render deploy  
+   - Test full flow on tienda-1vps.onrender.com  
 
-**Final Instructions**:
-1. Dashboard: Create/rotate App REST key, enable IP allowlist.
-2. .env: Add ONESIGNAL_APP_ID (public), ONESIGNAL_REST_API_KEY (new rich key).
-3. Test: `node app.js`, make order → check push.
+**7. [ ] Verify Dashboard**  
+   - OneSignal.com → Audience → Search "admin_trebol" ✓
 
-Run `node app.js` to test live!
+---
 
+## Quick Test Commands
+```bash
+# Clear OneSignal (Chrome DevTools)
+# Application → Storage → Clear site data → onesignal.com
+
+# Test subscription  
+curl -X POST https://api.onesignal.com/api/v1/notifications \\
+  -H "Authorization: key YOUR_REST_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"app_id":"a6a0e0fc-4caf-4ce6-adff-5856c98bfffe","include_external_user_ids":["admin_trebol"],"contents":{"en":"Test"}}'
+```
+
+## Success Criteria
+- ✅ Console: "Push subscription: {optedIn: true, external_user_id: admin_trebol}"  
+- ✅ Admin UI: 🔔 Notificaciones ON (green)  
+- ✅ New order → Admin push received instantly  
+- ✅ OneSignal Dashboard: 1 device as "admin_trebol"
+
+**Next**: Edit `js/onesignal-init.js` → Step 1"
 
