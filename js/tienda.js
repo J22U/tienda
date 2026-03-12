@@ -27,7 +27,7 @@ async function cargarProductos() {
             
             const srcFinal = (fotoPrincipal && fotoPrincipal.startsWith('http')) 
                 ? fotoPrincipal 
-                : (fotoPrincipal ? `${BASE_URL}${fotoPrincipal}` : 'https://via.placeholder.com/250?text=Sin+Imagen');
+                : (fotoPrincipal ? `${BASE_URL}${fotoPrincipal}` : 'https://placehold.co/250x250?text=Sin+Imagen');
 
             const estaAgotado = p.Stock <= 0;
             const claseAgotado = estaAgotado ? 'product-out-of-stock' : ''; 
@@ -45,7 +45,7 @@ async function cargarProductos() {
                     <div class="card product-card ${claseAgotado} h-100">
                         <div class="img-container position-relative" onclick="${estaAgotado ? '' : `verDetalle(${p.ProductoID})`}">
                             ${tieneOferta ? `<div class="position-absolute top-0 end-0 bg-danger text-white px-2 py-1 rounded-start fw-bold" style="font-size: 0.8rem; z-index: 10;">-${descuento}%</div>` : ''}
-                            <img src="${srcFinal}" onerror="this.src='https://via.placeholder.com/250?text=Error+al+cargar'" 
+                            <img src="${srcFinal}" onerror="this.src='https://placehold.co/250x250/e74c3c/white?text=Error+al+cargar'"
                                  style="${estaAgotado ? 'filter: grayscale(1); opacity: 0.6;' : ''}">
                         </div>
                         <div class="p-4 text-center">
@@ -103,7 +103,7 @@ function verDetalle(id) {
                         return `
                         <div class="carousel-item ${i === 0 ? 'active' : ''}">
                             <img src="${srcFull}" class="d-block w-100" style="height: 350px; object-fit: contain;" 
-                                 onerror="this.src='https://via.placeholder.com/400?text=Error+al+cargar'">
+                                 onerror="this.src='https://placehold.co/400x400/e74c3c/white?text=Error+al+cargar'">
                         </div>`;
                     }).join('')}
                 </div>
@@ -118,9 +118,9 @@ function verDetalle(id) {
         const fotoURL = fotos.length > 0 ? fotos[0].trim() : '';
         const singleSrc = fotoURL.startsWith('http') 
             ? fotoURL 
-            : (fotoURL ? `${BASE_URL}${fotoURL}` : 'https://via.placeholder.com/400?text=Sin+Imagen');
+            : (fotoURL ? `${BASE_URL}${fotoURL}` : 'https://placehold.co/400x400?text=Sin+Imagen');
             
-        contenedorImagen.innerHTML = `<img src="${singleSrc}" class="img-fluid" style="max-height: 350px; object-fit: contain;" onerror="this.src='https://via.placeholder.com/400?text=Error+al+cargar'">`;
+        contenedorImagen.innerHTML = `<img src="${singleSrc}" class="img-fluid" style="max-height: 350px; object-fit: contain;" onerror="this.src='https://placehold.co/400x400/e74c3c/white?text=Error+al+cargar'">`;
     }
 
     // Calcular precio con descuento para el modal
