@@ -21,120 +21,58 @@
     <!-- Estilos personalizados -->
     <link rel="stylesheet" href="css/admin.css">
     
-    <!-- Verificación de sesión -->
+    <!-- Optimized Session + OneSignal -->
     <script>
-        // ============================================================================
-        // SESSION MANAGEMENT - Must match tienda.js logic exactly
-        // ============================================================================
-        
-        // Detect if running as installed PWA - MUST MATCH tienda.js
+        // Configuración de sesión - DEBE COINCIDIR CON tienda.js
+        const SESSION_CONFIG = {
+            browserSessionDuration: 24 * 60 * 60 * 1000,
+            pwaSessionDuration: 30 * 24 * 60 * 60 * 1000
+        };
+
         function isPWA() {
             return window.matchMedia('(display-mode: standalone)').matches || 
-                   window.matchMedia('(display-mode: fullscreen)').matches ||
-                   window.matchMedia('(display-mode: minimal-ui)').matches ||
                    window.navigator.standalone === true;
         }
 
-        // Session configuration - MUST MATCH tienda.js
-        const SESSION_CONFIG = {
-            browserSessionDuration: 24 * 60 * 60 * 1000, // 24 hours for browser
-            pwaSessionDuration: 30 * 24 * 60 * 60 * 1000  // 30 days for PWA
-        };
-
-        // Check if session is valid - MUST MATCH tienda.js logic exactly
         function isSessionValid() {
             const sessionStr = localStorage.getItem('admin_session');
-            if (!sessionStr) {
-                console.log('[Session] No session string found');
-                return false;
-            }
-            
+            if (!sessionStr) return false;
             try {
                 const session = JSON.parse(sessionStr);
-                console.log('[Session] Parsed session:', session);
-                
-                // If session is not marked as logged in, it's invalid
-                if (session.logged !== true) {
-                    console.log('[Session] Session not logged in');
-                    return false;
-                }
-                
-                // If currently running as PWA, session is always valid
-                if (isPWA()) {
-                    console.log('[Session] Currently in PWA mode - session valid');
-                    return true;
-                }
-                
-                // If session was created in PWA mode, it's always valid
-                if (session.isPWA === true) {
-                    console.log('[Session] Session created in PWA mode - session valid');
-                    return true;
-                }
-                
-                // For browser sessions, check expiration
+                if (session.logged !== true) return false;
+                if (isPWA() || session.isPWA === true) return true;
                 if (session.timestamp) {
-                    const elapsed = Date.now() - session.timestamp;
-                    const isValid = elapsed < SESSION_CONFIG.browserSessionDuration;
-                    console.log('[Session] Browser mode - elapsed:', elapsed, 'isValid:', isValid);
-                    return isValid;
+                    return (Date.now() - session.timestamp) < SESSION_CONFIG.browserSessionDuration;
                 }
-                
-                console.log('[Session] Session invalid - no valid flags');
                 return false;
-            } catch (e) {
-                console.log('[Session] Error parsing session:', e);
-                return false;
-            }
+            } catch (e) { return false; }
         }
 
-        // Clear session on logout
+        // ONESIGNAL: Registro automático de ID de administrador
+        window.OneSignal = window.OneSignal || [];
+        OneSignal.push(function() {
+            if (isSessionValid()) {
+                console.log('[OneSignal] Vinculando dispositivo como admin_trebol');
+                OneSignal.setExternalUserId("admin_trebol");
+            }
+        });
+
+        // Función de Logout mejorada
         function clearAdminSession() {
             localStorage.removeItem('admin_session');
             localStorage.removeItem('admin_logged');
-            console.log('[Session] Session cleared');
+            OneSignal.push(function() {
+                OneSignal.removeExternalUserId(); // Limpia el ID al salir
+                console.log('[OneSignal] Vínculo de admin eliminado');
+            });
+            window.location.replace('tienda.html');
         }
 
-        // Save session with PWA flag (called after successful login)
-        function saveAdminSession() {
-            const sessionData = {
-                logged: true,
-                timestamp: Date.now(),
-                isPWA: isPWA()
-            };
-            localStorage.setItem('admin_session', JSON.stringify(sessionData));
-            localStorage.setItem('admin_logged', 'true');
-        }
-
-        // ============================================================================
-        // PAGE LOAD - Check session BEFORE anything else
-        // ============================================================================
-        
-        console.log('[Session] Checking session on admin page load...');
-        console.log('[Session] admin_logged:', localStorage.getItem('admin_logged'));
-        console.log('[Session] admin_session:', localStorage.getItem('admin_session'));
-        
-        // First check: simple check for admin_logged flag
-        if (!localStorage.getItem('admin_logged')) {
-            console.log('[Session] admin_logged not found - redirecting');
+        // VALIDACIÓN DE ACCESO INMEDIATA
+        if (!localStorage.getItem('admin_logged') || !isSessionValid()) {
             window.location.replace('tienda.html');
-            throw new Error('No admin session - redirecting');
+            throw new Error('Acceso no autorizado');
         }
-        
-        // Second check: validate session expiration/details
-        if (!isSessionValid()) {
-            console.log('[Session] Session invalid or expired - redirecting to login');
-            // Don't clear session yet, just redirect to login to allow re-login
-            window.location.replace('tienda.html');
-            throw new Error('Session expired - redirecting');
-        }
-        
-        console.log('[Session] Session valid - allowing access to admin panel');
-        
-        // ============================================================================
-        // PROTECTION: Prevent back button and clear session on page unload (optional)
-        // ============================================================================
-        
-        // Note: We don't clear session on page hide/unload to allow multi-tab usage
     </script>
 </head>
 <body>
@@ -315,22 +253,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Socket.io for real-time notifications -->
     <script src="/socket.io/socket.io.js"></script>
-    <!-- OneSignal unified init -->
-    <script src="js/onesignal-init.js" defer></script>
-    <!-- Test notification button (admin only) -->
-    <script>
-      document.addEventListener('DOMContentLoaded', () => {
-        const testBtn = document.createElement('button');
-        testBtn.id = 'btn-test-notification';
-        testBtn.className = 'btn btn-outline-primary btn-sm rounded-pill fw-bold px-3 ms-2';
-        testBtn.innerHTML = '<i class="bi bi-play-circle"></i> Test Push';
-        testBtn.onclick = window.testNotification;
-        testBtn.title = 'Test OneSignal push (requires subscription)';
-        
-        const tabsLi = document.querySelector('#adminTabs li:last-child');
-        if (tabsLi) tabsLi.appendChild(testBtn);
-      });
-    </script>
+    <!-- OneSignal already handled in head session script -->
     <script src="js/admin.js"></script>
 </body>
 </html>

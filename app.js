@@ -30,8 +30,8 @@ function sendPushNotification(pedidoData) {
     
     const notification = {
         app_id: ONESIGNAL_APP_ID,
-        // CAMBIO AQUÍ: Usa "All" para asegurar que incluya a los 4 de tu lista
-        included_segments: ["All"], 
+        // Esto le envía SOLO a quien tú identifiques como admin en el navegador
+        include_external_user_ids: ["admin_trebol"], 
         headings: { 
             en: '🛒 Nuevo Pedido - Trébol',
             es: '🛒 Nuevo Pedido - Trébol' 
