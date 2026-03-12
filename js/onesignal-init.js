@@ -248,11 +248,61 @@ async function showAdminPrompt() {
   }
 }
 
-// Auto-init on DOM ready
+// 🔔 ADMIN TOGGLE SUPPORT
+function initAdminNotificationToggle() {
+  const toggle = document.getElementById('toggle-notificaciones');
+  const statusEl = document.getElementById('toggle-status');
+  if (!toggle || !isAdminPage()) return;
+
+  // Load saved state
+  const savedState = localStorage.getItem('admin_notifications_enabled') !== 'false';
+  toggle.checked = savedState;
+  updateToggleUI(savedState);
+
+  toggle.addEventListener('change', async (e) => {
+    const enabled = e.target.checked;
+    localStorage.setItem('admin_notifications_enabled', enabled);
+    updateToggleUI(enabled);
+    
+    if (OneSignalInstance) {
+      if (enabled) {
+        await OneSignalInstance.setExternalUserId("admin_trebol");
+        console.log('🔑 Admin notifications ENABLED');
+      } else {
+        await OneSignalInstance.removeExternalUserId();
+        console.log('🔓 Admin notifications DISABLED');
+      }
+    }
+  });
+}
+
+function updateToggleUI(enabled) {
+  const toggle = document.getElementById('toggle-notificaciones');
+  const label = document.querySelector('label[for="toggle-notificaciones"]');
+  const statusEl = document.getElementById('toggle-status');
+  
+  if (enabled) {
+    toggle.nextElementSibling.classList.add('text-success');
+    toggle.nextElementSibling.classList.remove('text-danger');
+    statusEl.textContent = 'ACTIVAS';
+    statusEl.className = 'text-success fw-bold';
+  } else {
+    toggle.nextElementSibling.classList.add('text-danger');
+    toggle.nextElementSibling.classList.remove('text-success');
+    statusEl.textContent = 'DESACTIVADAS';
+    statusEl.className = 'text-danger fw-bold';
+  }
+}
+
+// Auto-init on DOM ready + toggle
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initOneSignal);
+  document.addEventListener('DOMContentLoaded', () => {
+    initOneSignal();
+    initAdminNotificationToggle();
+  });
 } else {
   initOneSignal();
+  initAdminNotificationToggle();
 }
 
 // Export for global use

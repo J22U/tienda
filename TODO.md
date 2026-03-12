@@ -18,21 +18,19 @@
 - ✅ NO hay botones custom de notificaciones
 - ✅ Hereda cambios de onesignal-init.js (notifyButton+prompts disabled)
 
-### **Paso 4: TESTING** [PENDIENTE]
-```
-1. Abrir tienda.html → NO debe aparecer bell button ni slidedown prompt
-2. Login admin → admin.html auto-subscribe silently (check console: "🔑 Admin External ID set")
-3. Hacer pedido desde tienda → Admin recibe push via OneSignal (solo "admin_trebol")
-4. OneSignal dashboard → Solo "admin_trebol" subscribed, no clients
+### **Paso 4: FEEDBACK - Agregar Toggle Switch** ✅ **EN PROCESO**
+**Usuario pidió:** Toggle/interruptor en admin para habilitar/deshabiltitar notificaciones
 
-**Comandos para test:**
-- Live Server → localhost:5500/tienda.html 
-- Login admin@agro.com/123456 → admin.html (check console)
-- Hacer pedido → verificar push + socket.io
+**Plan toggle:**
+```
+1. Agregar toggle switch en admin.html header
+2. Toggle → setExternalUserId("admin_trebol") ON / removeExternalUserId() OFF
+3. Guardar estado en localStorage
+4. Load → restore toggle + setExternalUserId accordingly
+5. Update UI + console logs
 ```
 
-### **Paso 5: COMPLETAR** [PENDIENTE]
-- `attempt_completion` si tests OK
+### **Paso 5: TESTING** [PENDIENTE]
 
 **Estado actual:** ✅ **TODOS LOS ARCHIVOS EDITADOS** → Listo para testing
 ```
