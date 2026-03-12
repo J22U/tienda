@@ -420,8 +420,17 @@ async function procesarPago() {
 document.addEventListener('DOMContentLoaded', function() {
     cargarProductos();
 
-    // Check for existing valid session first - auto-login to admin
-    autoLoginIfValid();
+    // Check if user explicitly wants to view the store (via ?view=store parameter)
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewStore = urlParams.get('view');
+
+    // Only auto-login to admin if user is NOT explicitly viewing the store
+    // This allows admin to view the store without logging out
+    if (viewStore !== 'store') {
+        autoLoginIfValid();
+    } else {
+        console.log('[Session] User explicitly viewing store - skipping auto-login');
+    }
 
     // ============================================================================
     // ACCESSIBILITY FIX: Prevent aria-hidden focus issue on modals

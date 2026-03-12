@@ -1,33 +1,17 @@
-# TODO - Fix Session and Notifications Issues
+# TODO - Permitir ver tienda desde admin sin cerrar sesión
 
-## Issues to Fix:
-1. **Session closes when app is closed** - Admin session should persist until explicitly logged out
-2. **Notifications not appearing in installed PWA app**
+## Objetivo
+Cuando el usuario esté en el panel de admin, pueda hacer clic en "VER TIENDA" y ver la tienda sin ser redirigido de vuelta a admin por el auto-login.
 
-## COMPLETED:
+## Plan de implementación:
 
-### Step 1: Fix Session Management in tienda.js ✅
-- Added SESSION_CONFIG with browserSessionDuration (24 hours) and pwaSessionDuration (30 days)
-- Added isSessionValid() function with PWA mode detection
-- Added saveAdminSession() function to persist session with PWA flag
-- Added clearAdminSession() function
+1. [x] Analizar el código actual (admin.html, tienda.html, js/tienda.js)
+2. [x] Modificar js/tienda.js para detectar parámetro URL
+3. [x] Implementar lógica para omitir auto-login cuando view=store
+4. [ ] Probar la funcionalidad
 
-### Step 2: Fix Session Management in admin.html ✅
-- Updated SESSION_CONFIG to 24 hours for browser
-- Added saveAdminSession() function
-- Cleaned up session validation logic
-
-### Step 3: Fix Session in js/admin.js ✅
-- Removed sessionStorage.clear() that was causing session loss
-- Session now persists in localStorage only
-
-## Files Edited:
-1. js/tienda.js - Session management functions
-2. admin.html - Session validation improvements
-3. js/admin.js - Removed sessionStorage.clear()
-
-## Notes:
-- Session now persists until explicitly logged out
-- In PWA mode, session stays valid permanently (30 days)
-- For notifications in PWA: Make sure to enable browser notifications on the device
+## Detalles técnicos:
+- admin.html pasa `?view=store` al ir a tienda.html
+- tienda.js debe verificar este parámetro antes de ejecutar autoLoginIfValid()
+- Si view=store está presente, omitir redirección y permitir ver la tienda
 
