@@ -243,31 +243,38 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 // 🔧 SIMPLIFIED LOGOUT - NOW GLOBAL (Fix ReferenceError)
-window.logoutSimple = function() {
-    console.log('🚀 SIMPLIFIED LOGOUT - Starting full clear');
+window.logoutSimple = async function() {
+    console.log('🚀 COMPLETE LOGOUT - Local + Server + OneSignal');
     
-    try {
-        // FULL CLEAR - everything
-        localStorage.clear();
-        sessionStorage.clear();
-        console.log('✅ Storage cleared');
-        
-        // OneSignal cleanup
-        if (window.OneSignalInstance) {
-            window.OneSignalInstance.removeExternalUserId?.();
-            console.log('✅ OneSignal cleaned');
+    const serverToken = localStorage.getItem('server_session_token');
+    
+    // 🆕 1. Logout server-side
+    if (serverToken) {
+        try {
+            await fetch(`${BASE_URL}/api/admin-session`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'logout', token: serverToken })
+            });
+            console.log('✅ Server logout OK');
+        } catch (e) {
+            console.warn('Server logout failed:', e);
         }
-        
-        // Clear any potential cookies (basic)
-        document.cookie.split(";").forEach(c => {
-            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-        });
-        
-    } catch (error) {
-        console.error('❌ Clear error:', error);
     }
     
-    console.log('🔄 Force redirect to tienda.html');
+    // 🆕 2. OneSignal logout
+    if (window.OneSignalInstance) {
+        await window.OneSignalInstance.logout();
+        await window.OneSignalInstance.removeExternalUserId();
+        console.log('✅ OneSignal logout');
+    }
+    
+    // 3. FULL CLEAR local
+    localStorage.clear();
+    sessionStorage.clear();
+    console.log('✅ Local storage cleared');
+    
+    // 4. Force redirect
     window.location.replace('tienda.html');
 };
 

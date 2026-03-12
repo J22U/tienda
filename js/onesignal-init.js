@@ -164,34 +164,7 @@ async function unsubscribeNotifications() {
 /**
  * Test notification (admin only)
  */
-async function testNotification() {
-  if (!OneSignalInstance) {
-    alert('OneSignal not initialized');
-    return;
-  }
-  
-  try {
-    const isSubscribed = await OneSignalInstance.User.PushSubscription.optInStatus();
-    if (isSubscribed !== 1) {
-      alert('Subscribe first');
-      return;
-    }
-    
-    OneSignalInstance.Notifications.addEventListener('click', (event) => {
-      console.log('Notification clicked:', event);
-      window.focus();
-    });
-    
-    OneSignalInstance.Notifications.displayNotification({
-      title: '🛒 Test Notification - Trébol',
-      message: 'Push notifications working!',
-      icon: 'https://res.cloudinary.com/donc8a6tc/image/upload/v1770738241/LOGO_TR%C3%89BOL-removebg-preview_uyamlw.png',
-      url: window.location.href
-    });
-  } catch (e) {
-    console.error('Test failed:', e);
-  }
-}
+
 
 // 🆕 UTILITY FUNCTIONS
 
@@ -251,8 +224,12 @@ function initAdminNotificationToggle() {
   const statusEl = document.getElementById('toggle-status');
   if (!toggle || !isAdminPage()) return;
 
-  // Load saved state (default ON for admins)
-  const savedState = localStorage.getItem('admin_notifications_enabled') !== 'false';
+  // Load saved state (default OFF until user enables)
+  let savedState = localStorage.getItem('admin_notifications_enabled');
+  if (savedState === null) {
+    savedState = 'false';
+    localStorage.setItem('admin_notifications_enabled', 'false');
+  }
   toggle.checked = savedState;
   updateToggleUI(savedState);
 
@@ -311,23 +288,23 @@ function updateToggleUI(enabled) {
  */
 async function checkAndRecoverSubscription() {
   if (!isAdminPage()) return;
-  
-  const savedState = localStorage.getItem('onesignal_subscription_state');
+
+  // 🆕 PERSISTENCIA MEJORADA: Leer userId del localStorage
+  const savedUserId = localStorage.getItem('onesignal_user_id') || 'admin_trebol';
   const toggleEnabled = localStorage.getItem('admin_notifications_enabled') !== 'false';
-  const hasExternalId = localStorage.getItem('onesignal_admin_id') === 'admin_trebol';
   
-  console.log('🔍 Recovery check:', { toggleEnabled, hasExternalId, savedState: savedState ? 'exists' : 'none' });
-  
-  if (toggleEnabled && OneSignalInstance) {
-    // Always ensure external ID is set when toggle ON
-    await OneSignalInstance.setExternalUserId("admin_trebol");
-    localStorage.setItem('onesignal_admin_id', 'admin_trebol');
-    console.log('🔑 External ID ENFORCED: admin_trebol');
+  console.log('🔍 Recovery check:', { savedUserId, toggleEnabled });
+
+  if (toggleEnabled && OneSignalInstance && savedUserId) {
+    // Usar userId persistido (no hardcodeado)
+    await OneSignalInstance.setExternalUserId(savedUserId);
+    localStorage.setItem('onesignal_admin_id', savedUserId);
+    console.log(`🔑 External ID restaurado: ${savedUserId}`);
     
-    // Check current status
+    // Verificar estado actual
     const status = await getSubscriptionStatus();
     if (!status.subscribed || status.permission !== 'granted') {
-      console.log('🔄 Auto-recovery: Re-prompting...');
+      console.log('🔄 Auto-recovery: Re-solicitando permiso...');
       await requestNotificationPermission();
     }
   }
@@ -376,9 +353,7 @@ window.OneSignalInit = {
   updateNotificationUI, 
   requestNotificationPermission, 
   unsubscribeNotifications, 
-  testNotification,
   getSubscriptionStatus,
-  showAdminPrompt,
   isAdminPage,
   checkAndRecoverSubscription,  // 🆕 Recovery
   setupExternalIdListener       // 🆕 Listener

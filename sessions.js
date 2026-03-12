@@ -1,0 +1,84 @@
+const sessions = new Map();
+
+/**
+ * Simple in-memory session management for admin users
+ * Key: sessionToken (random string)
+ * Value: { userId: "admin_trebol", logged: true, timestamp: Date.now() }
+ */
+class AdminSessions {
+  constructor() {
+    this.sessions = new Map();
+  }
+
+  // Create new session
+  create(userId = "admin_trebol") {
+    const token = this.generateToken();
+    this.sessions.set(token, {
+      userId,
+      logged: true,
+      timestamp: Date.now(),
+      lastActivity: Date.now()
+    });
+    return token;
+  }
+
+  // Get active session data (returns null if expired/invalid)
+  get(token) {
+    const session = this.sessions.get(token);
+    if (!session) return null;
+
+    // Auto-cleanup expired sessions (>24h)
+    if (Date.now() - session.timestamp > 24 * 60 * 60 * 1000) {
+      this.sessions.delete(token);
+      return null;
+    }
+
+    // Update last activity
+    session.lastActivity = Date.now();
+    return session;
+  }
+
+  // Logout - delete session
+  destroy(token) {
+    this.sessions.delete(token);
+    return true;
+  }
+
+  // Get current active admin userId (first valid session)
+  getActiveUserId() {
+    for (const [token, session] of this.sessions.entries()) {
+      if (session.logged) {
+        return session.userId;
+      }
+    }
+    return null; // No active admins
+  }
+
+  // Cleanup expired sessions (run periodically)
+  cleanup() {
+    const now = Date.now();
+    for (const [token, session] of this.sessions.entries()) {
+      if (now - session.timestamp > 24 * 60 * 60 * 1000) {
+        this.sessions.delete(token);
+      }
+    }
+  }
+
+  // Generate secure random token
+  generateToken() {
+    return Math.random().toString(36).substr(2) + 
+           Math.random().toString(36).substr(2) + 
+           Date.now().toString(36);
+  }
+
+  // Get stats (debug)
+  stats() {
+    return {
+      active: this.sessions.size,
+      admins: Array.from(this.sessions.values()).filter(s => s.logged).length
+    };
+  }
+}
+
+module.exports = new AdminSessions();
+

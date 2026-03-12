@@ -9,6 +9,7 @@ const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const http = require('http');
 const { Server } = require('socket.io');
 const https = require('https');
+const adminSessions = require('./sessions.js');
 require('dotenv').config();
 
 // OneSignal Configuration
@@ -30,8 +31,10 @@ function sendPushNotification(pedidoData) {
     
     const notification = {
         app_id: ONESIGNAL_APP_ID,
-        // Esto le envía SOLO a quien tú identifiques como admin en el navegador
+// ✅ Prioridad 1: Admin específico (setExternalUserId("admin_trebol") requerido)
         include_external_user_ids: ["admin_trebol"], 
+        // Fallback si 0 recipients: uncomment para All Users
+        // included_segments: ["All"],
         headings: { 
             en: '🛒 Nuevo Pedido - Trébol',
             es: '🛒 Nuevo Pedido - Trébol' 
@@ -92,6 +95,35 @@ const io = new Server(server, {
         origin: "*",
         methods: ["GET", "POST"]
     }
+});
+
+// 🆕 SOCKET.IO AUTENTICADO - Solo admins logueados
+io.use((socket, next) => {
+    const token = socket.handshake.auth.token || socket.handshake.headers['x-session-token'];
+    const session = adminSessions.get(token);
+    
+    if (session && session.logged) {
+        socket.userId = session.userId;
+        socket.sessionToken = token;
+        console.log(`🔌 Admin conectado: ${socket.userId}`);
+        next();
+    } else {
+        console.log(`❌ Socket rechazado - Sin sesión`);
+        next(new Error('Sesión inválida'));
+    }
+});
+
+io.on('connection', (socket) => {
+    console.log(`✅ Socket admin: ${socket.userId}`);
+    
+    socket.on('disconnect', () => {
+        console.log(`👋 Admin desconectado: ${socket.userId}`);
+    });
+    
+    // Solo enviar nuevo-pedido a admins conectados
+    socket.on('ping', () => {
+        socket.emit('pong', { active: adminSessions.stats() });
+    });
 });
 
 app.use(express.json());
@@ -585,13 +617,48 @@ app.get('/unread-count', async (req, res) => {
     }
 });
 
+// 🆕 ENDPOINTS SESIÓN ADMIN - DETECCIÓN AUTOMÁTICA
+app.get('/api/admin-session', (req, res) => {
+    const token = req.headers['x-session-token'] || req.query.token;
+    const session = adminSessions.get(token);
+    
+    if (session) {
+        res.json({ 
+            success: true, 
+            userId: session.userId, 
+            logged: true,
+            token 
+        });
+        console.log(`✅ Admin activo: ${session.userId}`);
+    } else {
+        res.json({ 
+            success: false, 
+            userId: null, 
+            logged: false,
+            message: 'No hay admin logueado'
+        });
+    }
+});
+
+app.post('/api/admin-session', express.json(), (req, res) => {
+    const { action, userId = "admin_trebol" } = req.body;
+    
+    if (action === 'login') {
+        const token = adminSessions.create(userId);
+        res.json({ success: true, token, userId });
+        console.log(`🔑 Login admin: ${userId}`);
+    } else if (action === 'logout') {
+        const token = req.body.token;
+        adminSessions.destroy(token);
+        res.json({ success: true });
+        console.log(`🚪 Logout admin`);
+    } else {
+        res.status(400).json({ error: 'action: login|logout' });
+    }
+});
+
 app.get('/logout', (req, res) => {
-    req.session.destroy((err) => {
-        if (err) {
-            return console.log(err);
-        }
-        res.redirect('/login');
-    });
+    res.redirect('/tienda.html');
 });
 
 app.get('/menu', (req, res) => {

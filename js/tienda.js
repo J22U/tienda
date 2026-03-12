@@ -532,16 +532,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const formLogin = document.getElementById('form-login-admin');
     if (formLogin) {
-        formLogin.addEventListener('submit', function(e) {
+formLogin.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('admin-email').value;
             const pass = document.getElementById('admin-password').value;
 
             if (email === "admin@agro.com" && pass === "123456") {
-                // Set both session flags for admin.html compatibility
-                localStorage.setItem('admin_logged', 'true');
+                const USER_ID = "admin_trebol";
                 
-                // Create session object matching admin.html expectations
+                // 🆕 1. Local session
+                localStorage.setItem('admin_logged', 'true');
                 const sessionData = {
                     logged: true,
                     timestamp: Date.now(),
@@ -549,21 +549,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
                 localStorage.setItem('admin_session', JSON.stringify(sessionData));
                 
-                // 🔥 ONESIGNAL: Link session on login success (Gemini Step 1)
-                if (window.OneSignalDeferred && window.OneSignalDeferred.length > 0) {
-                  setTimeout(async () => {
-                    try {
-                      await window.OneSignalInit?.initOneSignal();
-                      const OneSignal = window.OneSignalDeferred[0]?.OneSignal;
-                      if (OneSignal) {
-                        await OneSignal.login("admin_trebol");
-                        await OneSignal.User.PushSubscription.optIn();
-                        console.log("✅ Sesión vinculada con OneSignal - admin_trebol tagged");
-                      }
-                    } catch (e) {
-                      console.warn("OneSignal login skipped:", e);
+                // 🆕 2. Sync server-side session
+                try {
+                    const serverRes = await fetch(`${BASE_URL}/api/admin-session`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'login', userId: USER_ID })
+                    });
+                    const serverData = await serverRes.json();
+                    if (serverData.success) {
+                        localStorage.setItem('server_session_token', serverData.token);
+                        console.log('✅ Server session synced:', USER_ID);
                     }
-                  }, 500);
+                } catch (e) {
+                    console.warn('Server sync failed:', e);
+                }
+                
+                // 🆕 3. OneSignal con userId persistido
+                localStorage.setItem('onesignal_user_id', USER_ID);
+                if (window.OneSignalInit) {
+                    await window.OneSignalInit.initOneSignal();
                 }
                 
                 Swal.fire({
