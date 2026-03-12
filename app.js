@@ -289,7 +289,7 @@ app.put('/productos/:id', upload.array('imagenes', 6), async (req, res) => {
                 .query('SELECT * FROM Productos WHERE ProductoID=@id');
             currentProduct = productResult.recordset[0];
         }
-        console.log('✅ EXISTS:', exists.recordset[0]?.cnt || 0, 'Current:', {
+        console.log('✅ EXISTS:', existsCnt || 0, 'Current:', {
             exists: !!currentProduct,
             nombre: currentProduct?.Nombre,
             precio: currentProduct?.Precio,
