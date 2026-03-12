@@ -162,7 +162,7 @@ app.get('/productos', async (req, res) => {
         const pool = await poolPromise;
         // Fallback para tabla vacía/no existente
         try {
-            const result = await pool.request().query(`
+        const result = await pool.request().query(`
                 SELECT p.*, 
                 ISNULL((SELECT TOP 1 ImagenURL FROM ProductoImagenes pi WHERE pi.ProductoID = p.ProductoID), '') as FotoReal,
                 ISNULL((SELECT STRING_AGG(CAST(pi2.ImagenURL AS NVARCHAR(MAX)), '|') 
@@ -178,12 +178,12 @@ app.get('/productos', async (req, res) => {
                 };
             });
             res.json(productos);
+            return;
         } catch (dbErr) {
             console.log('Tabla Productos no encontrada, retornando array vacío:', dbErr.message);
             res.json([]);
+            return;
         }
-
-        res.json(productos);
     } catch (err) { 
         res.status(500).json({ error: err.message }); 
     }
@@ -585,6 +585,10 @@ app.get('/logout', (req, res) => {
         }
         res.redirect('/login');
     });
+});
+
+app.get('/menu', (req, res) => {
+    res.json([]);
 });
 
 // Middleware para prevenir caché
