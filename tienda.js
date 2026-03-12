@@ -305,6 +305,7 @@ function saveAdminSession() {
     localStorage.setItem('admin_logged', 'true');
     
     console.log(`[Session] Saved as ${isPWAMode ? 'PWA (indefinite)' : 'browser (3h)'}`);
+    console.log('[Session] Session data:', sessionData);
 }
 
 // Check if session is valid

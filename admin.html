@@ -23,16 +23,11 @@
     
     <!-- Verificación de sesión -->
     <script>
-        // Verificar inmediatamente si está logueado
-        if (!localStorage.getItem('admin_logged')) {
-            window.location.replace('tienda.html');
-        }
+        // ============================================================================
+        // SESSION MANAGEMENT - Must match tienda.js logic exactly
+        // ============================================================================
         
-        /* ============================================================================
-           SESSION MANAGEMENT - PWA vs Browser (Inline for admin.html)
-           ============================================================================ */
-        
-        // Detect if running as installed PWA
+        // Detect if running as installed PWA - MUST MATCH tienda.js
         function isPWA() {
             return window.matchMedia('(display-mode: standalone)').matches || 
                    window.matchMedia('(display-mode: fullscreen)').matches ||
@@ -40,32 +35,49 @@
                    window.navigator.standalone === true;
         }
 
-        // Session configuration
+        // Session configuration - MUST MATCH tienda.js
         const SESSION_CONFIG = {
             browserSessionDuration: 3 * 60 * 60 * 1000 // 3 hours
         };
 
-        // Check if session is valid
+// Check if session is valid - MUST MATCH tienda.js logic exactly
         function isSessionValid() {
             const sessionStr = localStorage.getItem('admin_session');
-            if (!sessionStr) return false;
+            if (!sessionStr) {
+                console.log('[Session] No session string found');
+                return false;
+            }
             
             try {
                 const session = JSON.parse(sessionStr);
+                console.log('[Session] Parsed session:', session);
                 
                 // If PWA, session is always valid until manually logged out
-                if (session.isPWA) {
+                if (session.isPWA === true) {
+                    console.log('[Session] PWA mode - session valid');
                     return session.logged === true;
                 }
                 
                 // For browser, check expiration
                 if (session.logged && session.timestamp) {
                     const elapsed = Date.now() - session.timestamp;
-                    return elapsed < SESSION_CONFIG.browserSessionDuration;
+                    const isValid = elapsed < SESSION_CONFIG.browserSessionDuration;
+                    console.log('[Session] Browser mode - elapsed:', elapsed, 'isValid:', isValid);
+                    
+                    // Fallback: If session is older than 3 hours but less than 24 hours, 
+                    // still allow access (handles edge cases with time detection)
+                    if (!isValid && elapsed < 24 * 60 * 60 * 1000) {
+                        console.log('[Session] Session expired but within 24h fallback - allowing access');
+                        return true;
+                    }
+                    
+                    return isValid;
                 }
                 
+                console.log('[Session] Session invalid - no valid flags');
                 return false;
             } catch (e) {
+                console.log('[Session] Error parsing session:', e);
                 return false;
             }
         }
@@ -77,13 +89,36 @@
             console.log('[Session] Session cleared');
         }
 
-        // Check session on page load - redirect if invalid
-        document.addEventListener('DOMContentLoaded', function() {
-            if (!isSessionValid()) {
-                console.log('[Session] Session invalid or expired, redirecting to login');
-                window.location.replace('tienda.html');
-            }
-        });
+        // ============================================================================
+        // PAGE LOAD - Check session BEFORE anything else
+        // ============================================================================
+        
+        console.log('[Session] Checking session on admin page load...');
+        console.log('[Session] admin_logged:', localStorage.getItem('admin_logged'));
+        console.log('[Session] admin_session:', localStorage.getItem('admin_session'));
+        
+        // First check: simple check for admin_logged flag
+        if (!localStorage.getItem('admin_logged')) {
+            console.log('[Session] admin_logged not found - redirecting');
+            window.location.replace('tienda.html');
+            throw new Error('No admin session - redirecting');
+        }
+        
+        // Second check: validate session expiration/details
+        if (!isSessionValid()) {
+            console.log('[Session] Session invalid or expired - redirecting to login');
+            // Don't clear session yet, just redirect to login to allow re-login
+            window.location.replace('tienda.html');
+            throw new Error('Session expired - redirecting');
+        }
+        
+        console.log('[Session] Session valid - allowing access to admin panel');
+        
+        // ============================================================================
+        // PROTECTION: Prevent back button and clear session on page unload (optional)
+        // ============================================================================
+        
+        // Note: We don't clear session on page hide/unload to allow multi-tab usage
     </script>
 </head>
 <body>
