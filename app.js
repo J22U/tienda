@@ -30,9 +30,13 @@ function sendPushNotification(pedidoData) {
     
     const notification = {
         app_id: ONESIGNAL_APP_ID,
-        included_segments: ["Total Subscriptions"],
-        headings: { es: '🛒 Nuevo Pedido - Trébol' },
+        included_segments: ["Subscribed Users"], // "Subscribed Users" es el estándar actual
+        headings: { 
+            en: '🛒 Nuevo Pedido - Trébol',
+            es: '🛒 Nuevo Pedido - Trébol' 
+        },
         contents: { 
+            en: `Pedido #${numeroPedido} de ${nombreCliente}`,
             es: `Pedido #${numeroPedido} de ${nombreCliente}\nTotal: $${Number(total).toLocaleString()}\n${productos} producto(s)` 
         },
         url: 'https://tienda-1vps.onrender.com/admin.html',
