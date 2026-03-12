@@ -179,6 +179,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
     
     const formProducto = document.getElementById('form-producto');
+    if (formProducto) {
+        formProducto.addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('prod-id').value;
             const url = editando ? `${BASE_URL}/productos/${id}` : `${BASE_URL}/productos`;
@@ -1149,6 +1151,27 @@ async function aplicarDescuentoProducto(productoId, descuentoActual) {
 /* ============================================================================
    INICIALIZACIÓN
    ============================================================================ */
+
+// 🔓 EXPOSE FUNCTIONS FOR HTML onclick (Fix ReferenceError)
+window.cargarInventario = cargarInventario;
+window.cargarAgotados = cargarAgotados;
+window.cargarPedidos = cargarPedidos;
+window.filtrarProductos = filtrarProductos;
+window.limpiarForm = limpiarForm;
+window.prepararEdicion = prepararEdicion;
+window.eliminarProducto = eliminarProducto;
+window.aplicarDescuentoProducto = aplicarDescuentoProducto;
+window.cargarPedidos = cargarPedidos;
+window.filtrarPedidos = filtrarPedidos;
+window.eliminarPedido = eliminarPedido;
+window.completarPedido = completarPedido;
+window.marcarPendiente = marcarPendiente;
+window.prepararFacturaPorId = prepararFacturaPorId;
+window.guardarDescuentoSimple = guardarDescuentoSimple;
+window.exportarInventario = exportarInventario;
+window.importarBackup = importarBackup;
+window.procesarRestauracionProductos = procesarRestauracionProductos;
+window.procesarRestauracionPedidos = procesarRestauracionPedidos;
 
 // Verificar sesión al cargar la página
 verificarSesion();
