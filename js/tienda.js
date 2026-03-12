@@ -563,4 +563,34 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // ============================================================================
+    // ONESIGNAL PUSH NOTIFICATIONS - CLIENTE TIENDA
+    // ============================================================================
+    if (typeof OneSignal !== 'undefined') {
+        OneSignal.init({
+            appId: "a6a0e0fc-4caf-4ce6-adff-5856c98bfffe",
+            allowLocalhostAsSecureOrigin: true,
+            notifyButton: {
+                enable: true,
+                size: 'medium',
+                position: 'bottom-right',
+                showCredit: false
+            },
+            promptOptions: {
+                slidedown: {
+                    enabled: true,
+                    autoPrompt: true,
+                    timeDelay: 10000,  // 10s delay
+                    pageViews: 1
+                }
+            }
+        }).then(() => {
+            console.log('🔔 OneSignal inicializado en tienda');
+            OneSignal.Notifications.requestPermission(true);
+        }).catch(err => console.error('OneSignal error:', err));
+    } else {
+        console.log('OneSignal SDK no cargado en tienda');
+    }
 });
+
