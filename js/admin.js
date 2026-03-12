@@ -236,62 +236,39 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
     
-    // BOTÓN LOGOUT
-    const btnLogout = document.getElementById('btn-logout');
-    if (btnLogout) {
-        console.log('🔧 Logout button found, attaching handler');
-        btnLogout.addEventListener('click', async function(e) {
-            console.log('🔧 Logout clicked');
-            e.preventDefault();
-            e.stopPropagation();
-
-            try {
-                const result = await Swal.fire({
-                    title: '¿Cerrar sesión?',
-                    text: "Tendrás que ingresar la clave nuevamente para entrar al panel.",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#2d5a27',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Sí, salir',
-                    cancelButtonText: 'Cancelar',
-                    reverseButtons: true
-                });
-
-                if (result.isConfirmed) {
-                    console.log('🔧 Confirm logout - clearing session');
-                    // Limpiar todos los datos de sesión usando la función centralizada
-                    if (typeof clearAdminSession === 'function') {
-                        clearAdminSession();
-                    } else {
-                        // Fallback: limpiar manualmente
-                        localStorage.removeItem('admin_session');
-                        localStorage.removeItem('admin_logged');
-                    }
-                    
-                    // 🔥 ONESIGNAL: Unlink on logout (optional, non-blocking)
-                    if (window.OneSignalInstance) {
-                      try {
-                        await window.OneSignalInstance.logout?.();
-                        console.log("🔓 OneSignal unlinked");
-                      } catch (e) {
-                        console.warn("OneSignal logout skipped:", e);
-                      }
-                    }
-                    
-                    // REDIRECT INMEDIATO - no dependency on async
-                    console.log('🔧 Redirecting to tienda.html');
-                    window.location.replace('tienda.html');
-                }
-            } catch (error) {
-                console.error('Logout error:', error);
-                // Force redirect on error
-                window.location.replace('tienda.html');
+    // 🔧 SIMPLIFIED LOGOUT - Direct clear + redirect (bypasses event listener issues)
+    window.logoutSimple = function() {
+        console.log('🚀 SIMPLIFIED LOGOUT - Starting full clear');
+        
+        try {
+            // FULL CLEAR - everything
+            localStorage.clear();
+            sessionStorage.clear();
+            console.log('✅ Storage cleared');
+            
+            // OneSignal cleanup
+            if (window.OneSignalInstance) {
+                window.OneSignalInstance.removeExternalUserId?.();
+                console.log('✅ OneSignal cleaned');
             }
-        });
-    } else {
-        console.error('❌ btn-logout not found!');
-    }
+            
+            // Clear any potential cookies (basic)
+            document.cookie.split(";").forEach(c => {
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+            });
+            
+        } catch (error) {
+            console.error('❌ Clear error:', error);
+        }
+        
+        console.log('🔄 Force redirect to tienda.html');
+        window.location.replace('tienda.html');
+    };
+    
+    // Keep original for reference (commented)
+    /*
+    const btnLogout = document.getElementById('btn-logout'); // COMMENTED - now direct onclick
+    */
 });
 
 /* ============================================================================
