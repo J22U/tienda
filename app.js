@@ -14,7 +14,7 @@ require('dotenv').config();
 // OneSignal Configuration
 const ONESIGNAL_CONFIG = {
     appId: 'a6a0e0fc-4caf-4ce6-adff-5856c98bfffe',
-    apiKey: 'os_v2_app_u2qob7cmv5gonlp7lblmtc777yxi2467ij3uow5ncy36pgqu6qcfn2v37aemniwgnaf2sgw5yq3zegi3wolqezcivxz3dz7giqppxkq'
+apiKey: 'app_u2qob7cmv5gonlp7lblmtc7773jqeixqniouweverhitgz2logi7nvshqd5vdjwylsthbvje3vrlpxepvmvjhedbfcuqiy5zkratuva'
 };
 
 // Function to send push notification via OneSignal
@@ -23,6 +23,7 @@ function sendPushNotification(pedidoData) {
     
     // OneSignal notification data
     const notification = {
+        included_segments: ["Total Subscriptions"],
         app_id: ONESIGNAL_CONFIG.appId,
         headings: {
             en: '🛒 Nuevo Pedido - Trébol',
@@ -37,6 +38,8 @@ function sendPushNotification(pedidoData) {
         chrome_big_picture: 'https://res.cloudinary.com/donc8a6tc/image/upload/v1770738241/LOGO_TR%C3%89BOL-removebg-preview_uyamlw.png',
         firefox_icon: 'https://res.cloudinary.com/donc8a6tc/image/upload/v1770738241/LOGO_TR%C3%89BOL-removebg-preview_uyamlw.png',
         safari_apns_env: 'production',
+        android_accent_color: "FF00FF00",
+        priority: 10,
         aps: {
             alert: {
                 title: '🛒 Nuevo Pedido - Trébol',
@@ -57,7 +60,7 @@ function sendPushNotification(pedidoData) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Basic ${ONESIGNAL_CONFIG.apiKey}`
+'Authorization': `Key ${ONESIGNAL_CONFIG.apiKey}`
         }
     };
     
