@@ -162,14 +162,19 @@ app.get('/productos', async (req, res) => {
         const pool = await poolPromise;
         const result = await pool.request().query(`
             SELECT p.*, 
-            (SELECT TOP 1 ImagenURL FROM ProductoImagenes WHERE ProductoID = p.ProductoID) as FotoReal
+            (SELECT TOP 1 ImagenURL FROM ProductoImagenes WHERE ProductoID = p.ProductoID ORDER BY ImagenID) as FotoReal,
+            (SELECT STRING_AGG(CAST(ImagenURL AS NVARCHAR(MAX)), '|') FROM ProductoImagenes WHERE ProductoID = p.ProductoID ORDER BY ImagenID) as GaleriaCompleta
             FROM Productos p
         `);
 
-        const productos = result.recordset.map(p => ({
-            ...p,
-            ImagenURL: p.ImagenURL || p.FotoReal || ''
-        }));
+        const productos = result.recordset.map(p => {
+            const galeriaCompleta = p.GaleriaCompleta ? p.GaleriaCompleta.split('|').filter(url => url.trim()) : [];
+            return {
+                ...p,
+                ImagenURL: p.ImagenURL || p.FotoReal || galeriaCompleta[0] || '',
+                Galeria: galeriaCompleta
+            };
+        });
 
         res.json(productos);
     } catch (err) { 
