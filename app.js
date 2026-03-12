@@ -14,7 +14,7 @@ require('dotenv').config();
 // OneSignal Configuration
 const ONESIGNAL_CONFIG = {
     appId: 'a6a0e0fc-4caf-4ce6-adff-5856c98bfffe',
-apiKey: 'os_v2_app_u2qob7cmv5gonlp7lblmtc777zhweepv62neiy5ercmc32meslfspgf3arokfen2tosqmwy3m545fpuksttlqhadjchvxylpxfxj5bq'
+apiKey: 'weepv62neiy5ercmc32meslf'
 };
 
 // Function to send push notification via OneSignal
