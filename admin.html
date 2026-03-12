@@ -155,6 +155,9 @@
                 <a href="tienda.html?view=store" class="btn btn-dark rounded-pill px-4 fw-bold btn-sm">
                     <i class="bi bi-shop me-2"></i> VER TIENDA
                 </a>
+                <button id="btn-onesignal-status" class="btn btn-warning rounded-pill fw-bold btn-sm px-3 ms-2" type="button">
+                  <i class="bi bi-bell"></i> Activar Notificaciones
+                </button>
                 <button type="button" id="btn-logout" class="btn btn-danger rounded-pill px-4 fw-bold btn-sm">
                     <i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión
                 </button>
@@ -313,139 +316,21 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Socket.io for real-time notifications -->
     <script src="/socket.io/socket.io.js"></script>
-    <!-- OneSignal Push Notifications (v16) -->
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <!-- OneSignal unified init -->
+    <script src="js/onesignal-init.js" defer></script>
+    <!-- Test notification button (admin only) -->
     <script>
-        // ============================================================================
-        // ONESIGNAL PUSH NOTIFICATIONS - Configuración completa
-        // ============================================================================
+      document.addEventListener('DOMContentLoaded', () => {
+        const testBtn = document.createElement('button');
+        testBtn.id = 'btn-test-notification';
+        testBtn.className = 'btn btn-outline-primary btn-sm rounded-pill fw-bold px-3 ms-2';
+        testBtn.innerHTML = '<i class="bi bi-play-circle"></i> Test Push';
+        testBtn.onclick = window.testNotification;
+        testBtn.title = 'Test OneSignal push (requires subscription)';
         
-        let OneSignalInitialized = false;
-        
-        // Función para inicializar OneSignal
-        async function initOneSignal() {
-            if (OneSignalInitialized) return;
-            
-            window.OneSignalDeferred = window.OneSignalDeferred || [];
-            
-            OneSignalDeferred.push(async function(OneSignal) {
-                try {
-                    await OneSignal.init({
-                        appId: "a6a0e0fc-4caf-4ce6-adff-5856c98bfffe",
-                        allowLocalhostAsSecureOrigin: true,
-serviceWorkerPath: './OneSignalSDKWorker.js',
-                        serviceWorkerParam: { scope: '/' },
-                        notifyButton: {
-                            enable: false
-                        },
-                        welcomeNotification: {
-                            "title": "🔔 Trébol Notificaciones",
-                            "message": "¡Notificaciones activadas! Ahora recibirás alertas de nuevos pedidos.",
-                            "url": ""
-                        }
-                    });
-                    
-                    OneSignalInitialized = true;
-                    console.log('✅ OneSignal inicializado correctamente');
-                    
-                    // Obtener estado de suscripción
-                    const subscription = await OneSignal.User.PushSubscription;
-                    console.log('📱 Estado de suscripción:', subscription.state);
-                    
-                    // Escuchar cambios en la suscripción
-                    OneSignal.User.PushSubscription.addEventListener('stateChange', function(event) {
-                        console.log('📬 Cambio de estado:', event);
-                        actualizarBotonNotificaciones();
-                    });
-                    
-                    // ActualizarUI
-                    actualizarBotonNotificaciones();
-                    
-                } catch (error) {
-                    console.error('❌ Error inicializando OneSignal:', error);
-                }
-            });
-        }
-        
-        // ActualizarUI del botón de notificaciones
-        async function actualizarBotonNotificaciones() {
-            window.OneSignalDeferred = window.OneSignalDeferred || [];
-            OneSignalDeferred.push(async function(OneSignal) {
-                const btn = document.getElementById('btn-onesignal-status');
-                if (!btn) return;
-                
-                try {
-                    const permission = await OneSignal.Notifications.permission;
-                    const subscription = await OneSignal.User.PushSubscription;
-                    
-                    if (permission === 'granted' && subscription.state === 'subscribed') {
-                        btn.innerHTML = '<i class="bi bi-bell-fill"></i> Notificaciones ON';
-                        btn.className = 'btn btn-success rounded-pill fw-bold btn-sm';
-                        btn.onclick = () => OneSignal.User.PushSubscription.unsubscribe();
-                    } else if (permission === 'denied') {
-                        btn.innerHTML = '<i class="bi bi-bell-slash"></i> Bloqueadas';
-                        btn.className = 'btn btn-danger rounded-pill fw-bold btn-sm';
-                    } else {
-                        btn.innerHTML = '<i class="bi bi-bell"></i> Activar';
-                        btn.className = 'btn btn-warning rounded-pill fw-bold btn-sm';
-                        btn.onclick = () => solicitarPermisoNotificaciones();
-                    }
-                } catch (e) {
-                    console.log('OneSignal no disponible aún');
-                }
-            });
-        }
-        
-        // Solicitar permiso de notificaciones manualmente
-        async function solicitarPermisoNotificaciones() {
-            window.OneSignalDeferred = window.OneSignalDeferred || [];
-            OneSignalDeferred.push(async function(OneSignal) {
-                try {
-                    const permission = await OneSignal.Notifications.requestPermission();
-                    console.log('Permiso de notificaciones:', permission);
-                    actualizarBotonNotificaciones();
-                    
-                    if (permission) {
-                        Swal.fire({
-                            title: '¡Notificaciones Activadas! 🔔',
-                            text: 'Recibirás alertas cuando lleguen nuevos pedidos.',
-                            icon: 'success',
-                            confirmButtonColor: '#27ae60'
-                        });
-                    }
-                } catch (error) {
-                    console.error('Error solicitando permiso:', error);
-                }
-            });
-        }
-        
-        // Notificar manualmente (para pruebas)
-        async function probarNotificacion() {
-            window.OneSignalDeferred = window.OneSignalDeferred || [];
-            OneSignalDeferred.push(async function(OneSignal) {
-                try {
-                    const isSubscribed = await OneSignal.User.PushSubscription.get();
-                    if (!isSubscribed) {
-                        Swal.fire('Activa primero las notificaciones', 'Haz click en el botón de campana', 'warning');
-                        return;
-                    }
-                    
-                    OneSignal.Notifications.displayNotification({
-                        title: '🛒 Prueba de Notificación',
-                        message: 'Las notificaciones están funcionando correctamente.',
-                        icon: 'https://res.cloudinary.com/donc8a6tc/image/upload/v1770738241/LOGO_TR%C3%89BOL-removebg-preview_uyamlw.png'
-                    });
-                } catch (e) {
-                    console.error(e);
-                }
-            });
-        }
-        
-        // Inicializar cuando el DOM esté listo
-        document.addEventListener('DOMContentLoaded', function() {
-            // Delay para asegurar que OneSignal cargue
-            setTimeout(initOneSignal, 2000);
-        });
+        const tabsLi = document.querySelector('#adminTabs li:last-child');
+        if (tabsLi) tabsLi.appendChild(testBtn);
+      });
     </script>
     <script src="js/admin.js"></script>
 </body>

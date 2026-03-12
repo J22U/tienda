@@ -13,7 +13,11 @@ require('dotenv').config();
 
 // OneSignal Configuration
 // OneSignal Configuration (from .env - REST API Key required)
-const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID || 'a6a0e0fc-4caf-4ce6-adff-5856c98bfffe';
+const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID;
+if (!ONESIGNAL_APP_ID) {
+  console.error('❌ ONESIGNAL_APP_ID missing from .env');
+}
+
 const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY || null;
 
 if (!ONESIGNAL_REST_API_KEY || ONESIGNAL_REST_API_KEY === 'YOUR_REST_API_KEY_HERE') {
@@ -39,13 +43,14 @@ function sendPushNotification(pedidoData) {
     
     const options = {
         hostname: 'api.onesignal.com', 
-        path: '/api/v1/notifications',
+        path: '/notifications', // Rich API endpoint
         method: 'POST',
         headers: {
             'Content-Type': 'application/json; charset=utf-8',
-            'Authorization': `key ${ONESIGNAL_REST_API_KEY}` 
+            'Authorization': `Basic ${Buffer.from(ONESIGNAL_REST_API_KEY + ':').toString('base64')}`  // Rich API Basic auth (key: colon)
         }
     };
+
     const req = https.request(options, (res) => {
         let data = '';
         res.on('data', (chunk) => { data += chunk; });
@@ -56,7 +61,8 @@ function sendPushNotification(pedidoData) {
 
     req.on('error', (error) => { 
         console.error('❌ OneSignal request failed:', error.message); 
-        console.error('   REST API Key preview:', ONESIGNAL_REST_API_KEY ? ONESIGNAL_REST_API_KEY.substring(0, 10) + '...' : 'MISSING');
+    console.error('   Rich API Key preview:', ONESIGNAL_REST_API_KEY ? ONESIGNAL_REST_API_KEY.substring(0, 10) + '...' : 'MISSING');
+
     });
     req.write(postData);
     req.end();
