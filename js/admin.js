@@ -247,7 +247,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     localStorage.removeItem('admin_session');
                     localStorage.removeItem('admin_logged');
                 }
-                sessionStorage.clear();
+                
+                // No usamos sessionStorage.clear() - la sesión ahora es persistente
                 
                 // Esperar un poco antes de redirigir
                 setTimeout(() => {

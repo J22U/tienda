@@ -1,25 +1,33 @@
-# ✅ Completed: Session Persistence and Push Notifications
+# TODO - Fix Session and Notifications Issues
 
-## 1. Persistent Admin Session - ✅ COMPLETE
-- **PWA Mode**: Session persists indefinitely (until logout)
-- **Browser Mode**: Session expires after 3 hours
-- **Auto-login**: Automatically redirects to admin panel if session is valid
+## Issues to Fix:
+1. **Session closes when app is closed** - Admin session should persist until explicitly logged out
+2. **Notifications not appearing in installed PWA app**
 
-## 2. Push Notifications (OneSignal) - ✅ COMPLETE
-- **Client-side**: OneSignal SDK added to admin.html
-- **Server-side**: Push notification function configured in app.js
-- **API Key**: Configured with user's OneSignal REST API Key
+## COMPLETED:
 
-## Files Modified
-1. `tienda.js` - Session management functions
-2. `admin.html` - Session validation + OneSignal SDK
-3. `js/admin.js` - Updated logout handling
-4. `manifest.json` - Added push notification config
-5. `app.js` - Added OneSignal push notification function
+### Step 1: Fix Session Management in tienda.js ✅
+- Added SESSION_CONFIG with browserSessionDuration (24 hours) and pwaSessionDuration (30 days)
+- Added isSessionValid() function with PWA mode detection
+- Added saveAdminSession() function to persist session with PWA flag
+- Added clearAdminSession() function
 
-## Testing
-- [x] Session persistence in PWA (indefinite login)
-- [x] Browser session expiration (3 hours)
-- [x] Auto-login redirects
-- [x] OneSignal push notifications configured
+### Step 2: Fix Session Management in admin.html ✅
+- Updated SESSION_CONFIG to 24 hours for browser
+- Added saveAdminSession() function
+- Cleaned up session validation logic
+
+### Step 3: Fix Session in js/admin.js ✅
+- Removed sessionStorage.clear() that was causing session loss
+- Session now persists in localStorage only
+
+## Files Edited:
+1. js/tienda.js - Session management functions
+2. admin.html - Session validation improvements
+3. js/admin.js - Removed sessionStorage.clear()
+
+## Notes:
+- Session now persists until explicitly logged out
+- In PWA mode, session stays valid permanently (30 days)
+- For notifications in PWA: Make sure to enable browser notifications on the device
 

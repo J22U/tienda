@@ -14,6 +14,61 @@ function isPWA() {
 }
 
 /* ============================================================================
+   SESSION MANAGEMENT - Persistent for PWA
+   ============================================================================ */
+
+// Session configuration - longer duration for PWA
+const SESSION_CONFIG = {
+    browserSessionDuration: 24 * 60 * 60 * 1000, // 24 hours for browser
+    pwaSessionDuration: 30 * 24 * 60 * 60 * 1000  // 30 days for PWA (effectively permanent)
+};
+
+// Check if session is valid
+function isSessionValid() {
+    const sessionStr = localStorage.getItem('admin_session');
+    if (!sessionStr) {
+        return false;
+    }
+    
+    try {
+        const session = JSON.parse(sessionStr);
+        
+        // If PWA, session is always valid until manually logged out
+        if (session.isPWA === true) {
+            return session.logged === true;
+        }
+        
+        // For browser, check expiration
+        if (session.logged && session.timestamp) {
+            const elapsed = Date.now() - session.timestamp;
+            return elapsed < SESSION_CONFIG.browserSessionDuration;
+        }
+        
+        return false;
+    } catch (e) {
+        return false;
+    }
+}
+
+// Save session with PWA flag
+function saveAdminSession() {
+    const sessionData = {
+        logged: true,
+        timestamp: Date.now(),
+        isPWA: isPWA()
+    };
+    localStorage.setItem('admin_session', JSON.stringify(sessionData));
+    localStorage.setItem('admin_logged', 'true');
+}
+
+// Clear session on logout only
+function clearAdminSession() {
+    localStorage.removeItem('admin_session');
+    localStorage.removeItem('admin_logged');
+    console.log('[Session] Admin session cleared');
+}
+
+/* ============================================================================
    PRODUCTOS - CARGA Y RENDERIZADO
    ============================================================================ */
 

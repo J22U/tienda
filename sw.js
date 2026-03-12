@@ -1,7 +1,8 @@
 // Service Worker para Trébol Repuestos
 // Esta app siempre requiere internet - solo registra para permitir instalación PWA
 
-importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDKWorker.js');
+// OneSignal no se carga directamente para evitar errores de red
+// La funcionalidad de notificaciones se maneja desde el servidor
 
 const CACHE_NAME = 'trebol-v1';
 

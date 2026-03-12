@@ -35,12 +35,13 @@
                    window.navigator.standalone === true;
         }
 
-        // Session configuration - MUST MATCH tienda.js
+    // Session configuration - MUST MATCH tienda.js
         const SESSION_CONFIG = {
-            browserSessionDuration: 3 * 60 * 60 * 1000 // 3 hours
+            browserSessionDuration: 24 * 60 * 60 * 1000, // 24 hours for browser
+            pwaSessionDuration: 30 * 24 * 60 * 60 * 1000  // 30 days for PWA
         };
 
-// Check if session is valid - MUST MATCH tienda.js logic exactly
+        // Check if session is valid - MUST MATCH tienda.js logic exactly
         function isSessionValid() {
             const sessionStr = localStorage.getItem('admin_session');
             if (!sessionStr) {
@@ -63,14 +64,6 @@
                     const elapsed = Date.now() - session.timestamp;
                     const isValid = elapsed < SESSION_CONFIG.browserSessionDuration;
                     console.log('[Session] Browser mode - elapsed:', elapsed, 'isValid:', isValid);
-                    
-                    // Fallback: If session is older than 3 hours but less than 24 hours, 
-                    // still allow access (handles edge cases with time detection)
-                    if (!isValid && elapsed < 24 * 60 * 60 * 1000) {
-                        console.log('[Session] Session expired but within 24h fallback - allowing access');
-                        return true;
-                    }
-                    
                     return isValid;
                 }
                 
@@ -87,6 +80,17 @@
             localStorage.removeItem('admin_session');
             localStorage.removeItem('admin_logged');
             console.log('[Session] Session cleared');
+        }
+
+        // Save session with PWA flag (called after successful login)
+        function saveAdminSession() {
+            const sessionData = {
+                logged: true,
+                timestamp: Date.now(),
+                isPWA: isPWA()
+            };
+            localStorage.setItem('admin_session', JSON.stringify(sessionData));
+            localStorage.setItem('admin_logged', 'true');
         }
 
         // ============================================================================
