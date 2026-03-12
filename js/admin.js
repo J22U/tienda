@@ -1187,15 +1187,28 @@ cargarAgotados();
    NOTIFICACIONES EN TIEMPO REAL CON SOCKET.IO
    ============================================================================ */
 
-// Inicializar conexión Socket.io
-const socket = io();
+// Inicializar conexión Socket.io CON AUTENTICACIÓN
+const serverToken = localStorage.getItem('server_session_token');
+console.log('🔌 Socket connecting with token:', serverToken ? `${serverToken.slice(0,8)}...` : 'NO TOKEN');
 
-// Estado de conexión
+const socket = io({
+  auth: {
+    token: serverToken
+  }
+});
+
+if (!serverToken) {
+  console.warn('⚠️ No server_session_token found - socket will likely be rejected');
+}
+
+// Estado de conexión + reconnect logic
 let socketConectado = false;
+let reconnectAttempts = 0;
+const MAX_RECONNECTS = 5;
 
 // Listener para conexión establecida
 socket.on('connect', () => {
-    console.log('🔌 Conectado a Socket.io - Notificaciones activas');
+    console.log('✅ SOCKET.CONNECT - Token auth success! User:', socket.userId);
     socketConectado = true;
     
     // Mostrar indicador visual de conexión en el header
@@ -1229,14 +1242,26 @@ socket.on('connect', () => {
     }
 });
 
-socket.on('disconnect', () => {
-    console.log('🔌 Desconectado de Socket.io');
+socket.on('disconnect', (reason) => {
+    console.log('🔌 Socket disconnect:', reason);
     socketConectado = false;
     
-    // Actualizar indicador
+    // Update indicator FIRST
     const indicador = document.getElementById('socket-status');
     if (indicador) {
         indicador.innerHTML = '<span class="status-dot offline"></span><span class="status-text" style="color: #e74c3c;">OFFLINE</span>';
+    }
+    
+    if (reconnectAttempts < MAX_RECONNECTS && reason !== 'io server disconnect') {
+      reconnectAttempts++;
+      console.log(`🔄 Reconnect attempt ${reconnectAttempts}/${MAX_RECONNECTS}`);
+      setTimeout(() => {
+        const newToken = localStorage.getItem('server_session_token');
+        if (newToken) {
+          socket.auth = { token: newToken };
+          socket.connect();
+        }
+      }, 2000 * reconnectAttempts);
     }
 });
 

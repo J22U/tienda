@@ -224,18 +224,46 @@ function initAdminNotificationToggle() {
   const statusEl = document.getElementById('toggle-status');
   if (!toggle || !isAdminPage()) return;
 
-  // Load saved state (default OFF until user enables)
-  let savedState = localStorage.getItem('admin_notifications_enabled');
+// PWA PERSISTENT: IndexedDB + localStorage fallback
+  async function getToggleState() {
+    try {
+      // Try IndexedDB first (PWA persistent)
+      const dbReq = indexedDB.open('OneSignalTrebol', 1);
+      return new Promise((resolve) => {
+        dbReq.onsuccess = (e) => {
+          const db = e.target.result;
+          const tx = db.transaction(['toggle'], 'readonly');
+          const store = tx.objectStore('toggle');
+          const req = store.get('admin_notifications');
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => resolve(null);
+        };
+        dbReq.onerror = () => resolve(null);
+        dbReq.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains('toggle')) {
+            db.createObjectStore('toggle');
+          }
+          resolve(null);
+        };
+      });
+    } catch (e) {
+      console.warn('IndexedDB failed:', e);
+      return localStorage.getItem('admin_notifications_enabled');
+    }
+  }
+
+  let savedState = await getToggleState();
   if (savedState === null) {
     savedState = 'false';
-    localStorage.setItem('admin_notifications_enabled', 'false');
+    setToggleState('false');
   }
-  toggle.checked = savedState;
+  toggle.checked = savedState === 'true';
   updateToggleUI(savedState);
 
     toggle.addEventListener('change', async (e) => {
     const enabled = e.target.checked;
-    localStorage.setItem('admin_notifications_enabled', enabled);
+    await setToggleState(enabled.toString());
     updateToggleUI(enabled);
     
     if (OneSignalInstance) {
