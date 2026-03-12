@@ -46,10 +46,16 @@
     <span class="brand-text">TRÉBOL</span>
 </a>
 </a>
-        <button class="btn btn-warning fw-bold d-flex align-items-center position-relative px-4 rounded-pill" data-bs-toggle="modal" data-bs-target="#modalCarrito">
-            <i class="bi bi-cart3 me-2 fs-5"></i> MI PEDIDO
-            <span id="cont-carrito" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
-        </button>
+        <div class="d-flex align-items-center gap-2">
+            <!-- Botón de instalación PWA -->
+            <button id="btn-install-pwa" class="btn btn-outline-light fw-bold d-flex align-items-center rounded-pill px-3" style="display: none;" onclick="installPWA()">
+                <i class="bi bi-download me-1"></i> Instalar App
+            </button>
+            <button class="btn btn-warning fw-bold d-flex align-items-center position-relative px-4 rounded-pill" data-bs-toggle="modal" data-bs-target="#modalCarrito">
+                <i class="bi bi-cart3 me-2 fs-5"></i> MI PEDIDO
+                <span id="cont-carrito" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">0</span>
+            </button>
+        </div>
     </div>
 </nav>
 
@@ -302,6 +308,54 @@
 
 <!-- Service Worker para PWA (solo permite instalación, requiere internet) -->
 <script>
+let deferredPrompt;
+const installBtn = document.getElementById('btn-install-pwa');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevenir el diálogo automático
+    e.preventDefault();
+    // Guardar el evento para usarlo después
+    deferredPrompt = e;
+    
+    // Mostrar botón de instalación si existe
+    if (installBtn) {
+        installBtn.style.display = 'inline-flex';
+    }
+    
+    console.log('PWA instalable disponible');
+});
+
+// Manejar clic en botón de instalación
+async function installPWA() {
+    if (!deferredPrompt) {
+        return;
+    }
+    
+    // Mostrar el diálogo de instalación
+    deferredPrompt.prompt();
+    
+    // Esperar a que el usuario responda
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    console.log('Resultado de instalación:', outcome);
+    
+    // Limpiar
+    deferredPrompt = null;
+    
+    // Ocultar botón
+    if (installBtn) {
+        installBtn.style.display = 'none';
+    }
+}
+
+// Detectar si ya está instalado
+window.addEventListener('appinstalled', () => {
+    console.log('PWA instalada correctamente');
+    if (installBtn) {
+        installBtn.style.display = 'none';
+    }
+});
+
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
