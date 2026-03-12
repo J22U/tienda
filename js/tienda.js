@@ -78,6 +78,13 @@ function saveAdminSession() {
     };
     localStorage.setItem('admin_session', JSON.stringify(sessionData));
     localStorage.setItem('admin_logged', 'true');
+    
+    // 🔗 ONESIGNAL: Sync external ID after saving session
+    setTimeout(async () => {
+      if (window.OneSignalInit?.checkAndRecoverSubscription) {
+        await window.OneSignalInit.checkAndRecoverSubscription();
+      }
+    }, 100);
 }
 
 // Auto-login if session is valid (called on page load)
@@ -541,6 +548,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     isPWA: isPWA()
                 };
                 localStorage.setItem('admin_session', JSON.stringify(sessionData));
+                
+                // 🔥 ONESIGNAL: Link session on login success (Gemini Step 1)
+                if (window.OneSignalDeferred && window.OneSignalDeferred.length > 0) {
+                  setTimeout(async () => {
+                    try {
+                      await window.OneSignalInit?.initOneSignal();
+                      const OneSignal = window.OneSignalDeferred[0]?.OneSignal;
+                      if (OneSignal) {
+                        await OneSignal.login("admin_trebol");
+                        await OneSignal.User.PushSubscription.optIn();
+                        console.log("✅ Sesión vinculada con OneSignal - admin_trebol tagged");
+                      }
+                    } catch (e) {
+                      console.warn("OneSignal login skipped:", e);
+                    }
+                  }, 500);
+                }
                 
                 Swal.fire({
                     title: '¡Acceso Permitido!',

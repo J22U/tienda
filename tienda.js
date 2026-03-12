@@ -375,6 +375,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Save session based on PWA/browser mode
                 saveAdminSession();
                 
+                // 🔥 ONESIGNAL: Link session on login success (Gemini Step 1)
+                if (window.OneSignalDeferred && window.OneSignalDeferred.length > 0) {
+                  setTimeout(async () => {
+                    try {
+                      await window.OneSignalInit?.initOneSignal();
+                      const OneSignal = window.OneSignalDeferred[0]?.OneSignal;
+                      if (OneSignal) {
+                        await OneSignal.login("admin_trebol");
+                        await OneSignal.User.PushSubscription.optIn();
+                        console.log("✅ Sesión vinculada con OneSignal - admin_trebol tagged");
+                      }
+                    } catch (e) {
+                      console.warn("OneSignal login skipped:", e);
+                    }
+                  }, 500);
+                }
+                
                 Swal.fire({
                     title: '¡Acceso Permitido!',
                     text: 'Bienvenido al panel de control.',

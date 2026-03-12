@@ -265,6 +265,21 @@ document.addEventListener('DOMContentLoaded', async function() {
                     localStorage.removeItem('admin_logged');
                 }
                 
+                // 🔥 ONESIGNAL: Unlink on logout (Gemini Step 2)
+                if (window.OneSignalDeferred && window.OneSignalDeferred.length > 0) {
+                  setTimeout(async () => {
+                    try {
+                      const OneSignal = window.OneSignalDeferred[0]?.OneSignal;
+                      if (OneSignal) {
+                        await OneSignal.logout();
+                        console.log("🔓 OneSignal unlinked - admin_trebol removed");
+                      }
+                    } catch (e) {
+                      console.warn("OneSignal logout skipped:", e);
+                    }
+                  }, 100);
+                }
+                
                 // No usamos sessionStorage.clear() - la sesión ahora es persistente
                 
                 // Esperar un poco antes de redirigir

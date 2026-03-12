@@ -256,7 +256,7 @@ function initAdminNotificationToggle() {
   toggle.checked = savedState;
   updateToggleUI(savedState);
 
-  toggle.addEventListener('change', async (e) => {
+    toggle.addEventListener('change', async (e) => {
     const enabled = e.target.checked;
     localStorage.setItem('admin_notifications_enabled', enabled);
     updateToggleUI(enabled);
@@ -264,13 +264,15 @@ function initAdminNotificationToggle() {
     if (OneSignalInstance) {
       // 🔥 FIXED: Always setExternalUserId when ON (even if not subscribed)
       if (enabled) {
-        await OneSignalInstance.setExternalUserId("admin_trebol");
+        await OneSignalInstance.login("admin_trebol");
+        await OneSignalInstance.User.PushSubscription.optIn();
         console.log('🔑 Admin notifications ENABLED + External ID set');
         // Trigger recovery check
         await checkAndRecoverSubscription();
       } else {
+        await OneSignalInstance.logout();
         await OneSignalInstance.removeExternalUserId();
-        console.log('🔓 Admin notifications DISABLED');
+        console.log('🔓 Admin notifications DISABLED - logged out');
       }
     }
   });
