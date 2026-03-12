@@ -1078,12 +1078,131 @@ async function procesarRestauracionPedidos(pedidos, opcion) {
    PROTECCIÓN DE SESIÓN
    ============================================================================ */
 
-function verificarSesion() {
-    const adminLogged = localStorage.getItem('admin_logged');
-    if (!adminLogged) {
-        window.location.replace('tienda.html');
+/* ============================================================================
+   PERSISTENT SESSION MANAGEMENT - Copied from tienda.js + enhanced
+   ============================================================================ */
+function isPWA() {
+    return window.matchMedia('(display-mode: standalone)').matches || 
+           window.matchMedia('(display-mode: fullscreen)').matches ||
+           window.matchMedia('(display-mode: minimal-ui)').matches ||
+           window.navigator.standalone === true;
+}
+
+const SESSION_CONFIG = {
+    browserSessionDuration: 24 * 60 * 60 * 1000,
+    pwaSessionDuration: 30 * 24 * 60 * 60 * 1000
+};
+
+function isSessionValid() {
+    const sessionStr = localStorage.getItem('admin_session');
+    if (!sessionStr) {
+        console.log('[AdminSession] No session string found');
+        return false;
+    }
+    
+    try {
+        const session = JSON.parse(sessionStr);
+        console.log('[AdminSession] Parsed session:', session);
+        
+        if (session.logged !== true) {
+            console.log('[AdminSession] Session not logged in');
+            return false;
+        }
+        
+        if (isPWA() || session.isPWA === true) {
+            console.log('[AdminSession] PWA mode - session valid');
+            return true;
+        }
+        
+        if (session.timestamp) {
+            const elapsed = Date.now() - session.timestamp;
+            const isValid = elapsed < SESSION_CONFIG.browserSessionDuration;
+            console.log('[AdminSession] Browser check:', elapsed, 'valid:', isValid);
+            return isValid;
+        }
+        
+        return false;
+    } catch (e) {
+        console.log('[AdminSession] Parse error:', e);
+        return false;
     }
 }
+
+async function refreshServerSession() {
+    const serverToken = localStorage.getItem('server_session_token');
+    if (!serverToken) {
+        console.log('[AdminSession] No server token - creating new');
+        return createServerSession();
+    }
+    
+    try {
+        const res = await fetch(`${BASE_URL}/api/admin-session?token=${serverToken}`, {
+            headers: { 'x-session-token': serverToken }
+        });
+        const session = await res.json();
+        
+        if (session.logged) {
+            console.log('✅ Server session valid');
+            return true;
+        } else {
+            console.log('🔄 Server session expired - refreshing');
+            return createServerSession();
+        }
+    } catch (e) {
+        console.log('❌ Server check failed:', e);
+        return createServerSession();
+    }
+}
+
+async function createServerSession() {
+    try {
+        const res = await fetch(`${BASE_URL}/api/admin-session`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'login', userId: 'admin_trebol' })
+        });
+        const data = await res.json();
+        
+        if (data.success && data.token) {
+            localStorage.setItem('server_session_token', data.token);
+            console.log('✅ New server session created');
+            return true;
+        }
+        return false;
+    } catch (e) {
+        console.log('❌ Failed to create server session:', e);
+        return false;
+    }
+}
+
+async function verificarSesion() {
+    // 1. Check local session
+    if (!isSessionValid()) {
+        console.log('[AdminSession] Local session invalid → logout');
+        localStorage.removeItem('admin_logged');
+        window.location.replace('tienda.html');
+        return;
+    }
+    
+    // 2. Validate/refresh server session
+    const serverOk = await refreshServerSession();
+    if (!serverOk) {
+        console.log('[AdminSession] Server session refresh failed → logout');
+        localStorage.clear();
+        window.location.replace('tienda.html');
+        return;
+    }
+    
+    console.log('✅ Complete session verification passed');
+    
+    // 3. Update socket with fresh token
+    const freshToken = localStorage.getItem('server_session_token');
+    if (socket && freshToken && socket.auth?.token !== freshToken) {
+        socket.auth.token = freshToken;
+        if (!socket.connected) socket.connect();
+    }
+}
+
 
 function limpiarHistorial() {
     // Reemplazar múltiples veces para sobrescribir el historial
@@ -1154,7 +1273,7 @@ async function aplicarDescuentoProducto(productoId, descuentoActual) {
    INICIALIZACIÓN
    ============================================================================ */
 
-// 🔓 EXPOSE FUNCTIONS FOR HTML onclick (Fix ReferenceError)
+// 🔓 EXPOSE FUNCTIONS FOR HTML onclick (Fix ReferenceError) + Session
 window.cargarInventario = cargarInventario;
 window.cargarAgotados = cargarAgotados;
 window.cargarPedidos = cargarPedidos;
@@ -1163,7 +1282,6 @@ window.limpiarForm = limpiarForm;
 window.prepararEdicion = prepararEdicion;
 window.eliminarProducto = eliminarProducto;
 window.aplicarDescuentoProducto = aplicarDescuentoProducto;
-window.cargarPedidos = cargarPedidos;
 window.filtrarPedidos = filtrarPedidos;
 window.eliminarPedido = eliminarPedido;
 window.completarPedido = completarPedido;
@@ -1172,8 +1290,9 @@ window.prepararFacturaPorId = prepararFacturaPorId;
 window.guardarDescuentoSimple = guardarDescuentoSimple;
 window.exportarInventario = exportarInventario;
 window.importarBackup = importarBackup;
-window.procesarRestauracionProductos = procesarRestauracionProductos;
-window.procesarRestauracionPedidos = procesarRestauracionPedidos;
+window.logoutSimple = logoutSimple;
+window.verificarSesion = verificarSesion;
+window.isSessionValid = isSessionValid;
 
 // Verificar sesión al cargar la página
 verificarSesion();
@@ -1198,7 +1317,7 @@ const socket = io({
 });
 
 if (!serverToken) {
-  console.warn('⚠️ No server_session_token found - socket will likely be rejected');
+  console.warn('⚠️ No server_session_token - will refresh on verificarSesion()');
 }
 
 // Estado de conexión + reconnect logic

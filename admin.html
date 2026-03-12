@@ -22,51 +22,15 @@
     <link rel="stylesheet" href="css/admin.css">
     
     <!-- Optimized Session + OneSignal Toggle -->
-    <script>
-        // Configuración de sesión - DEBE COINCIDIR CON tienda.js
-        const SESSION_CONFIG = {
-            browserSessionDuration: 24 * 60 * 60 * 1000,
-            pwaSessionDuration: 30 * 24 * 60 * 60 * 1000
-        };
-
-        function isPWA() {
-            return window.matchMedia('(display-mode: standalone)').matches || 
-                   window.navigator.standalone === true;
+<script>
+        // ✅ Session validation moved to js/admin.js - cleaner architecture
+        
+        // Only basic protection here (detailed logic in js/admin.js)
+        if (!localStorage.getItem('admin_logged')) {
+            window.location.replace('tienda.html');
         }
-
-        function isSessionValid() {
-            const sessionStr = localStorage.getItem('admin_session');
-            if (!sessionStr) return false;
-            try {
-                const session = JSON.parse(sessionStr);
-                if (session.logged !== true) return false;
-                if (isPWA() || session.isPWA === true) return true;
-                if (session.timestamp) {
-                    return (Date.now() - session.timestamp) < SESSION_CONFIG.browserSessionDuration;
-                }
-                return false;
-            } catch (e) { return false; }
-        }
-
-        // ✅ TOGGLE: Don't auto-set external ID - toggle controls it
+        
         window.OneSignal = window.OneSignal || [];
-
-        // Función de Logout mejorada - limpia toggle también
-        function clearAdminSession() {
-            localStorage.removeItem('admin_session');
-            localStorage.removeItem('admin_logged');
-            localStorage.removeItem('admin_notifications_enabled');
-            if (window.OneSignalInstance) {
-                window.OneSignalInstance.removeExternalUserId();
-            }
-            window.location.replace('tienda.html');
-        }
-
-        // VALIDACIÓN DE ACCESO INMEDIATA
-        if (!localStorage.getItem('admin_logged') || !isSessionValid()) {
-            window.location.replace('tienda.html');
-            throw new Error('Acceso no autorizado');
-        }
     </script>
 </head>
 <body>

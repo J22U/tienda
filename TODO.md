@@ -1,26 +1,41 @@
-# ✅ Ferreteria Fixes - Socket + OneSignal Persistence
-*Status: 0/5 COMPLETED - Approved Plan*
+# TODO: Persistent Admin Login Session
+Status: ✅ **PLAN APPROVED** - Implementing persistent login across tab/app closes
 
-## 📋 Implementation Steps
+## 📋 Implementation Steps (Sequential)
 
-### 1. 🔌 Fix Socket Auth (js/admin.js) 
-- [x] Add `auth: { token: localStorage.getItem('server_session_token') }` to socket connection
-- [x] Test: No more "Socket rechazado", see "✅ Socket admin: admin_trebol"
+### 1. **✅ Create TODO.md** (Current - Done)
 
-**Status: 1/5 COMPLETED**
+### 2. **Update js/admin.js** (Primary Fix)
+   - Copy `isPWA()`, `isSessionValid()`, `saveAdminSession()` from tienda.js
+   - Replace `verificarSesion()` with complete validation + server sync
+   - Add token refresh + socket reconnect logic
+   - Mark as **✅ COMPLETED**
 
-### 2. 🔔 OneSignal PWA Persistence (js/onesignal-init.js)
-- [ ] Add IndexedDB fallback for toggle state
-- [ ] Test: Toggle stays ON after PWA close/reopen
+### 3. **Update admin.html** (Minor Cleanup)
+   - Remove inline duplication of session check
+   - Keep only protection redirect
+   - Mark as **✅ COMPLETED**
 
-### 3. 📱 Add Socket Status UI (admin.html) 
-- [ ] Add connection indicator next to toggle
+### 4. **Test Persistent Login**
+   ```
+   1. Login in tienda.html
+   2. Go to admin.html → Verify loads
+   3. Close tab/browser → Reopen admin.html → Verify auto-login (no prompt)
+   4. Check console: Socket connects with token
+   5. Mark as **✅ PASS**
 
-### 4. 🧪 Test Both Fixes
-- [ ] Restart server, login, verify socket + toggle persistence
+   Edge case: Wait 24h+ → Should require re-login
+   ```
 
-### 5. 🎉 Complete Task
-- [ ] attempt_completion with demo commands
+### 5. **Final Verification**
+   - No regressions in existing features
+   - Socket.io notifications working
+   - **attempt_completion**
 
-**Next:** Edit js/admin.js (Step 1)
+## Progress Tracker
+- [x] Plan approved
+- [x] **js/admin.js updated** ✅ Persistent session logic integrated (isSessionValid, refreshServerSession, full verificarSesion)
+- [x] **admin.html cleaned** ✅ Removed inline duplication, now uses js/admin.js only
+- [ ] Tests passed  
+- [ ] Complete ✅
 
