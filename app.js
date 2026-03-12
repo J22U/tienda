@@ -43,11 +43,11 @@ function sendPushNotification(pedidoData) {
     
     const options = {
         hostname: 'api.onesignal.com', 
-        path: '/notifications', // Rich API endpoint
+        path: '/api/v1/notifications', // <-- CAMBIO AQUÍ: Debe incluir /api/v1/
         method: 'POST',
         headers: {
             'Content-Type': 'application/json; charset=utf-8',
-            'Authorization': `Basic ${Buffer.from(ONESIGNAL_REST_API_KEY + ':').toString('base64')}`  // Rich API Basic auth (key: colon)
+            'Authorization': `key ${ONESIGNAL_REST_API_KEY}` 
         }
     };
 
