@@ -160,21 +160,28 @@ const upload = multer({ storage: storage });
 app.get('/productos', async (req, res) => {
     try {
         const pool = await poolPromise;
-        const result = await pool.request().query(`
-            SELECT p.*, 
-            (SELECT TOP 1 ImagenURL FROM ProductoImagenes WHERE ProductoID = p.ProductoID) as FotoReal,
-            (SELECT STRING_AGG(CAST(ImagenURL AS NVARCHAR(MAX)), '|') FROM (SELECT TOP 100 ImagenURL FROM ProductoImagenes WHERE ProductoID = p.ProductoID ORDER BY ImagenID) AS Imagenes) as GaleriaCompleta
-            FROM Productos p
-        `);
-
-        const productos = result.recordset.map(p => {
-            const galeriaCompleta = p.GaleriaCompleta ? p.GaleriaCompleta.split('|').filter(url => url.trim()) : [];
-            return {
-                ...p,
-                ImagenURL: p.ImagenURL || p.FotoReal || galeriaCompleta[0] || '',
-                Galeria: galeriaCompleta
-            };
-        });
+        // Fallback para tabla vacía/no existente
+        try {
+            const result = await pool.request().query(`
+                SELECT p.*, 
+                ISNULL((SELECT TOP 1 ImagenURL FROM ProductoImagenes pi WHERE pi.ProductoID = p.ProductoID), '') as FotoReal,
+                ISNULL((SELECT STRING_AGG(CAST(pi2.ImagenURL AS NVARCHAR(MAX)), '|') 
+                        FROM (SELECT TOP 10 ImagenURL FROM ProductoImagenes WHERE ProductoID = p.ProductoID ORDER BY ImagenID) pi2), '') as GaleriaCompleta
+                FROM Productos p
+            `);
+            const productos = result.recordset.map(p => {
+                const galeriaCompleta = p.GaleriaCompleta ? p.GaleriaCompleta.split('|').filter(url => url && url.trim()) : [];
+                return {
+                    ...p,
+                    ImagenURL: p.ImagenURL || p.FotoReal || galeriaCompleta[0] || '',
+                    Galeria: galeriaCompleta.length > 0 ? galeriaCompleta : []
+                };
+            });
+            res.json(productos);
+        } catch (dbErr) {
+            console.log('Tabla Productos no encontrada, retornando array vacío:', dbErr.message);
+            res.json([]);
+        }
 
         res.json(productos);
     } catch (err) { 
