@@ -42,14 +42,13 @@ function sendPushNotification(pedidoData) {
     const postData = JSON.stringify(notification);
     
     const options = {
-        hostname: 'onesignal.com', // Volvemos al hostname estable
-        path: '/api/v1/notifications', 
+        hostname: 'api.onesignal.com', // NUEVO DOMINIO para llaves os_v2
+        path: '/api/v1/notifications',
         method: 'POST',
         headers: {
             'Content-Type': 'application/json; charset=utf-8',
-            // EL SECRETO: Aunque la llave empiece por os_v2, 
-            // la API v1 EXIGE que uses "Basic"
-            'Authorization': `Basic ${ONESIGNAL_REST_API_KEY}` 
+            // SEGÚN EL MANUAL: Las llaves os_v2 usan el esquema "key"
+            'Authorization': `key ${ONESIGNAL_REST_API_KEY}` 
         }
     };
 
