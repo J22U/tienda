@@ -3,6 +3,17 @@ let productosData = [];
 const BASE_URL = 'https://tienda-1vps.onrender.com';
 
 /* ============================================================================
+   PWA DETECTION - Must match admin.html logic
+   ============================================================================ */
+
+function isPWA() {
+    return window.matchMedia('(display-mode: standalone)').matches || 
+           window.matchMedia('(display-mode: fullscreen)').matches ||
+           window.matchMedia('(display-mode: minimal-ui)').matches ||
+           window.navigator.standalone === true;
+}
+
+/* ============================================================================
    PRODUCTOS - CARGA Y RENDERIZADO
    ============================================================================ */
 
