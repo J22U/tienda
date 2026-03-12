@@ -14,7 +14,7 @@ require('dotenv').config();
 // OneSignal Configuration
 const ONESIGNAL_CONFIG = {
     appId: 'a6a0e0fc-4caf-4ce6-adff-5856c98bfffe',
-    apiKey: 'os_v2_app_u2qob7cmv5gonlp7lblmtc7772qyyq6sivqec25wsvfkmeqioilxc643u56wdki2sj6hlpfvdpwmf6rbwk54uqj77s24arft3jp67ja'
+    apiKey: 'os_v2_app_u2qob7cmv5gonlp7lblmtc777yxi2467ij3uow5ncy36pgqu6qcfn2v37aemniwgnaf2sgw5yq3zegi3wolqezcivxz3dz7giqppxkq'
 };
 
 // Function to send push notification via OneSignal
@@ -417,7 +417,7 @@ app.post('/pedidos', async (req, res) => {
             .input('pr', sql.NVarChar, JSON.stringify(productos))
             .input('to', sql.Decimal(18, 2), total)
             .query(`INSERT INTO Pedidos (NombreCliente, Correo, Telefono, Documento, Direccion, Productos, Total, Fecha, Estado) VALUES (@nc, @co, @te, @do, @di, @pr, @to, GETDATE(), 'Pendiente'); SELECT SCOPE_IDENTITY() AS PedidoID;`);
-        
+
         const nuevoPedidoId = resultPedido.recordset[0].PedidoID;
         
         // Actualizar stock
@@ -766,7 +766,7 @@ app.post('/restore-pedidos', async (req, res) => {
                     .input('fe', sql.DateTime, p.Fecha ? new Date(p.Fecha) : new Date())
                     .input('es', sql.NVarChar, p.Estado || 'Pendiente')
                     .input('tm', sql.Decimal(18, 2), p.TotalManual ? parseFloat(p.TotalManual) : null)
-                    .input('dp', sql.Decimal(5, 2), p.DescuentoPorcentaje ? parseFloat(p.DescuentoPorcentaje) : null)
+                    .input('dp', sql.Decimal(5,2), p.DescuentoPorcentaje ? parseFloat(p.DescuentoPorcentaje) : null)
                     .query(`
                         INSERT INTO Pedidos (NombreCliente, Correo, Telefono, Documento, Direccion, Productos, Total, Fecha, Estado, TotalManual, DescuentoPorcentaje) 
                         VALUES (@nc, @co, @te, @do, @di, @pr, @to, @fe, @es, @tm, @dp)
