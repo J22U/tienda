@@ -8,7 +8,7 @@
 ✅ formData.append('imagenes[]', ...) → formData.append('imagenes', ...)
 ```
 
-### ✅ PASO 3: Test local **← LISTO PARA EJECUTAR**
+### ✅ PASO 3: SQL Query Fixed **← Render editing OK**
 ```
 1. Abrir http://localhost:3000/admin.html 
 2. Crear producto + 2-3 imágenes → ✅ Sin errores

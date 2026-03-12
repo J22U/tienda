@@ -277,11 +277,18 @@ app.put('/productos/:id', upload.array('imagenes', 6), async (req, res) => {
         
         // CHECK EXISTS + SELECT CURRENT STATE
         console.log('🔍 Checking product existence/state...');
-        const exists = await pool.request()
+        const existsResult = await pool.request()
             .input('id', sql.Int, intId)
-            .query('SELECT COUNT(*) as cnt, * FROM Productos WHERE ProductoID=@id');
-            
-        const currentProduct = exists.recordset[0];
+            .query('SELECT COUNT(*) as cnt FROM Productos WHERE ProductoID=@id');
+        const existsCnt = existsResult.recordset[0].cnt;
+        
+        let currentProduct = null;
+        if (existsCnt > 0) {
+            const productResult = await pool.request()
+                .input('id', sql.Int, intId)
+                .query('SELECT * FROM Productos WHERE ProductoID=@id');
+            currentProduct = productResult.recordset[0];
+        }
         console.log('✅ EXISTS:', exists.recordset[0]?.cnt || 0, 'Current:', {
             exists: !!currentProduct,
             nombre: currentProduct?.Nombre,
