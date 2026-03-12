@@ -30,7 +30,8 @@ function sendPushNotification(pedidoData) {
     
     const notification = {
         app_id: ONESIGNAL_APP_ID,
-        included_segments: ["Subscribed Users"], // "Subscribed Users" es el estándar actual
+        // CAMBIO AQUÍ: Usa "All" para asegurar que incluya a los 4 de tu lista
+        included_segments: ["All"], 
         headings: { 
             en: '🛒 Nuevo Pedido - Trébol',
             es: '🛒 Nuevo Pedido - Trébol' 
