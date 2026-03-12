@@ -239,55 +239,58 @@ document.addEventListener('DOMContentLoaded', async function() {
     // BOTÓN LOGOUT
     const btnLogout = document.getElementById('btn-logout');
     if (btnLogout) {
+        console.log('🔧 Logout button found, attaching handler');
         btnLogout.addEventListener('click', async function(e) {
+            console.log('🔧 Logout clicked');
             e.preventDefault();
             e.stopPropagation();
 
-            const result = await Swal.fire({
-                title: '¿Cerrar sesión?',
-                text: "Tendrás que ingresar la clave nuevamente para entrar al panel.",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#2d5a27',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Sí, salir',
-                cancelButtonText: 'Cancelar',
-                reverseButtons: true
-            });
+            try {
+                const result = await Swal.fire({
+                    title: '¿Cerrar sesión?',
+                    text: "Tendrás que ingresar la clave nuevamente para entrar al panel.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#2d5a27',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Sí, salir',
+                    cancelButtonText: 'Cancelar',
+                    reverseButtons: true
+                });
 
-            if (result.isConfirmed) {
-                // Limpiar todos los datos de sesión usando la función centralizada
-                if (typeof clearAdminSession === 'function') {
-                    clearAdminSession();
-                } else {
-                    // Fallback: limpiar manualmente
-                    localStorage.removeItem('admin_session');
-                    localStorage.removeItem('admin_logged');
-                }
-                
-                // 🔥 ONESIGNAL: Unlink on logout (Gemini Step 2)
-                if (window.OneSignalDeferred && window.OneSignalDeferred.length > 0) {
-                  setTimeout(async () => {
-                    try {
-                      const OneSignal = window.OneSignalDeferred[0]?.OneSignal;
-                      if (OneSignal) {
-                        await OneSignal.logout();
-                        console.log("🔓 OneSignal unlinked - admin_trebol removed");
-                      }
-                    } catch (e) {
-                      console.warn("OneSignal logout skipped:", e);
+                if (result.isConfirmed) {
+                    console.log('🔧 Confirm logout - clearing session');
+                    // Limpiar todos los datos de sesión usando la función centralizada
+                    if (typeof clearAdminSession === 'function') {
+                        clearAdminSession();
+                    } else {
+                        // Fallback: limpiar manualmente
+                        localStorage.removeItem('admin_session');
+                        localStorage.removeItem('admin_logged');
                     }
-                  }, 100);
-                }
-                
-                // No usamos sessionStorage.clear() - la sesión ahora es persistente
-                
-                // Esperar un poco antes de redirigir
-                setTimeout(() => {
+                    
+                    // 🔥 ONESIGNAL: Unlink on logout (optional, non-blocking)
+                    if (window.OneSignalInstance) {
+                      try {
+                        await window.OneSignalInstance.logout?.();
+                        console.log("🔓 OneSignal unlinked");
+                      } catch (e) {
+                        console.warn("OneSignal logout skipped:", e);
+                      }
+                    }
+                    
+                    // REDIRECT INMEDIATO - no dependency on async
+                    console.log('🔧 Redirecting to tienda.html');
                     window.location.replace('tienda.html');
-                }, 300);
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                // Force redirect on error
+                window.location.replace('tienda.html');
             }
         });
+    } else {
+        console.error('❌ btn-logout not found!');
     }
 });
 
