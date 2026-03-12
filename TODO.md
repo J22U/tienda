@@ -22,12 +22,12 @@ js/tienda.js → ✓ OneSignal.init() + notifyButton + auto-prompt (10s)
 js/admin.js → ✓ Ya maneja nativo + Socket.io (HTML init OK)
 ```
 
-**Paso 3: Probar suscripción** ⏳
+**Paso 3: Test & Fix Background** 🔄
 ```
-[ ] Abrir admin.html → aceptar notificación
-[ ] Hacer pedido desde tienda.html
-[ ] Verificar push llega (incluso pestaña cerrada)
-[ ] Verificar OneSignal Dashboard → 1+ suscriptores
+❌ Issue: Localhost limita push background
+✅ Fix 1: Test PRODUCTION https://tienda-1vps.onrender.com
+✅ Fix 2: Check https://onesignal.com → ¿suscriptores > 0?
+[ ] Corregir admin.html OneSignalSDKWorker.js path
 ```
 
 **Paso 4: Test Background (PWA móvil)** ⏳
