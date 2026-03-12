@@ -104,6 +104,11 @@ function clearAdminSession() {
 async function cargarProductos() {
     try {
         const res = await fetch(`${BASE_URL}/productos`);
+        if (!res.ok) {
+            const errText = await res.text();
+            console.error('Productos fetch failed:', res.status, errText);
+            throw new Error(`Error ${res.status}: ${errText.substring(0,100)}`);
+        }
         productosData = await res.json();
         const contenedor = document.getElementById('contenedor-productos');
         
@@ -138,7 +143,7 @@ async function cargarProductos() {
             return `
                 <div class="col-md-4 col-lg-3">
                     <div class="card product-card ${claseAgotado} h-100">
-                        <div class="img-container position-relative" onclick="${estaAgotado ? '' : `verDetalle(${p.ProductoID})`}">
+                        <div class="img-container position-relative" onclick="${estaAgotado ? '' : `verDetalle(${p.ProductoID})`}">  
                             ${tieneOferta ? `<div class="position-absolute top-0 end-0 bg-danger text-white px-2 py-1 rounded-start fw-bold" style="font-size: 0.8rem; z-index: 10;">-${descuento}%</div>` : ''}
                             <img src="${srcFinal}" onerror="this.src='https://placehold.co/250x250/e74c3c/white?text=Error+al+cargar'"
                                  style="${estaAgotado ? 'filter: grayscale(1); opacity: 0.6;' : ''}">
@@ -168,6 +173,7 @@ async function cargarProductos() {
         contenedor.innerHTML = htmlProductos;
     } catch (error) {
         console.error("Error cargando productos:", error);
+        Swal.fire('Error', 'No se pudieron cargar los productos. Verifique su conexión.', 'error');
     }
 }
 

@@ -229,32 +229,103 @@ app.put('/productos/:id/descuento', async (req, res) => {
 
 app.put('/productos/:id', upload.single('imagenes'), async (req, res) => {
     const { id } = req.params;
-    const nombre = req.body.Nombre || req.body.nombre;
-    const marca = req.body.Marca || req.body.marca;
-    const sku = req.body.CodigoSKU || req.body.sku;
-    const precio = req.body.Precio || req.body.precio;
-    const stock = req.body.Stock || req.body.stock;
-    const caracteristicas = req.body.Caracteristicas || req.body.caracteristicas;
-
+    
+    console.log('🔧 PUT /productos/:id - START', { id, bodyKeys: Object.keys(req.body || {}), hasFile: !!req.file });
+    
     try {
-        const pool = await poolPromise;
-        await pool.request()
-            .input('id', sql.Int, id)
-            .input('n', sql.NVarChar, nombre)
-            .input('m', sql.NVarChar, marca)
-            .input('s', sql.NVarChar, sku || null)
-            .input('p', sql.Decimal(18, 2), parseFloat(precio) || 0)
-            .input('st', sql.Int, parseInt(stock) || 0)
-            .input('c', sql.NVarChar, caracteristicas || '')
-            .query(`UPDATE Productos SET Nombre=@n, Marca=@m, CodigoSKU=@s, Precio=@p, Stock=@st, Caracteristicas=@c WHERE ProductoID=@id`);
-
-        if (req.file) {
-            const url = req.file.path;
-            await pool.request().input('id', sql.Int, id).query('DELETE FROM ProductoImagenes WHERE ProductoID=@id');
-            await pool.request().input('id', sql.Int, id).input('url', sql.NVarChar, url).query('INSERT INTO ProductoImagenes (ProductoID, ImagenURL) VALUES (@id, @url)');
+        if (!id || isNaN(parseInt(id))) {
+            console.error('❌ INVALID ID:', id);
+            return res.status(400).json({ error: 'ID inválido' });
         }
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+        
+        const intId = parseInt(id);
+        const nombre = (req.body.Nombre || req.body.nombre || '').trim();
+        const marca = req.body.Marca || req.body.marca || '';
+        const sku = req.body.CodigoSKU || req.body.sku || null;
+        const precioRaw = req.body.Precio || req.body.precio;
+        const stockRaw = req.body.Stock || req.body.stock;
+        const caracteristicas = req.body.Caracteristicas || req.body.caracteristicas || '';
+
+        if (!nombre) {
+            console.error('❌ MISSING NOMBRE');
+            return res.status(400).json({ error: 'Nombre requerido' });
+        }
+
+        const precio = parseFloat(precioRaw);
+        const stock = parseInt(stockRaw);
+        
+        if (isNaN(precio) || precio < 0) {
+            console.error('❌ INVALID PRECIO:', precioRaw);
+            return res.status(400).json({ error: 'Precio inválido' });
+        }
+        if (isNaN(stock) || stock < 0) {
+            console.error('❌ INVALID STOCK:', stockRaw);
+            return res.status(400).json({ error: 'Stock inválido' });
+        }
+
+        console.log('📋 Parsed inputs OK:', { intId, nombre, precio, stock });
+
+        const pool = await poolPromise;
+        
+        // CHECK EXISTS
+        const exists = await pool.request()
+            .input('id', sql.Int, intId)
+            .query('SELECT COUNT(*) as cnt FROM Productos WHERE ProductoID=@id');
+            
+        console.log('✅ EXISTS:', exists.recordset[0].cnt);
+        
+        if (exists.recordset[0].cnt === 0) {
+            console.error('❌ PRODUCTO 404:', intId);
+            return res.status(404).json({ error: `Producto ${intId} no existe` });
+        }
+
+        // UPDATE
+        const result = await pool.request()
+            .input('id', sql.Int, intId)
+            .input('n', sql.NVarChar(255), nombre)
+            .input('m', sql.NVarChar(100), marca)
+            .input('s', sql.NVarChar(50), sku)
+            .input('p', sql.Decimal(18,2), precio)
+            .input('st', sql.Int, stock)
+            .input('c', sql.NVarChar, caracteristicas)
+            .query(`UPDATE Productos SET 
+                Nombre=@n, Marca=@m, CodigoSKU=@s, 
+                Precio=@p, Stock=@st, Caracteristicas=@c 
+                WHERE ProductoID=@id`);
+
+        console.log('✅ UPDATE rows:', result.rowsAffected[0]);
+
+        // IMAGE (if present)
+        if (req.file) {
+            console.log('🖼️ Image:', req.file.path);
+            try {
+                await pool.request().input('id', sql.Int, intId)
+                    .query('DELETE FROM ProductoImagenes WHERE ProductoID=@id');
+                    
+                await pool.request()
+                    .input('id', sql.Int, intId)
+                    .input('url', sql.NVarChar(500), req.file.path)
+                    .query('INSERT INTO ProductoImagenes (ProductoID, ImagenURL) VALUES (@id, @url)');
+                    
+                console.log('✅ Image OK');
+            } catch (imgErr) {
+                console.error('⚠️ Image failed but continued:', imgErr.message);
+            }
+        }
+        
+        console.log('🎉 SUCCESS producto:', intId);
+        res.json({ success: true, id: intId });
+        
+    } catch (error) {
+        console.error('💥 PUT /productos/:id FAILED:', {
+            id: req.params.id,
+            error: error.message,
+            stack: error.stack?.split('\n')[0]
+        });
+        res.status(500).json({ 
+            error: process.env.NODE_ENV === 'development' ? error.message : 'Error servidor' 
+        });
+    }
 });
 
 app.delete('/productos/:id', async (req, res) => {

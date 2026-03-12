@@ -40,25 +40,22 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// Fetch event - Network only (siempre requiere internet)
+// Suppress OneSignal console spam
+self.addEventListener('error', (event) => {
+    if (event.filename && event.filename.includes('OneSignal')) {
+        console.warn('[SW] OneSignal error suppressed (server-side notifications active)');
+        event.stopImmediatePropagation();
+    }
+});
+
+// Network only fetch
 self.addEventListener('fetch', (event) => {
-    // Siempre ir a la red - requiere internet
     event.respondWith(
         fetch(event.request)
-            .then((response) => {
-                // Solo devolver respuestas válidas
-                return response;
-            })
-            .catch(() => {
-                // Si no hay internet, devolver error
-                return new Response(
-                    JSON.stringify({ error: 'Se requiere conexión a internet' }),
-                    { 
-                        status: 503,
-                        headers: { 'Content-Type': 'application/json' }
-                    }
-                );
-            })
+            .then((response) => response)
+            .catch(() => new Response(JSON.stringify({ error: 'Sin conexión' }), {
+                status: 503, headers: { 'Content-Type': 'application/json' }
+            }))
     );
 });
 

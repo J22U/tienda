@@ -208,19 +208,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     body: formData
                 });
 
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    console.error("Server error:", res.status, errorText);
+                    throw new Error(`Error ${res.status}: ${errorText.substring(0, 200)}`);
+                }
+
                 const result = await res.json();
 
-                if (res.ok) {
-                    await Swal.fire('¡Éxito!', 'Producto guardado correctamente', 'success');
-                    limpiarForm();
-                    cargarInventario();
-                    cargarAgotados();
-                } else {
-                    throw new Error(result.error || 'Error al guardar');
-                }
+                await Swal.fire('¡Éxito!', 'Producto guardado correctamente', 'success');
+                limpiarForm();
+                cargarInventario();
+                cargarAgotados();
             } catch (err) {
                 console.error("Error completo:", err);
-                Swal.fire('Error', err.message, 'error');
+                Swal.fire('Error', err.message || 'Error al guardar producto', 'error');
             }
         });
     }
