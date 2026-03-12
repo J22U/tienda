@@ -297,53 +297,16 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Socket.io for real-time notifications -->
     <script src="/socket.io/socket.io.js"></script>
-    <!-- OneSignal Push Notifications -->
-    <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async=""></script>
+    <!-- OneSignal Push Notifications (v16) -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
-        // OneSignal Initialization
-        var OneSignal = OneSignal || [];
-        OneSignal.push(function() {
-            OneSignal.init({
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        OneSignalDeferred.push(async function(OneSignal) {
+            await OneSignal.init({
                 appId: "a6a0e0fc-4caf-4ce6-adff-5856c98bfffe",
-                autoRegister: true,
-                notifyButton: {
-                    enable: false
-                },
-                promptOptions: {
-                    customHTML: '<p>Recibe notificaciones de nuevos pedidos</p>',
-                    actionMessage: '¿Quieres recibir notificaciones de nuevos pedidos?',
-                    acceptButtonText: 'SÍ',
-                    cancelButtonText: 'NO'
-                }
-            });
-            
-            // Check if already subscribed
-            OneSignal.isPushNotificationsEnabled(function(enabled) {
-                if (enabled) {
-                    console.log('OneSignal: Push notifications enabled');
-                } else {
-                    console.log('OneSignal: Push notifications not enabled');
-                }
-            });
-            
-            // Handle notification click
-            OneSignal.on('notificationClick', function(event) {
-                console.log('OneSignal: Notification clicked', event);
-                // Optionally redirect to admin panel
-                if (event.action && event.action.type === 'openApp') {
-                    window.location.href = 'admin.html';
-                }
+                allowLocalhostAsSecureOrigin: true,
             });
         });
-        
-        // Function to subscribe to push notifications (called from UI)
-        function subscribeToPush() {
-            OneSignal.push(function() {
-                OneSignal.registerForPushNotifications({
-                    modalPrompt: true
-                });
-            });
-        }
     </script>
     <script src="js/admin.js"></script>
 </body>
