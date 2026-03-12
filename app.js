@@ -14,74 +14,48 @@ require('dotenv').config();
 // OneSignal Configuration
 const ONESIGNAL_CONFIG = {
     appId: 'a6a0e0fc-4caf-4ce6-adff-5856c98bfffe',
-apiKey: 'weepv62neiy5ercmc32meslf'
+apiKey: 'os_v2_app_u2qob7cmv5gonlp7lblmtc777ykziv3kknkev7monxinj74lj5usa557qudrwnwejsfvmfrawialxhw7hv5pt3kize3linydtwakcoy'
 };
 
 // Function to send push notification via OneSignal
 function sendPushNotification(pedidoData) {
     const { numeroPedido, nombreCliente, total, productos } = pedidoData;
     
-    // OneSignal notification data
     const notification = {
-        included_segments: ["Total Subscriptions"],
         app_id: ONESIGNAL_CONFIG.appId,
-        headings: {
-            en: '🛒 Nuevo Pedido - Trébol',
-            es: '🛒 Nuevo Pedido - Trébol'
-        },
-        contents: {
-            en: `Pedido #${numeroPedido} de ${nombreCliente}\nTotal: $${Number(total).toLocaleString()}\n${productos} producto(s)`,
-            es: `Pedido #${numeroPedido} de ${nombreCliente}\nTotal: $${Number(total).toLocaleString()}\n${productos} producto(s)`
+        included_segments: ["Total Subscriptions"],
+        headings: { es: '🛒 Nuevo Pedido - Trébol' },
+        contents: { 
+            es: `Pedido #${numeroPedido} de ${nombreCliente}\nTotal: $${Number(total).toLocaleString()}\n${productos} producto(s)` 
         },
         url: 'https://tienda-1vps.onrender.com/admin.html',
-        chrome_web_icon: 'https://res.cloudinary.com/donc8a6tc/image/upload/v1770738241/LOGO_TR%C3%89BOL-removebg-preview_uyamlw.png',
-        chrome_big_picture: 'https://res.cloudinary.com/donc8a6tc/image/upload/v1770738241/LOGO_TR%C3%89BOL-removebg-preview_uyamlw.png',
-        firefox_icon: 'https://res.cloudinary.com/donc8a6tc/image/upload/v1770738241/LOGO_TR%C3%89BOL-removebg-preview_uyamlw.png',
-        safari_apns_env: 'production',
-        android_accent_color: "FF00FF00",
-        priority: 10,
-        aps: {
-            alert: {
-                title: '🛒 Nuevo Pedido - Trébol',
-                body: `Pedido #${numeroPedido} de ${nombreCliente} - $${Number(total).toLocaleString()}`
-            },
-            sound: 'default',
-            badge_type: 1
-        }
+        priority: 10 
     };
-    
-    // Convert to JSON
+
     const postData = JSON.stringify(notification);
     
-    // OneSignal REST API request options
     const options = {
-        hostname: 'onesignal.com',
+        hostname: 'api.onesignal.com', // <-- NUEVA URL SEGÚN MANUAL
         path: '/api/v1/notifications',
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
-'Authorization': `Basic ${ONESIGNAL_CONFIG.apiKey}`
+            'Content-Type': 'application/json; charset=utf-8',
+            // NUEVO FORMATO: Palabra "key" en lugar de "Basic"
+            'Authorization': `key ${ONESIGNAL_CONFIG.apiKey}` 
         }
     };
-    
+
     const req = https.request(options, (res) => {
         let data = '';
-        res.on('data', (chunk) => {
-            data += chunk;
-        });
+        res.on('data', (chunk) => { data += chunk; });
         res.on('end', () => {
-            console.log('OneSignal response:', data);
+            console.log('✅ OneSignal response:', data);
         });
     });
-    
-    req.on('error', (error) => {
-        console.error('OneSignal error:', error);
-    });
-    
+
+    req.on('error', (error) => { console.error('❌ OneSignal error:', error); });
     req.write(postData);
     req.end();
-    
-    console.log('📱 OneSignal push notification queued for delivery');
 }
 
 const app = express();
