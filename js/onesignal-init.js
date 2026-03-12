@@ -91,31 +91,37 @@ async function initOneSignal() {
 /**
  * Update notification button/UI status
  */
-async function updateNotificationUI() {
-  if (!OneSignalInstance) return;
+async function updateNotificationUI(retryCount = 0) {
+  const statusBtn = document.getElementById('btn-onesignal-status');
+  if (!statusBtn) return;
+
+  if (!OneSignalInstance) {
+    if (retryCount < 10) {
+      console.log(`OneSignal UI update retry ${retryCount + 1}/10...`);
+      setTimeout(() => updateNotificationUI(retryCount + 1), 500);
+    }
+    return;
+  }
 
   try {
-    // Check for status button (admin.html)
-    const statusBtn = document.getElementById('btn-onesignal-status');
-    if (statusBtn) {
-      const permission = await OneSignalInstance.Notifications.permission;
-      const subscription = await OneSignalInstance.User.PushSubscription.optInStatus();
+    const permission = await OneSignalInstance.Notifications.permission;
+    const subscription = await OneSignalInstance.User.PushSubscription.optInStatus();
 
-      if (permission === 'granted' && subscription === 1) { // subscribed
-        statusBtn.innerHTML = '<i class="bi bi-bell-fill"></i> Notificaciones ON';
-        statusBtn.className = 'btn btn-success rounded-pill fw-bold btn-sm px-3';
-        statusBtn.onclick = () => unsubscribeNotifications();
-      } else if (permission === 'denied') {
-        statusBtn.innerHTML = '<i class="bi bi-bell-slash"></i> Bloqueadas';
-        statusBtn.className = 'btn btn-danger rounded-pill fw-bold btn-sm px-3';
-      } else {
-        statusBtn.innerHTML = '<i class="bi bi-bell"></i> Activar';
-        statusBtn.className = 'btn btn-warning rounded-pill fw-bold btn-sm px-3';
-        statusBtn.onclick = () => requestNotificationPermission();
-      }
+    if (permission === 'granted' && subscription === 1) {
+      statusBtn.innerHTML = '<i class="bi bi-bell-fill"></i> Notificaciones ON';
+      statusBtn.className = 'btn btn-success rounded-pill fw-bold btn-sm px-3';
+      statusBtn.onclick = () => unsubscribeNotifications();
+    } else if (permission === 'denied') {
+      statusBtn.innerHTML = '<i class="bi bi-bell-slash"></i> Bloqueadas';
+      statusBtn.className = 'btn btn-danger rounded-pill fw-bold btn-sm px-3';
+    } else {
+      statusBtn.innerHTML = '<i class="bi bi-bell"></i> Activar';
+      statusBtn.className = 'btn btn-warning rounded-pill fw-bold btn-sm px-3';
+      statusBtn.onclick = () => requestNotificationPermission();
     }
+    console.log('🔔 Notification UI updated');
   } catch (e) {
-    console.log('UI update: OneSignal not ready yet');
+    console.log('UI update error:', e);
   }
 }
 
