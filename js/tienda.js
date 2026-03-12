@@ -325,6 +325,23 @@ async function procesarPago() {
 document.addEventListener('DOMContentLoaded', function() {
     cargarProductos();
 
+    // ============================================================================
+    // ACCESSIBILITY FIX: Prevent aria-hidden focus issue on modals
+    // ============================================================================
+    // This fixes the error: "aria-hidden on a focused element" when closing modals
+    // Source: https://www.digitala11y.com/accessible-modal-hiding/
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+        modal.addEventListener('hidden.bs.modal', function() {
+            // When modal is hidden, check if there's an active element
+            const activeElement = document.activeElement;
+            if (activeElement && modal.contains(activeElement)) {
+                // Move focus to body to prevent aria-hidden on focused element
+                document.body.focus();
+            }
+        });
+    });
+
     const formLogin = document.getElementById('form-login-admin');
     if (formLogin) {
         formLogin.addEventListener('submit', function(e) {
