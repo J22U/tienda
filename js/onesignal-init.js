@@ -288,25 +288,34 @@ function updateToggleUI(enabled) {
  */
 async function checkAndRecoverSubscription() {
   if (!isAdminPage()) return;
-
-  // 🆕 PERSISTENCIA MEJORADA: Leer userId del localStorage
-  const savedUserId = localStorage.getItem('onesignal_user_id') || 'admin_trebol';
-  const toggleEnabled = localStorage.getItem('admin_notifications_enabled') !== 'false';
   
-  console.log('🔍 Recovery check:', { savedUserId, toggleEnabled });
-
+  // ✅ PERSISTENTE: Estado guardado sobrevive cerrar pestaña/app
+  const savedUserId = localStorage.getItem('onesignal_user_id') || 'admin_trebol';
+  const toggleEnabled = localStorage.getItem('admin_notifications_enabled') === 'true'; // Exact match
+  const savedState = localStorage.getItem('onesignal_subscription_state');
+  
+  console.log('🔍 Recovery:', { savedUserId, toggleEnabled, savedState: savedState ? 'exists' : 'none' });
+  
   if (toggleEnabled && OneSignalInstance && savedUserId) {
-    // Usar userId persistido (no hardcodeado)
+    // Restaurar external ID (persiste cross-session)
     await OneSignalInstance.setExternalUserId(savedUserId);
     localStorage.setItem('onesignal_admin_id', savedUserId);
-    console.log(`🔑 External ID restaurado: ${savedUserId}`);
     
-    // Verificar estado actual
-    const status = await getSubscriptionStatus();
-    if (!status.subscribed || status.permission !== 'granted') {
-      console.log('🔄 Auto-recovery: Re-solicitando permiso...');
-      await requestNotificationPermission();
+    // Auto-subscribe si estaba activo antes
+    if (savedState) {
+      try {
+        const state = JSON.parse(savedState);
+        if (state.isSubscribed) {
+          console.log('🔄 Restaurando suscripción previa...');
+          await OneSignalInstance.User.PushSubscription.optIn();
+        }
+      } catch (e) {
+        console.warn('Saved state invalid:', e);
+      }
     }
+    
+    console.log(`🔑 External ID persistente: ${savedUserId} ✅`);
+    updateNotificationUI();
   }
 }
 
