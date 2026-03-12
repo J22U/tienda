@@ -35,16 +35,15 @@ function sendPushNotification(pedidoData) {
     const postData = JSON.stringify(notification);
     
     const options = {
-        hostname: 'api.onesignal.com', // <-- NUEVA URL SEGÚN MANUAL
+        hostname: 'api.onesignal.com', 
         path: '/api/v1/notifications',
         method: 'POST',
         headers: {
             'Content-Type': 'application/json; charset=utf-8',
-            // NUEVO FORMATO: Palabra "key" en lugar de "Basic"
-            'Authorization': `key ${ONESIGNAL_CONFIG.apiKey}` 
+            // PRUEBA 1: "Key" con K mayúscula (algunos servidores v1 son sensibles al case)
+            'Authorization': `Key ${ONESIGNAL_CONFIG.apiKey}` 
         }
     };
-
     const req = https.request(options, (res) => {
         let data = '';
         res.on('data', (chunk) => { data += chunk; });
