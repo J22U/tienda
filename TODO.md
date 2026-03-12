@@ -2,12 +2,13 @@
 
 ## Plan Steps:
 - [x] 1. Create TODO.md ✓
-- [x] 2. Fix duplicate res.json() in GET /productos route ✓
-- [x] 3. Add safe GET /menu route handler ✓
-- [ ] 4. Test locally: `npm start` then `curl http://localhost:3000/productos`
-- [ ] 5. Deploy to Render (git push / restart service)
-- [ ] 6. Complete ✓
+- [x] 2. Fix headers error in app.js ✓
+- [ ] 3. Fix gallery images in js/tienda.js (normalize Galeria array)
+- [ ] 4. Test: tienda.html → product modal → gallery next/prev
+- [ ] 5. Deploy to Render
+- [ ] 6. Complete
 
-**Current: Core fixes complete. Test next.**
+**Current: Headers ✅ Gallery next**
+
 
 

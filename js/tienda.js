@@ -190,8 +190,15 @@ function verDetalle(id) {
 
     let fotos = [];
     if (p.ImagenURL) fotos.push(p.ImagenURL);
-    if (p.Galeria && p.Galeria.length > 0) {
-        p.Galeria.forEach(g => { if(!fotos.includes(g.ImagenURL)) fotos.push(g.ImagenURL); });
+    if (p.Galeria) {
+        // Normalize string array to object format for backward compatibility
+        const galeriaNorm = Array.isArray(p.Galeria) 
+            ? p.Galeria.map(url => ({ ImagenURL: String(url || '').trim() })) 
+            : [];
+        galeriaNorm.forEach(g => { 
+            const imgUrl = g.ImagenURL || g;
+            if (imgUrl && !fotos.includes(imgUrl)) fotos.push(imgUrl); 
+        });
     }
 
     if (fotos.length > 1) {
