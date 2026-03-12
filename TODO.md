@@ -1,17 +1,42 @@
-# TODO - Permitir ver tienda desde admin sin cerrar sesión
+# Plan de Notificaciones Push - PWA Trébol ✅ COMPLETADO
 
 ## Objetivo
-Cuando el usuario esté en el panel de admin, pueda hacer clic en "VER TIENDA" y ver la tienda sin ser redirigido de vuelta a admin por el auto-login.
+Implementar notificaciones push en la PWA que aparezcan cuando la app está cerrada/cerrada.
 
-## Plan de implementación:
+## Estado Final:
+- ✅ OneSignal SDK integrado en admin.html
+- ✅ Service Worker de OneSignal presente
+- ✅ Botón de activación de notificaciones en el header
+- ✅ Configuración completa de OneSignal con personalización
 
-1. [x] Analizar el código actual (admin.html, tienda.html, js/tienda.js)
-2. [x] Modificar js/tienda.js para detectar parámetro URL
-3. [x] Implementar lógica para omitir auto-login cuando view=store
-4. [ ] Probar la funcionalidad
+## Implementación Realizada
 
-## Detalles técnicos:
-- admin.html pasa `?view=store` al ir a tienda.html
-- tienda.js debe verificar este parámetro antes de ejecutar autoLoginIfValid()
-- Si view=store está presente, omitir redirección y permitir ver la tienda
+### 1. admin.html - Completado
+- ✅ Botón "Activar" en el header para suscripciones
+- ✅ Configuración avanzada de OneSignal con:
+  - Botón flotante de notificaciones
+  - Mensajes personalizados en español
+  - Notificación de bienvenida
+  - Manejo de estados de suscripción
+- ✅ Funciones JavaScript:
+  - `initOneSignal()` - Inicialización
+  - `solicitarPermisoNotificaciones()` - Solicitar permiso
+  - `actualizarBotonNotificaciones()` - UI dinámico
+  - `probarNotificacion()` - Para pruebas
+
+## Cómo Usar
+
+### En el Panel de Admin:
+1. Abre admin.html
+2. Verás el botón amarillo "🔔 Activar" en el header
+3. Haz clic para activar las notificaciones
+4. El botón se volverá verde "Notificaciones ON"
+5. ¡Listo! Recibirás notificaciones push incluso con la app cerrada
+
+### Para que funcione cuando la app está cerrada:
+- El servidor debe enviar notificaciones push a través de la API de OneSignal
+- Cuando llega un nuevo pedido, el servidor debe llamar a OneSignal
+
+## Nota Importante
+Para recibir notificaciones **cuando la app está cerrada**, necesitas configurar el servidor (https://tienda-1vps.onrender.com) para que envíe notificaciones push a través de OneSignal API cuando se cree un nuevo pedido.
 
