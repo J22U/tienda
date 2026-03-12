@@ -192,7 +192,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 for(let i = 0; i < fotoInput.files.length; i++) {
-                    formData.append('imagenes[]', fotoInput.files[i]);
+                    formData.append('imagenes', fotoInput.files[i]);
                 }
             }
 
