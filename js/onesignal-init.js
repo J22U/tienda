@@ -38,20 +38,19 @@ async function initOneSignal() {
           serviceWorkerPath: './OneSignalSDKWorker.js',
           serviceWorkerParam: { scope: '/' },
           notifyButton: {
-            enable: true,
+            enable: false, // ✅ DISABLED: No bell button for clients
             size: 'medium',
             position: 'bottom-right',
             showCredit: false
           },
           welcomeNotification: {
-            title: '🔔 Trébol Repuestos',
-            message: 'Notificaciones activadas. Recibirás alertas de nuevos pedidos.',
-            url: window.location.href
+            // ✅ DISABLED: No welcome for auto-subscribe admin
+            disable: true
           },
           promptOptions: {
             slidedown: {
-              enabled: true,
-              autoPrompt: true,
+              enabled: false, // ✅ DISABLED: No prompts for clients
+              autoPrompt: false,
               timeDelay: 10000,
               pageViews: 1
             }
@@ -92,6 +91,12 @@ async function initOneSignal() {
  * Update notification button/UI status
  */
 async function updateNotificationUI(retryCount = 0) {
+  // ✅ DISABLED FOR CLIENTS: Only admin pages show UI
+  if (!isAdminPage()) {
+    console.log('🔇 Non-admin page: Skipping notification UI');
+    return;
+  }
+
   const statusBtn = document.getElementById('btn-onesignal-status');
   if (!statusBtn) return;
 
