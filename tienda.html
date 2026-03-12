@@ -47,9 +47,13 @@
 </a>
 </a>
         <div class="d-flex align-items-center gap-2">
-            <!-- Botón de instalación PWA -->
+<!-- Botón de instalación PWA -->
             <button id="btn-install-pwa" class="btn btn-outline-light fw-bold d-flex align-items-center rounded-pill px-3" style="display: none;" onclick="installPWA()">
                 <i class="bi bi-download me-1"></i> Instalar App
+            </button>
+            <!-- Botón alternativo para iOS -->
+            <button id="btn-install-ios" class="btn btn-outline-light fw-bold d-flex align-items-center rounded-pill px-3 d-none" onclick="showIOSInstructions()">
+                <i class="bi bi-apple me-1"></i> Instalar App
             </button>
             <button class="btn btn-warning fw-bold d-flex align-items-center position-relative px-4 rounded-pill" data-bs-toggle="modal" data-bs-target="#modalCarrito">
                 <i class="bi bi-cart3 me-2 fs-5"></i> MI PEDIDO
@@ -309,7 +313,51 @@
 <!-- Service Worker para PWA (solo permite instalación, requiere internet) -->
 <script>
 let deferredPrompt;
-const installBtn = document.getElementById('btn-install-pwa');
+let installBtn;
+let installBtnIOS;
+
+document.addEventListener('DOMContentLoaded', function() {
+    installBtn = document.getElementById('btn-install-pwa');
+    installBtnIOS = document.getElementById('btn-install-ios');
+    
+    // Detectar si es iOS
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator.standalone);
+    
+    console.log('iOS:', isIOS, 'Standalone:', isInStandaloneMode);
+    
+    // Si es iOS y no está instalado, mostrar botón de iOS
+    if (isIOS && !isInStandaloneMode && installBtnIOS) {
+        installBtnIOS.classList.remove('d-none');
+        installBtnIOS.style.display = 'inline-flex';
+        console.log('Mostrando botón iOS');
+    }
+    
+    // Debug: verificar si el botón existe
+    console.log('Botón de instalación PWA:', installBtn);
+    console.log('Botón de instalación iOS:', installBtnIOS);
+});
+
+// Función para mostrar instrucciones de iOS
+function showIOSInstructions() {
+    Swal.fire({
+        icon: 'info',
+        title: '📱 Instalar en iPhone/iPad',
+        html: `
+            <div class="text-start">
+                <p class="mb-3">Sigue estos pasos para instalar la app:</p>
+                <ol class="text-start">
+                    <li class="mb-2">Toca el botón de <strong>compartir</strong> <i class="bi bi-share"></i> en la parte inferior</li>
+                    <li class="mb-2">Desplázate hacia abajo y busca <strong>"Añadir a pantalla de inicio"</strong></li>
+                    <li class="mb-2">Toca <strong>"Añadir"</strong> en la esquina superior derecha</li>
+                    <li class="mb-0">¡Listo! La app aparecerá en tu pantalla de inicio</li>
+                </ol>
+            </div>
+        `,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#198754'
+    });
+}
 
 window.addEventListener('beforeinstallprompt', (e) => {
     // Prevenir el diálogo automático
@@ -320,31 +368,43 @@ window.addEventListener('beforeinstallprompt', (e) => {
     // Mostrar botón de instalación si existe
     if (installBtn) {
         installBtn.style.display = 'inline-flex';
+        console.log('PWA disponible para instalar');
     }
-    
-    console.log('PWA instalable disponible');
 });
 
 // Manejar clic en botón de instalación
 async function installPWA() {
+    console.log('Clicked install button');
+    console.log('deferredPrompt:', deferredPrompt);
+    
     if (!deferredPrompt) {
+        alert('La instalación no está disponible en este momento. Intenta desde Chrome en Android.');
         return;
     }
     
-    // Mostrar el diálogo de instalación
-    deferredPrompt.prompt();
-    
-    // Esperar a que el usuario responda
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    console.log('Resultado de instalación:', outcome);
-    
-    // Limpiar
-    deferredPrompt = null;
-    
-    // Ocultar botón
-    if (installBtn) {
-        installBtn.style.display = 'none';
+    try {
+        // Mostrar el diálogo de instalación
+        deferredPrompt.prompt();
+        
+        // Esperar a que el usuario responda
+        const { outcome } = await deferredPrompt.userChoice;
+        
+        console.log('Resultado de instalación:', outcome);
+        
+        // Limpiar
+        deferredPrompt = null;
+        
+        // Ocultar botón
+        if (installBtn) {
+            installBtn.style.display = 'none';
+        }
+        
+        if (outcome === 'accepted') {
+            alert('¡App instalada correctamente!');
+        }
+    } catch (error) {
+        console.error('Error en instalación:', error);
+        alert('Error al instalar: ' + error.message);
     }
 }
 
@@ -354,6 +414,7 @@ window.addEventListener('appinstalled', () => {
     if (installBtn) {
         installBtn.style.display = 'none';
     }
+    alert('¡App de Trébol instalada exitosamente!');
 });
 
 if ('serviceWorker' in navigator) {
