@@ -317,18 +317,22 @@ function isSessionValid() {
         const session = JSON.parse(sessionStr);
         
         // If PWA, session is always valid until manually logged out
-        if (session.isPWA) {
+        if (session.isPWA === true) {
+            console.log('[Session] PWA mode - session valid:', session.logged);
             return session.logged === true;
         }
         
         // For browser, check expiration
         if (session.logged && session.timestamp) {
             const elapsed = Date.now() - session.timestamp;
-            return elapsed < SESSION_CONFIG.browserSessionDuration;
+            const isValid = elapsed < SESSION_CONFIG.browserSessionDuration;
+            console.log('[Session] Browser mode - elapsed:', elapsed, 'isValid:', isValid);
+            return isValid;
         }
         
         return false;
     } catch (e) {
+        console.log('[Session] Error parsing session:', e);
         return false;
     }
 }

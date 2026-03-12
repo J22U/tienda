@@ -27,25 +27,44 @@ const SESSION_CONFIG = {
 function isSessionValid() {
     const sessionStr = localStorage.getItem('admin_session');
     if (!sessionStr) {
+        console.log('[Session] No session string found');
         return false;
     }
     
     try {
         const session = JSON.parse(sessionStr);
+        console.log('[Session] Parsed session:', session);
         
-        // If PWA, session is always valid until manually logged out
+        // If session is not marked as logged in, it's invalid
+        if (session.logged !== true) {
+            console.log('[Session] Session not logged in');
+            return false;
+        }
+        
+        // If currently running as PWA, session is always valid
+        if (isPWA()) {
+            console.log('[Session] Currently in PWA mode - session valid');
+            return true;
+        }
+        
+        // If session was created in PWA mode, it's always valid
         if (session.isPWA === true) {
-            return session.logged === true;
+            console.log('[Session] Session created in PWA mode - session valid');
+            return true;
         }
         
-        // For browser, check expiration
-        if (session.logged && session.timestamp) {
+        // For browser sessions, check expiration
+        if (session.timestamp) {
             const elapsed = Date.now() - session.timestamp;
-            return elapsed < SESSION_CONFIG.browserSessionDuration;
+            const isValid = elapsed < SESSION_CONFIG.browserSessionDuration;
+            console.log('[Session] Browser mode - elapsed:', elapsed, 'isValid:', isValid);
+            return isValid;
         }
         
+        console.log('[Session] Session invalid - no valid flags');
         return false;
     } catch (e) {
+        console.log('[Session] Error parsing session:', e);
         return false;
     }
 }
@@ -59,6 +78,16 @@ function saveAdminSession() {
     };
     localStorage.setItem('admin_session', JSON.stringify(sessionData));
     localStorage.setItem('admin_logged', 'true');
+}
+
+// Auto-login if session is valid (called on page load)
+function autoLoginIfValid() {
+    if (isSessionValid()) {
+        const isPWA_mode = isPWA();
+        console.log(`[Session] Auto-login successful (${isPWA_mode ? 'PWA' : 'browser'})`);
+        // Redirect to admin panel
+        window.location.href = 'admin.html';
+    }
 }
 
 // Clear session on logout only
@@ -390,6 +419,9 @@ async function procesarPago() {
 
 document.addEventListener('DOMContentLoaded', function() {
     cargarProductos();
+
+    // Check for existing valid session first - auto-login to admin
+    autoLoginIfValid();
 
     // ============================================================================
     // ACCESSIBILITY FIX: Prevent aria-hidden focus issue on modals

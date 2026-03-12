@@ -1135,6 +1135,9 @@ async function aplicarDescuentoProducto(productoId, descuentoActual) {
    INICIALIZACIÓN
    ============================================================================ */
 
+// Verificar sesión al cargar la página
+verificarSesion();
+
 // Cargar inventario y pedidos al iniciar
 cargarInventario();
 cargarPedidos();

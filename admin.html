@@ -53,14 +53,26 @@
                 const session = JSON.parse(sessionStr);
                 console.log('[Session] Parsed session:', session);
                 
-                // If PWA, session is always valid until manually logged out
-                if (session.isPWA === true) {
-                    console.log('[Session] PWA mode - session valid');
-                    return session.logged === true;
+                // If session is not marked as logged in, it's invalid
+                if (session.logged !== true) {
+                    console.log('[Session] Session not logged in');
+                    return false;
                 }
                 
-                // For browser, check expiration
-                if (session.logged && session.timestamp) {
+                // If currently running as PWA, session is always valid
+                if (isPWA()) {
+                    console.log('[Session] Currently in PWA mode - session valid');
+                    return true;
+                }
+                
+                // If session was created in PWA mode, it's always valid
+                if (session.isPWA === true) {
+                    console.log('[Session] Session created in PWA mode - session valid');
+                    return true;
+                }
+                
+                // For browser sessions, check expiration
+                if (session.timestamp) {
                     const elapsed = Date.now() - session.timestamp;
                     const isValid = elapsed < SESSION_CONFIG.browserSessionDuration;
                     console.log('[Session] Browser mode - elapsed:', elapsed, 'isValid:', isValid);
