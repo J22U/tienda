@@ -234,6 +234,14 @@ app.put('/productos/:id', upload.array('imagenes', 6), async (req, res) => {
     
     console.log('🔧 PUT /productos/:id - START', { id, bodyKeys: Object.keys(req.body || {}), hasFiles: req.files ? req.files.length : 0 });
     
+    let pool;
+    try {
+        pool = await poolPromise;
+    } catch (dbErr) {
+        console.error('💥 DB POOL FAILED:', dbErr);
+        return res.status(500).json({ error: 'Database connection failed' });
+    }
+    
     try {
         if (!id || isNaN(parseInt(id))) {
             console.error('❌ INVALID ID:', id);
@@ -266,22 +274,28 @@ app.put('/productos/:id', upload.array('imagenes', 6), async (req, res) => {
         }
 
         console.log('📋 Parsed inputs OK:', { intId, nombre, precio, stock });
-
-        const pool = await poolPromise;
         
-        // CHECK EXISTS
+        // CHECK EXISTS + SELECT CURRENT STATE
+        console.log('🔍 Checking product existence/state...');
         const exists = await pool.request()
             .input('id', sql.Int, intId)
-            .query('SELECT COUNT(*) as cnt FROM Productos WHERE ProductoID=@id');
+            .query('SELECT COUNT(*) as cnt, * FROM Productos WHERE ProductoID=@id');
             
-        console.log('✅ EXISTS:', exists.recordset[0].cnt);
+        const currentProduct = exists.recordset[0];
+        console.log('✅ EXISTS:', exists.recordset[0]?.cnt || 0, 'Current:', {
+            exists: !!currentProduct,
+            nombre: currentProduct?.Nombre,
+            precio: currentProduct?.Precio,
+            stock: currentProduct?.Stock
+        });
         
-        if (exists.recordset[0].cnt === 0) {
+        if (!currentProduct) {
             console.error('❌ PRODUCTO 404:', intId);
             return res.status(404).json({ error: `Producto ${intId} no existe` });
         }
 
         // UPDATE
+        console.log('📝 Executing UPDATE...');
         const result = await pool.request()
             .input('id', sql.Int, intId)
             .input('n', sql.NVarChar(255), nombre)
@@ -293,9 +307,9 @@ app.put('/productos/:id', upload.array('imagenes', 6), async (req, res) => {
             .query(`UPDATE Productos SET 
                 Nombre=@n, Marca=@m, CodigoSKU=@s, 
                 Precio=@p, Stock=@st, Caracteristicas=@c 
-                WHERE ProductoID=@id`);
+                WHERE ProductoID=@id`); 
 
-        console.log('✅ UPDATE rows:', result.rowsAffected[0]);
+        console.log('✅ UPDATE rows affected:', result.rowsAffected[0]);
 
         // IMAGES (if present - multiple)
         if (req.files && req.files.length > 0) {
