@@ -64,9 +64,10 @@ async function updateNotificationUI() {
 
   try {
     const permission = await OneSignalInstance.Notifications.permission;
-    const subscription = await OneSignalInstance.User.PushSubscription.optInStatus();
+    const subscriptionState = await OneSignalInstance.User.PushSubscription.state;
+    const subscribed = subscriptionState === 'Subscribed' || subscriptionState === 'OptedIn';
 
-    if (permission === 'granted' && subscription === 1) {
+    if (permission === 'granted' && subscribed) {
       statusBtn.innerHTML = '<i class="bi bi-bell-fill"></i> Notificaciones ON';
       statusBtn.className = 'btn btn-success rounded-pill fw-bold btn-sm px-3';
       statusBtn.onclick = unsubscribeNotifications;
@@ -114,11 +115,16 @@ async function getSubscriptionStatus() {
   if (!OneSignalInstance) return { ready: false };
   try {
     const permission = await OneSignalInstance.Notifications.permission;
-    const subStatus = await OneSignalInstance.User.PushSubscription.optInStatus();
+    
+    // v16: Use state instead of optInStatus()
+    const subscriptionState = await OneSignalInstance.User.PushSubscription.state;
+    const subscribed = subscriptionState === 'Subscribed' || subscriptionState === 'OptedIn';
+    
     return {
       ready: true,
       permission, 
-      subscribed: subStatus === 1,
+      subscribed,
+      subscriptionState,
       externalId: localStorage.getItem('onesignal_admin_id') || 'not_set'
     };
   } catch (e) {
