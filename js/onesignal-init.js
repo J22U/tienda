@@ -74,6 +74,26 @@ async function initOneSignal() {
 
         // Update UI immediately
         updateNotificationUI();
+        
+        // 🆕 PERSISTENCE FIX: Sync externalId with admin_logged state
+        OneSignalDeferred.push(async function(OneSignal) {
+            const adminLogueado = localStorage.getItem('admin_logged') === 'true';
+            const externalId = await OneSignal.User.getExternalId();
+
+            if (adminLogueado) {
+                if (externalId !== "admin_trebol") {
+                    await OneSignal.login("admin_trebol");
+                    await OneSignal.User.PushSubscription.optIn();
+                    console.log("✅ OneSignal: Identidad admin_trebol vinculada automáticamente");
+                }
+            } else {
+                if (externalId === "admin_trebol") {
+                    await OneSignal.logout();
+                    console.log("🔓 OneSignal: Sesión inactiva, identidad removida");
+                }
+            }
+        });
+        
         resolve(OneSignal);
         
       } catch (error) {
@@ -219,7 +239,7 @@ async function showAdminPrompt() {
 }
 
 // 🔔 ADMIN TOGGLE SUPPORT
-function initAdminNotificationToggle() {
+async function initAdminNotificationToggle() {
   const toggle = document.getElementById('toggle-notificaciones');
   const statusEl = document.getElementById('toggle-status');
   if (!toggle || !isAdminPage()) return;
@@ -256,14 +276,16 @@ function initAdminNotificationToggle() {
   let savedState = await getToggleState();
   if (savedState === null) {
     savedState = 'false';
-    setToggleState('false');
+    // MISSING: setToggleState('false'); - define or use localStorage.setItem
+    localStorage.setItem('admin_notifications_enabled', 'false');
   }
   toggle.checked = savedState === 'true';
   updateToggleUI(savedState);
 
-    toggle.addEventListener('change', async (e) => {
+  toggle.addEventListener('change', async (e) => {
     const enabled = e.target.checked;
-    await setToggleState(enabled.toString());
+    // MISSING: await setToggleState(enabled.toString()); - define or use localStorage.setItem
+    localStorage.setItem('admin_notifications_enabled', enabled.toString());
     updateToggleUI(enabled);
     
     if (OneSignalInstance) {

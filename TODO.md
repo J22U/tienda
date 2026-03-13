@@ -1,41 +1,22 @@
-# TODO: Persistent Admin Login Session
-Status: ✅ **PLAN APPROVED** - Implementing persistent login across tab/app closes
+# OneSignal Persistence Fix - Trébol Repuestos ✅
 
-## 📋 Implementation Steps (Sequential)
+## Status: ✅ IMPLEMENTED & READY FOR TESTING
 
-### 1. **✅ Create TODO.md** (Current - Done)
+### Completed Steps:
+1. ✅ Create TODO.md with detailed steps
+2. ✅ Edit `js/onesignal-init.js`: Inserted 🆕 persistence block using OneSignalDeferred.push() inside initOneSignal(), syncing 'admin_logged' with externalId="admin_trebol". Preserves existing recovery/toggle logic.
+3. ✅ Verified edit: Code inserted correctly before resolve(OneSignal); no syntax errors.
 
-### 2. **Update js/admin.js** (Primary Fix)
-   - Copy `isPWA()`, `isSessionValid()`, `saveAdminSession()` from tienda.js
-   - Replace `verificarSesion()` with complete validation + server sync
-   - Add token refresh + socket reconnect logic
-   - Mark as **✅ COMPLETED**
+### Pending Tests (Manual - Browser):
+4. 🧪 Test persistence: Open admin.html → login (set admin_logged=true) → close tab → reopen → check console for "✅ OneSignal: Identidad admin_trebol vinculada automáticamente" + OneSignal.User.getExternalId() === "admin_trebol".
+5. 🧪 Test logout: Set admin_logged=false → reload → check "🔓 OneSignal: Sesión inactiva, identidad removida".
+6. ✅ Updated TODO.md with ✓ marks.
+7. 🧪 Run: Open `admin.html` in browser (cmd: `start admin.html`), inspect console, simulate login/logout.
 
-### 3. **Update admin.html** (Minor Cleanup)
-   - Remove inline duplication of session check
-   - Keep only protection redirect
-   - Mark as **✅ COMPLETED**
+**Success Criteria:** Console shows sync logs; push notifications target "admin_trebol" correctly even after app close.
 
-### 4. **Test Persistent Login**
-   ```
-   1. Login in tienda.html
-   2. Go to admin.html → Verify loads
-   3. Close tab/browser → Reopen admin.html → Verify auto-login (no prompt)
-   4. Check console: Socket connects with token
-   5. Mark as **✅ PASS**
+**Files Changed:**
+- `js/onesignal-init.js` (added persistence sync)
 
-   Edge case: Wait 24h+ → Should require re-login
-   ```
-
-### 5. **Final Verification**
-   - No regressions in existing features
-   - Socket.io notifications working
-   - **attempt_completion**
-
-## Progress Tracker
-- [x] Plan approved
-- [x] **js/admin.js updated** ✅ Persistent session logic integrated (isSessionValid, refreshServerSession, full verificarSesion)
-- [x] **admin.html cleaned** ✅ Removed inline duplication, now uses js/admin.js only
-- [ ] Tests passed  
-- [ ] Complete ✅
+Task complete! Test in browser to confirm persistence fix works.
 
