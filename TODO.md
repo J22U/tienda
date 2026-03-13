@@ -1,17 +1,19 @@
-# OneSignal Server Fix - Force Send to Admin_trebol (No Offline Check)
+# Fix OneSignal "Not Defined" Error - Approved Plan
 
-Status: Edit Complete ✅
+## ✅ Status: In Progress
 
-## Steps:
-- [x] 1. Analyzed app.js - identified sendPushNotification log issue
-- [x] 2. Plan confirmed: Remove \"offline\" assumption, trust OneSignal delivery
-- [x] 3. Edit app.js: Updated response handler logs  
-- [ ] 4. Restart server (`node app.js` or redeploy to Render)
-- [ ] 5. Test new pedido - verify logs: 📡 SENT even if recipients=0
-- [ ] 6. Check OneSignal dashboard for delivery/queued notifications
-- [ ] 7. Mark COMPLETE
+### Steps (from approved plan):
 
-**Changes:**
-- Removed \"admin_trebol offline\" log
-- New logs: ✅ DELIVERED or 📡 SENT (pending)
-- Server ALWAYS forces OneSignal send, no local checks
+- [ ] **Step 1**: Create TODO.md (Current)
+- ✅ **Step 2**: Edit `admin.html` - Add v16 SDK script + remove conflicting shim
+- [ ] **Step 3**: Edit `tienda.html` - Add v16 SDK script 
+- [ ] **Step 4**: Test in browser console 
+  - `window.OneSignalDeferred ? console.log("✅") : console.log("❌")`
+  - `window.OneSignalInit?.initOneSignal()` → look for "✅ OneSignal v16 initialized"
+- [ ] **Step 5**: Verify admin subscription: `console.log(await window.OneSignalInit?.getSubscriptionStatus())`
+- [ ] **Step 6**: Test server push → recipients >0
+- [ ] **Step 7**: Update TODO.md with ✓ + attempt_completion
+
+**Expected Result**: OneSignal loads correctly, admin_trebol external ID sets, pushes work (recipients>0)
+
+**Next**: Step 2 - Edit admin.html

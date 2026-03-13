@@ -21,16 +21,17 @@
     <!-- Estilos personalizados -->
     <link rel="stylesheet" href="css/admin.css">
     
-    <!-- Optimized Session + OneSignal Toggle -->
-<script>
+    <!-- Optimized Session + OneSignal Toggle + ✅ OneSignal v16 SDK -->
+    <!-- CRITICAL: OneSignal SDK v16 (missing before) -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    
+    <script>
         // ✅ Session validation moved to js/admin.js - cleaner architecture
         
         // Only basic protection here (detailed logic in js/admin.js)
         if (!localStorage.getItem('admin_logged')) {
             window.location.replace('tienda.html');
         }
-        
-        window.OneSignal = window.OneSignal || [];
     </script>
 </head>
 <body>
@@ -236,16 +237,9 @@
     <!-- Socket.io for real-time notifications -->
     <script src="/socket.io/socket.io.js"></script>
     
-    <!-- 🔔 ONESIGNAL: Load after DOM for UI updates -->
-    <script src="js/onesignal-init.js"></script>
-    <script>
-      // Auto-prompt admin subscription + update UI
-      document.addEventListener('DOMContentLoaded', async function() {
-        await window.OneSignalInit.initOneSignal();
-        await window.OneSignalInit.updateNotificationUI();
-      });
-    </script>
-    <script src="js/admin.js"></script>
+    <!-- 🔔 ONESIGNAL: SDK loaded in head, custom init after DOM -->
+    <script src="js/onesignal-init.js" defer></script>
+    <script src="js/admin.js" defer></script>
 </body>
 </html>
 
