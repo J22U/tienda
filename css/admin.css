@@ -338,6 +338,15 @@ body {
     }
 }
 
+/* Pedido row clickable */
+.pedido-row {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.pedido-row:hover {
+    background-color: #f8f9fa !important;
+}
+
 /* Keep all other unchanged styles for orders, etc. */
 
 .order-actions {

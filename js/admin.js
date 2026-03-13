@@ -65,6 +65,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // 🔥 EVENT DELEGATION - PEDIDOS (CSP FIX)
     const listaPedidos = document.getElementById('lista-pedidos');
     listaPedidos.addEventListener('click', e => {
+        // 🆕 Click pedido-row → details (stopPropagation on buttons)
+        const pedidoRow = e.target.closest('.pedido-row');
+        if (pedidoRow && !e.target.closest('button')) {
+            const id = pedidoRow.dataset.pedidoId || e.target.closest('[data-pedido-id]').dataset.pedidoId;
+            mostrarDetallesPedido(id);
+            return;
+        }
+        
         const statusBtn = e.target.closest('.pedido-btn-status');
         if (statusBtn) {
             const id = statusBtn.dataset.pedidoId;
@@ -84,6 +92,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (facturaBtn) {
             const id = facturaBtn.dataset.pedidoId;
             generarFacturaPDFParaPedido(id);
+            return;
         }
     });
 
@@ -116,6 +125,7 @@ async function cargarProductos() {
             ❌ ${err.message}<br>
             <button class="btn btn-sm btn-warning mt-2" onclick="cargarProductos()">Reintentar</button>
         </div>`;
+        document.getElementById('order-count').textContent = `${filtered.length} pedidos`;
     } finally {
         mostrarLoader(lista, false);
     }
@@ -131,31 +141,33 @@ function renderProductos(prods, container) {
     container.innerHTML = prods.map(p => {
         const stockClass = p.Stock > 5 ? 'stock-high' : p.Stock > 0 ? 'stock-medium' : 'stock-low';
         const safeJSON = JSON.stringify(p).replace(/'/g, "&apos;");
+        const safePedidosJSON = JSON.stringify(p).replace(/'/g, "&apos;");
         
         return `
-        <div class="product-card" data-producto="${safeJSON}">
-            <div class="d-flex gap-3">
-                <img src="${p.ImagenURL || '/uploads/default.jpg'}" class="product-img-card">
-                <div class="flex-grow-1">
-                    <h6 class="fw-bold mb-1">${p.Nombre}</h6>
-                    <small class="text-muted">${p.Marca} #${p.CodigoSKU || 'N/A'}</small>
-                    <div class="mt-2">
-                        <div class="h4 text-success fw-bold">$${Number(p.Precio).toLocaleString()}</div>
-                        <div class="stock-info mt-2">
-                            <span class="badge ${stockClass}">${p.Stock} und</span>
-                        </div>
-                    </div>
+        <div class="pedido-row p-3 border-bottom cursor-pointer" data-pedido-id="${p.PedidoID}" data-pedido='${safePedidosJSON}'>
+            <div class="d-flex justify-content-between">
+                <div>
+                    <strong>#${p.NumeroDisplay || p.PedidoID}</strong> - ${p.NombreCliente}
+                    <br><small class="text-muted">${new Date(p.Fecha).toLocaleString('es-ES')}</small>
+                </div>
+                <div class="text-end">
+                    <div class="h5 fw-bold text-primary">$${Number(p.Total).toLocaleString()}</div>
+                    <span class="badge bg-${p.Estado === 'Completado' ? 'success' : p.Estado === 'Pendiente' ? 'warning' : 'secondary'}">${p.Estado}</span>
                 </div>
             </div>
-            <div class="actions-card mt-3">
-                <button class="action-btn action-edit" data-action="edit" title="Editar">
-                    <i class="bi bi-pencil"></i>
+            <div class="mt-2">
+                <button class="btn btn-sm btn-outline-${btnClass} me-1 pedido-btn-status" 
+                        data-pedido-id="${p.PedidoID}" 
+                        data-new-estado="${newEstado}">
+                    ${btnText}
                 </button>
-                <button class="action-btn action-discount" data-action="discount" title="Descuento">
-                    <i class="bi bi-percent"></i>
+                <button class="btn btn-sm btn-primary me-1 pedido-btn-factura" 
+                        data-pedido-id="${p.PedidoID}">
+                    <i class="bi bi-file-earmark-pdf me-1"></i>Factura
                 </button>
-                <button class="action-btn action-delete" data-action="delete" title="Eliminar">
-                    <i class="bi bi-trash"></i>
+                <button class="btn btn-sm btn-outline-danger pedido-btn-delete" 
+                        data-pedido-id="${p.PedidoID}">
+                    Eliminar
                 </button>
             </div>
         </div>`;
@@ -169,9 +181,12 @@ async function cargarPedidos() {
     try {
         const res = await fetch('/pedidos');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const allPedidos = await res.json();
+        let allPedidos = await res.json();
+        // 🔄 Sort ASC (oldest first)
+        allPedidos.sort((a, b) => new Date(a.Fecha) - new Date(b.Fecha));
         const filtered = allPedidos.filter(p => (window.filtroEstado || 'Todos') === 'Todos' || p.Estado === (window.filtroEstado || 'Todos'));
         renderPedidos(filtered, lista);
+        document.getElementById('order-count').textContent = `${filtered.length} pedidos`;
     } catch (err) {
         lista.innerHTML = `<div class="alert alert-danger text-center">
             ❌ ${err.message}<br>
@@ -319,7 +334,7 @@ async function generarFacturaPDFParaPedido(pedidoId) {
         const res = await fetch(`/pedidos/${pedidoId}`);
         if (!res.ok) throw new Error('Pedido no encontrado');
         const p = await res.json();
-        const numeroPedido = p.NumeroDisplay || p.PedidoID || pedidoId;
+        const numeroPedido = p.NumeroDisplay || p.PedidoID;
         generarFacturaPDF(p, numeroPedido);
     } catch(err) {
         Swal.fire('Error', `No se pudo cargar factura: ${err.message}`, 'error');
@@ -399,12 +414,17 @@ async function generarFacturaPDF(p, numeroPedido) {
     doc.text(`Dirección: ${p.Direccion || 'Entrega en local'}`, 20, 88);
 
     // 5. TABLA DE PRODUCTOS (Estilo moderno y limpio)
-    const rows = productosArr.map(item => [
-        item.cantidad,
-        { content: item.Nombre, styles: { fontStyle: 'bold' } },
-        `$ ${Number(item.Precio).toLocaleString()}`,
-        `$ ${(item.cantidad * item.Precio).toLocaleString()}`
-    ]);
+    const rows = productosArr.map(item => {
+        const descuento = item.DescuentoPorcentaje || 0;
+        const precioDesc = Number(item.Precio) * (1 - descuento / 100);
+        const subtotalDesc = item.cantidad * precioDesc;
+        return [
+            item.cantidad,
+            { content: `${item.Nombre}${descuento > 0 ? ` (-${descuento}%)` : ''}`, styles: { fontStyle: 'bold' } },
+            `$ ${Number(item.Precio).toLocaleString()}`,
+            `$ ${subtotalDesc.toLocaleString()}`
+        ];
+    });
 
     doc.autoTable({
         startY: 95,
@@ -477,6 +497,56 @@ async function generarFacturaPDF(p, numeroPedido) {
         confirmButtonColor: '#224a2b'
     });
 }
+
+// 🆕 Pedido Details Modal
+async function mostrarDetallesPedido(pedidoId) {
+    try {
+        const res = await fetch(`/pedidos/${pedidoId}`);
+        const p = await res.json();
+        
+        // Parse productos
+        let productosArr = [];
+        try { 
+            productosArr = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
+        } catch(e) { productosArr = []; }
+        
+        // Fill modal
+        document.getElementById('modalPedidoNum').textContent = `#${p.NumeroDisplay || p.PedidoID}`;
+        document.getElementById('modalCliente').textContent = p.NombreCliente;
+        document.getElementById('modalFecha').textContent = new Date(p.Fecha).toLocaleString('es-ES');
+        document.getElementById('modalEstado').textContent = p.Estado;
+        document.getElementById('modalTotal').textContent = `$${Number(p.Total).toLocaleString()}`;
+        document.getElementById('modalBtnFactura').dataset.pedidoId = pedidoId;
+        
+        // Items table with descuentos
+        const tbody = document.querySelector('#modalItemsTable tbody');
+        tbody.innerHTML = productosArr.map(item => {
+            const precioFinal = Number(item.Precio) * (1 - (item.DescuentoPorcentaje || 0)/100);
+            const subtotal = item.cantidad * precioFinal;
+            return `
+                <tr>
+                    <td>${item.Nombre}</td>
+                    <td>${item.cantidad}</td>
+                    <td>$${Number(item.Precio).toLocaleString()}</td>
+                    <td>${item.DescuentoPorcentaje || 0}%</td>
+                    <td><strong>$${subtotal.toLocaleString()}</strong></td>
+                </tr>`;
+        }).join('');
+        
+        // Show modal
+        new bootstrap.Modal(document.getElementById('modalPedidoDetails')).show();
+    } catch(err) {
+        Swal.fire('Error', 'No se pudieron cargar detalles', 'error');
+    }
+}
+
+// Modal factura button
+document.addEventListener('click', e => {
+    if (e.target.closest('#modalBtnFactura')) {
+        const id = e.target.closest('#modalBtnFactura').dataset.pedidoId;
+        generarFacturaPDFParaPedido(id);
+    }
+});
 
 // Utils
 function mostrarLoader(container, show) {
