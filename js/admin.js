@@ -1361,8 +1361,6 @@ cargarAgotados();
    ============================================================================ */
 
 // 🔧 DELAYED SOCKET - Wait for token refresh
-let socket = null;
-let socketReady = false;
 
 async function initSocketAfterSession() {
   await verificarSesion(); // Ensure fresh token FIRST
@@ -1405,9 +1403,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // Estado de conexión + reconnect logic
-let socketConectado = false;
-let reconnectAttempts = 0;
-const MAX_RECONNECTS = 5;
 
 // Listener para conexión establecida
 socket.on('connect', () => {
