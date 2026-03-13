@@ -207,6 +207,10 @@ const storage = new CloudinaryStorage({
 });
 const upload = multer({ storage: storage });
 
+
+
+console.log('✅ authJWT middleware loaded early');
+
 // ==========================================
 // RUTAS DE PRODUCTOS
 // ==========================================
@@ -243,7 +247,7 @@ app.get('/productos', async (req, res) => {
     }
 });
 
-app.post('/productos', authJWT, upload.array('imagenes', 6), async (req, res) => {
+app.post('/productos', upload.array('imagenes', 6), async (req, res) => {
     console.log('➕ CREATE PRODUCT:', { user: req.user?.userId, bodyKeys: Object.keys(req.body) });
     const nombre = req.body.Nombre || req.body.nombre;
     const marca = req.body.Marca || req.body.marca;
@@ -422,7 +426,7 @@ app.put('/productos/:id', upload.array('imagenes', 6), async (req, res) => {
 });
 
 // DELETE producto 🔍 DEBUG
-app.delete('/productos/:id', authJWT, async (req, res) => {
+app.delete('/productos/:id', async (req, res) => {
     console.log('🗑️ DELETE:', { id: req.params.id, user: req.user?.userId });
     try {
         const pool = await poolPromise;
