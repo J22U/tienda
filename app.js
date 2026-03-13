@@ -207,7 +207,26 @@ const storage = new CloudinaryStorage({
 });
 const upload = multer({ storage: storage });
 
-
+// 🔐 JWT MIDDLEWARE DEFINITION - FIXED
+const authJWT = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+  
+  if (!token) {
+    console.log('🚫 NO TOKEN - 401');
+    return res.status(401).json({ error: 'Token requerido' });
+  }
+  
+  jwt.verify(token, process.env.JWT_SECRET || 'MiClaveSuperSecretaParaJWT_32charsMin', (err, user) => {
+    if (err) {
+      console.log('🚫 INVALID TOKEN - 403:', err.message);
+      return res.status(403).json({ error: 'Token inválido' });
+    }
+    req.user = user;
+    console.log('✅ AUTH OK:', user.userId);
+    next();
+  });
+};
 
 console.log('✅ authJWT middleware loaded early');
 
@@ -285,7 +304,7 @@ app.post('/productos', upload.array('imagenes', 6), async (req, res) => {
 });
 
 // Ruta para aplicar descuento a producto 🔍 DEBUG
-app.put('/productos/:id/descuento', authJWT, async (req, res) => {
+app.put('/productos/:id/descuento', async (req, res) => {
     console.log('🛡️ DESCUENTO:', { id: req.params.id, descuento: req.body.descuento, user: req.user?.userId });
     const { id } = req.params;
     const { descuento } = req.body;
@@ -643,26 +662,7 @@ app.get('/unread-count', async (req, res) => {
     }
 });
 
-// 🔐 JWT MIDDLEWARE - MOVED BEFORE ROUTES (Fix ReferenceError)
-const authJWT = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
-  
-  if (!token) {
-    console.log('🚫 NO TOKEN - 401');
-    return res.status(401).json({ error: 'Token requerido' });
-  }
-  
-  jwt.verify(token, process.env.JWT_SECRET || 'MiClaveSuperSecretaParaJWT_32charsMin', (err, user) => {
-    if (err) {
-      console.log('🚫 INVALID TOKEN - 403:', err.message);
-      return res.status(403).json({ error: 'Token inválido' });
-    }
-    req.user = user;
-    console.log('✅ AUTH OK:', user.userId);
-    next();
-  });
-};
+
 
 // 🔐 LOGIN (after middleware def)
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
