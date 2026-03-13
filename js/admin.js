@@ -783,7 +783,13 @@ function renderPedidos(peds, container) {
                     <br><small class="text-muted">${new Date(p.Fecha).toLocaleString('es-ES')}</small>
                 </div>
                 <div class="text-end">
-                    <div class="h5 fw-bold text-primary">$${Number(p.Total).toLocaleString()}</div>
+                    ${p.DescuentoPorcentaje > 0 ? `
+                        <div>
+                            <small style="text-decoration: line-through; color: #888; font-size: 0.8em;">$${Number(p.Total).toLocaleString()}</small>
+                            <span style="background:#27ae60; color:white; padding:2px 5px; border-radius:4px; font-size:0.7em; margin-left:5px;">-${p.DescuentoPorcentaje}%</span>
+                        </div>
+                    ` : ''}
+                    <div class="h5 fw-bold" style="color: #2563eb;">$${Number(p.TotalManual || p.Total).toLocaleString()}</div>
                     <span class="badge bg-${p.Estado === 'Completado' ? 'success' : p.Estado === 'Pendiente' ? 'warning' : 'secondary'}">${p.Estado}</span>
                 </div>
             </div>
