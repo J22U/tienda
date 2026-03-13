@@ -38,8 +38,8 @@ async function initOneSignal() {
           promptOptions: { slidedown: { enabled: false } }
         });
         
-        // Set external ID post-init
-        await OneSignalInstance.login(userId);
+        // v16 FIX: login expects {externalId}, but use setExternalUserId for recovery
+        await OneSignalInstance.setExternalUserId(userId);
         
         OneSignalInitialized = true;
         console.log('✅ OneSignal v16 ready - user:', userId);
@@ -82,7 +82,10 @@ function getCurrentUserId() {
 }
 
 async function checkAndRecoverSubscription() {
-  if (!OneSignalInstance) return;
+  if (!OneSignalInstance) {
+    console.log('⏳ OneSignalInstance not ready, skipping recovery');
+    return;
+  }
   
   try {
     const userId = getCurrentUserId();
@@ -90,11 +93,12 @@ async function checkAndRecoverSubscription() {
     
     if (currentId !== userId) {
       console.log(`🔄 Recover: ${currentId} → ${userId}`);
-      await OneSignalInstance.login(userId);
+      // v16 FIX: Use setExternalUserId (safer than login for recovery)
+      await OneSignalInstance.setExternalUserId(userId);
       
       // Ensure subscribed
       const state = await OneSignalInstance.User.PushSubscription.state;
-      if (state !== 'Subscribed') {
+      if (state !== 'Subscribed' && state !== 'OptedIn') {
         await OneSignalInstance.User.PushSubscription.optIn();
       }
       
@@ -181,11 +185,18 @@ async function unsubscribeNotifications() {
   }
 }
 
-// Auto-start + persistence listeners
+// Auto-start + persistence listeners (with guard)
+let initPromise = null;
+async function safeInitOneSignal() {
+  if (initPromise) return initPromise; // Prevent multiple inits
+  initPromise = initOneSignal();
+  return initPromise;
+}
+
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initOneSignal);
+  document.addEventListener('DOMContentLoaded', safeInitOneSignal);
 } else {
-  initOneSignal();
+  safeInitOneSignal();
 }
 
 // Tab/activity recovery

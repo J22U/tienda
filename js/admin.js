@@ -13,7 +13,7 @@ const MAX_RECONNECTS = 5;
 let cargandoPedidosFlag = false;
 let productosLocal = []; 
 let editando = false;  // FIXED: Single declaration
-let OneSignalInitialized = false;
+
 
 /* ============================================================================
    PRODUCTOS - RENDERIZADO Y CARGA
@@ -181,22 +181,15 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     console.log('[AdminInit] ✅ Session OK');
     
-    // 2. OneSignal init (safe ?. )
+    // 2. OneSignal init (safe single call)
     try {
         await window.OneSignalInit?.initOneSignal();
-        await window.OneSignalInit?.showAdminPrompt();
-        await window.OneSignalInit?.checkAndRecoverSubscription();
-        await window.OneSignalInit?.updateNotificationUI();
         console.log('🔔 OneSignal ready');
     } catch (e) {
         console.warn('OneSignal init:', e);
     }
     
-    // 3. TAB FOCUS/VISIBILITY LISTENERS
-    window.addEventListener('focus', () => window.OneSignalInit?.checkAndRecoverSubscription());
-    document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) window.OneSignalInit?.checkAndRecoverSubscription();
-    });
+    // 3. TAB FOCUS/VISIBILITY LISTENERS (removed - handled by onesignal-v16-fixed.js)
     
     // 4. HISTORY PROTECTION
     window.history.pushState(null, null, window.location.href);
@@ -1344,9 +1337,7 @@ window.isSessionValid = isSessionValid;
 
     // NEW: OneSignal sync after session verify
     try {
-      window.OneSignalInit?.initOneSignal();
-      window.OneSignalInit?.checkAndRecoverSubscription();
-      console.log('🔗 Admin panel: OneSignal synced');
+      // OneSignal sync handled by onesignal-v16-fixed.js auto-recovery
     } catch (e) {
       console.warn('OneSignal sync failed:', e);
     }

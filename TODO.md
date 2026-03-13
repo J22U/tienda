@@ -1,21 +1,37 @@
-# TODO: Fix js/admin.js Errors (Approved Plan)
+# OneSignal Fix - Progress Tracker
 
-## Status: 🚀 IN PROGRESS
+## ✅ Plan Confirmed: Fix Duplicate Declaration + v16 Login Crash
 
-### Steps:
-- [ ] 1. Create/update TODO.md ✅ **DONE**
-- [✅] 2. Hoist global vars (`socket`, flags) to top of js/admin.js
-- [✅] 3. Consolidate ALL DOMContentLoaded into single master handler
-- [✅] 4. Fix verificarSesion(): Declare socket early, await userId safely
-- [ ] 5. Restructure socket init **after** session/OneSignal, merge duplicate handlers
-- [ ] 6. Add null checks (OneSignal?.), try/catch for async
-- [ ] 7. Expose window functions **after** declarations
-- [ ] 8. Initial loads (cargarInventario, etc.) at end
-- [ ] 9. Test: No console red errors, functions work
-- [ ] 10. Mark complete → attempt_completion
+**Files fixed (2/2):**
+1. `js/admin.js` ✓ - Duplicate removed, calls consolidated
+2. `js/onesignal-v16-fixed.js` ✓ - v16 login/setExternalUserId fixed + guards
 
-**Next step:** Step 5 - Restructure socket init & handlers in master DOMContentLoaded
+**Current Step: 2/3** - Files updated  
+**Next:** Step 3 → Test verification
 
-**File:** js/admin.js
-**Errors fixed:** Line 181 col7, 316 col1/2 (syntax)
+---
+
+## Step-by-Step Progress
+
+### ✅ Step 1: Fix js/admin.js
+- Removed `let OneSignalInitialized = false;`
+- Single safe OneSignal init call
+- Removed redundant listeners/calls
+
+### ✅ Step 2: Fix js/onesignal-v16-fixed.js  
+- ✅ `setExternalUserId(userId)` (v16 safe recovery)
+- ✅ Init guard prevents races
+- ✅ `safeInitOneSignal()` prevents duplicate inits
+
+### 🔄 Step 3: Test & Verify
+```
+Test these now:
+1. admin.html → F12 Console → No SyntaxError, see "🔔 OneSignal ready"
+2. Page load → No "Cannot read properties of undefined (reading 'Ye')" 
+3. Console → OneSignal init OK, userId: admin_trebol/...
+4. Paste activate-onesignal.js → "✅ Synced: admin_trebol/..."
+5. Check OneSignal Dashboard → externalId registered
+```
+
+**Status: READY FOR TESTING** 🧪
 
