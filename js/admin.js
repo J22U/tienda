@@ -206,6 +206,7 @@ async function cargarPedidos() {
             const numB = parseInt(b.NumeroDisplay || '0');
             return numB - numA;
         });
+        console.log('Pedidos cargados:', allPedidos.map(p => ({ID: p.PedidoID, Cliente: p.NombreCliente})));
         const filtered = allPedidos.filter(p => (window.filtroEstado || 'Todos') === 'Todos' || p.Estado === (window.filtroEstado || 'Todos'));
         renderPedidos(filtered, lista);
         document.getElementById('order-count').textContent = `${filtered.length} pedidos`;
@@ -526,13 +527,14 @@ window.productosModalArr = []; // Global for discount updates
 
 async function mostrarDetallesPedido(pedidoId) {
     try {
-        console.log('Fetching pedido:', pedidoId);
+        console.log('🔍 Intentando cargar pedido ID:', pedidoId, 'desde BD');
         const res = await fetch(`/pedidos/${pedidoId}`);
+        console.log('Respuesta servidor:', res.status, res.statusText);
         if (!res.ok) {
-            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+            throw new Error(`HTTP ${res.status}: ${res.statusText} para ID ${pedidoId}`);
         }
         const p = await res.json();
-        console.log('Pedido data:', p);
+        console.log('✅ Pedido cargado:', p.PedidoID, p.NombreCliente);
         
         // Parse productos → global
         window.productosModalArr = [];
