@@ -1,4 +1,4 @@
-// js/admin.js - Panel Admin Completo (CSP-safe) - Updated for Screenshot Layout
+// js/admin.js - Panel Admin Completo (CSP-safe) - Fixed Syntax Error
 document.addEventListener('DOMContentLoaded', function() {
     // 🔒 Session check
     if (!localStorage.getItem('admin_logged')) {
@@ -60,18 +60,24 @@ document.addEventListener('DOMContentLoaded', function() {
     window.exportarInventario = exportarInventario;
 });
 
-// 🛒 Load Products
+// 🛒 Load Products - DEBUG
 async function cargarProductos() {
     const lista = document.getElementById('lista-productos');
     mostrarLoader(lista, true);
-    
+    console.log('🔄 Cargando productos...');
     try {
         const res = await fetch('/productos');
+        console.log('Productos status:', res.status);
         productos = await res.json();
+        console.log('Productos:', productos.length);
         renderProductos(productos, lista);
         actualizarContadores();
     } catch (err) {
-        lista.innerHTML = `<div class="alert alert-warning">Error cargando productos: ${err.message}</div>`;
+        console.error('Error productos:', err);
+        lista.innerHTML = `<div class="alert alert-warning d-flex justify-content-between">
+            Error productos: ${err.message}
+            <button class="btn btn-sm btn-warning" onclick="cargarProductos()">Reintentar</button>
+        </div>`;
     } finally {
         mostrarLoader(lista, false);
     }
@@ -80,7 +86,7 @@ async function cargarProductos() {
 // 📦 Render Products - Modern Card Grid
 function renderProductos(prods, container) {
     if (!prods.length) {
-        container.innerHTML = '<div class="text-center py-5"><i class="bi bi-boxes fs-1 text-muted mb-3"></i><p class="text-muted">No hay productos</p></div>';
+        container.innerHTML = '<div class="text-center py-5"><i class="bi bi-boxes fs-1 text-muted mb-3"></i><p class="text-muted">No hay productos (DB vacía?)</p></div>';
         return;
     }
     
@@ -142,13 +148,34 @@ function filtrarProductos() {
     document.getElementById('total-count').textContent = `${visibles} items`;
 }
 
-// 📋 Load Orders - unchanged
-async function cargarPedidos() {\n    const lista = document.getElementById('lista-pedidos');\n    console.log('🔄 Iniciando carga de pedidos...');\n    mostrarLoader(lista, true);\n    \n    try {\n        const res = await fetch('/pedidos');\n        console.log('📡 Response status:', res.status, res.statusText);\n        if (!res.ok) {\n            throw new Error(`HTTP ${res.status}: ${res.statusText}`);\n        }\n        pedidos = await res.json();\n        console.log('✅ Pedidos cargados:', pedidos.length, 'items');\n        renderPedidos(pedidos.filter(p => filtroEstado === 'Todos' || p.Estado === filtroEstado), lista);\n        document.getElementById('order-count').textContent = `${pedidos.length} recibidos`;\n    } catch (err) {\n        console.error('❌ Error cargando pedidos:', err);\n        lista.innerHTML = `\n            <div class="alert alert-warning d-flex justify-content-between align-items-center">\n                <div>\n                    <i class="bi bi-exclamation-triangle me-2"></i>\n                    Error cargando pedidos: <strong>${err.message}</strong>\n                </div>\n                <button class="btn btn-sm btn-outline-warning" onclick="cargarPedidos()">Reintentar</button>\n            </div>\n        `;\n    } finally {\n        mostrarLoader(lista, false);\n    }\n}
+// 📋 Load Orders - FIXED Syntax
+async function cargarPedidos() {
+    const lista = document.getElementById('lista-pedidos');
+    console.log('🔄 Cargando pedidos...');
+    mostrarLoader(lista, true);
+    try {
+        const res = await fetch('/pedidos');
+        console.log('Pedidos status:', res.status);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        pedidos = await res.json();
+        console.log('Pedidos:', pedidos.length);
+        renderPedidos(pedidos.filter(p => filtroEstado === 'Todos' || p.Estado === filtroEstado), lista);
+        document.getElementById('order-count').textContent = `${pedidos.length} totales`;
+    } catch (err) {
+        console.error('Error pedidos:', err);
+        lista.innerHTML = `<div class="alert alert-warning d-flex justify-content-between">
+            ❌ ${err.message}
+            <button class="btn btn-sm btn-warning" onclick="cargarPedidos()">Reintentar</button>
+        </div>`;
+    } finally {
+        mostrarLoader(lista, false);
+    }
+}
 
-// 📦 Render Orders - unchanged
+// 📦 Render Orders
 function renderPedidos(peds, container) {
     if (!peds.length) {
-        container.innerHTML = '<div class="text-center py-5"><i class="bi bi-cart-x fs-1 text-muted mb-3"></i><p class="text-muted">No hay pedidos</p></div>';
+        container.innerHTML = '<div class="text-center py-5"><i class="bi bi-cart-x fs-1 text-muted mb-3"></i><p class="text-muted">No hay pedidos (DB vacía?)</p></div>';
         return;
     }
     
@@ -172,7 +199,7 @@ function renderPedidos(peds, container) {
     `).join('');
 }
 
-// 📦 Low Stock - unchanged
+// 📦 Low Stock
 async function cargarAgotados() {
     const lista = document.getElementById('lista-agotados');
     const bajos = productos.filter(p => p.Stock <= 5 && p.Stock > 0);
@@ -196,11 +223,10 @@ async function cargarAgotados() {
             </div>`;
         }).join('');
     }
-    
     document.getElementById('agotados-count').textContent = `${productos.filter(p => p.Stock <= 5).length} alertas`;
 }
 
-// ✏️ Edit Product - unchanged
+// ✏️ Edit Product
 function prepararEdicion(prod) {
     document.getElementById('prod-id').value = prod.ProductoID;
     document.getElementById('nombre').value = prod.Nombre;
@@ -213,7 +239,7 @@ function prepararEdicion(prod) {
     document.getElementById('btn-nuevo').dataset.action = 'limpiarForm';
 }
 
-// 💾 Save Product - unchanged
+// 💾 Save Product
 async function guardarProducto(e) {
     e.preventDefault();
     const formData = new FormData(document.getElementById('form-producto'));
@@ -221,11 +247,7 @@ async function guardarProducto(e) {
     
     try {
         const url = id ? `/productos/${id}` : '/productos';
-        const res = await fetch(url, {
-            method: 'POST',
-            body: formData
-        });
-        
+        const res = await fetch(url, { method: 'POST', body: formData });
         if (res.ok) {
             Swal.fire('¡Guardado!', 'Producto actualizado', 'success');
             document.getElementById('titulo-form').textContent = 'Crear Producto';
@@ -238,7 +260,7 @@ async function guardarProducto(e) {
     }
 }
 
-// 🗑️ Delete Product - unchanged
+// 🗑️ Delete Product
 async function eliminarProducto(id) {
     if (!confirm('¿Eliminar este producto?')) return;
     try {
@@ -250,7 +272,7 @@ async function eliminarProducto(id) {
     }
 }
 
-// 💰 Discount - unchanged
+// 💰 Discount
 async function aplicarDescuentoProducto(id, descuentoActual) {
     const descuento = prompt('Nuevo descuento % (0-100):', descuentoActual || '0');
     if (descuento === null || isNaN(descuento) || descuento < 0 || descuento > 100) return;
@@ -268,7 +290,7 @@ async function aplicarDescuentoProducto(id, descuentoActual) {
     }
 }
 
-// 📊 Order actions - unchanged
+// 📊 Order actions
 async function cambiarEstado(id, estado) {
     try {
         await fetch(`/pedidos/${id}/${estado.toLowerCase()}`, { method: 'PUT' });
@@ -293,7 +315,7 @@ function filtrarPedidos(estado) {
     cargarPedidos();
 }
 
-// 💾 Backup - unchanged
+// 💾 Backup
 async function exportarInventario() {
     try {
         const res = await fetch('/backup');
@@ -309,7 +331,7 @@ async function exportarInventario() {
     }
 }
 
-// 🔄 Utils - unchanged
+// 🔄 Utils
 function mostrarLoader(container, show) {
     if (show) {
         container.innerHTML = '<div class="text-center py-5"><div class="spinner-border"></div><p>Cargando...</p></div>';
@@ -330,7 +352,7 @@ function mostrarNotificacion(msg) {
     setTimeout(() => notif.remove(), 5000);
 }
 
-// 🔘 Description toggle function - FIXED full text
+// 🔘 Toggle Desc
 window.toggleDesc = function(btn) {
     const textEl = btn.previousElementSibling;
     const fullDesc = textEl.dataset.fullDesc;
@@ -349,7 +371,7 @@ window.toggleDesc = function(btn) {
     }
 };
 
-// 🔘 Limpiar form - unchanged
+// 🔘 Form clear
 document.addEventListener('click', e => {
     if (e.target.matches('[data-action="limpiarForm"]')) {
         document.getElementById('form-producto').reset();
@@ -357,4 +379,3 @@ document.addEventListener('click', e => {
         document.getElementById('titulo-form').textContent = 'Crear Producto';
     }
 });
-
