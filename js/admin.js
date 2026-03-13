@@ -524,6 +524,7 @@ async function generarFacturaPDF(p, numeroPedido) {
 
 // 🆕 Pedido Details Modal
 window.productosModalArr = []; // Global for discount updates
+window.pedidoModalData = null; // Global pedido data (con DescuentoPorcentaje)
 
 async function mostrarDetallesPedido(pedidoId) {
     try {
@@ -535,6 +536,9 @@ async function mostrarDetallesPedido(pedidoId) {
         }
         const p = await res.json();
         console.log('✅ Pedido cargado:', p.PedidoID, p.NombreCliente);
+        
+        // Store full pedido data
+        window.pedidoModalData = p;
         
         // Parse productos → global (safe)
         window.productosModalArr = [];
