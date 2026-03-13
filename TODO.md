@@ -1,14 +1,11 @@
-# 🚀 Fix All Admin Errors - Progress Tracker [0/5]
+# CSP + OneSignal Fix Progress
 
-**Status:** Approved ✅ | Implementing...
+## Plan Steps (from approved plan):
+- [x] Step 1: Fix SyntaxError in js/product-delegation.js
+- [ ] Step 2: Update sw.js to local OneSignal Worker (CSP-safe)
+- [ ] Step 3: Test local files (start tienda.html/admin.html)
+- [ ] Step 4: Server CSP update on Render.com (add https://cdn.onesignal.com)
+- [ ] Step 5: Verify no errors after deployment
 
-## 📋 Implementation Steps
+**Next:** Complete step 2, then test.
 
-### [✅] 1. Remove console spam in js/admin.js (renderizarProducto)
-### [✅] 2. Fix CSP violations - Event delegation for product buttons + js/product-delegation.js  
-### [ ] 3. Fix WebSocket local development detection
-### [ ] 4. Fix OneSignal v16 → stable v15 + timing
-### [ ] 5. Test all fixes + attempt_completion
-
-**Test command:** `start admin.html`  
-**Expected:** Clean console, working buttons, no crashes

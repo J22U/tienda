@@ -19,3 +19,7 @@ document.addEventListener('click', function(e) {
       window.aplicarDescuentoProducto(prodData.ProductoID, prodData.DescuentoPorcentaje || 0);
       break;
   }
+});
+
+console.log('[Admin] Product delegation handler ready ✅');
+

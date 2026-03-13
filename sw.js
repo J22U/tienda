@@ -1,5 +1,5 @@
 /* Trébol Repuestos - OneSignal Compatible Service Worker v2 */
-importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js?v=16.0.0');
+importScripts('./OneSignalSDKWorker.js');
 
 /* Minimal PWA caching - NO fetch interference with OneSignal */
 const CACHE_NAME = 'trebol-pwa-v2';
@@ -41,5 +41,5 @@ self.addEventListener('activate', event => {
 });
 
 /* NO fetch handler - Let OneSignal handle notifications */
-console.log('[SW] Trébol PWA + OneSignal Service Worker loaded ✅');
+console.log('[SW] Trébol PWA + Local OneSignal Service Worker loaded ✅');
 
