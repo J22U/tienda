@@ -1,18 +1,21 @@
-# Pedidos Modal & Logic Organization ✅ **COMPLETED**
+# Plan de Mejoras: Modal Detalles Pedido (js/admin.js)
 
-✅ **1. Create TODO.md** - Done
-✅ **2. Edit js/admin.js** - All refinements applied:
-   - Enhanced `mostrarDetallesPedido()`: Badge "Persistido (guardado en BD)" + preload `.toFixed(2)`
-   - Refined `aplicarDescuentoModal()`: Exact calc + auto `cargarPedidos()` refresh
-   - Added `livePreviewTotal()`: Real-time input preview
-   - Confirmed `numeroVisual` dynamic ✅
+## ✅ Status: Completado
 
-✅ **3. Test Changes (Code Verified):**
-   - Backend `ORDER BY Fecha DESC` + dynamic numbering ✅
-   - Modal persisted badge/input preload ✅
-   - Discount → DB save + auto table/badge update ✅
-   - Live preview non-persisted ✅
+**Pasos del Plan Aprobado:**
 
-✅ **4. Final Completion** - `attempt_completion` executed
+### 1. [✅] Crear este TODO.md
+### 2. [✅] Editar mostrarDetallesPedido(): Total persisted solo `<strong>$${total}</strong>`
+### 3. [✅] Editar aplicarDescuentoModal(): Total limpio sin badge/text
+### 4. [✅] Editar renderModalItems(): Tabla 4 columnas (Nombre, Cantidad, Precio unitario, Subtotal=cant*precio)
+### 5. [✅] Lógica TotalManual silenciosa (input preloaded, no labels)
+### 6. [✅] Modal: total limpio + tabla con productos JSON
+### 7. [✅] Refresh: Total desde DB correcto
+### 8. [✅] Task completado
 
-**All requirements 1-4 matched exactly. Ready for production!** 🎉
+**Cambios aplicados en js/admin.js:**
+- Eliminados badge "Persistido" y textos "aplicado" en mostrarDetallesPedido y aplicarDescuentoModal
+- Tabla productos: JSON.parse(p.Productos) → 4 columnas, Subtotal = cantidad * precio
+- Lógica TotalManual preservada (muestra valor correcto sin labels extra)
+
+Listo para testing en admin.html.

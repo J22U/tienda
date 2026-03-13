@@ -557,11 +557,7 @@ async function mostrarDetallesPedido(pedidoId) {
             descuentoInput.disabled = true; // Locked when persisted
             
             const formattedTotal = Number(p.TotalManual).toLocaleString();
-            modalTotalEl.innerHTML = `
-                <strong>$${formattedTotal}</strong> 
-                <span class="badge bg-success ms-1">Persistido (guardado en BD)</span>
-                <br><small class="text-muted">Descuento: ${p.DescuentoPorcentaje}% aplicado</small>
-            `;
+            modalTotalEl.innerHTML = `<strong>$${formattedTotal}</strong>`;
         } else {
             descuentoInput.disabled = false;
             renderModalItems();
@@ -580,14 +576,12 @@ function renderModalItems() {
     const productosArr = window.productosModalArr;
     const tbody = document.querySelector('#modalItemsTable tbody');
     tbody.innerHTML = productosArr.map((item, idx) => {
-        const precioFinal = Number(item.Precio) * (1 - (item.DescuentoPorcentaje || 0)/100);
-        const subtotal = item.cantidad * precioFinal;
+        const subtotal = item.cantidad * Number(item.Precio);
         return `
             <tr data-producto-index="${idx}">
                 <td>${item.Nombre}</td>
                 <td>${item.cantidad}</td>
                 <td>$${Number(item.Precio).toLocaleString()}</td>
-                <td>${(item.DescuentoPorcentaje || 0)}%</td>
                 <td><strong>$${subtotal.toLocaleString()}</strong></td>
             </tr>`;
     }).join('');
@@ -642,13 +636,9 @@ window.aplicarDescuentoModal = async function() {
         
         const data = await res.json();
         
-        // ✅ Update modal total with persisted badge
+        // ✅ Update modal total (clean)
         const formattedManual = Number(data.totalManual).toLocaleString();
-        document.getElementById('modalTotal').innerHTML = `
-            <strong>$${formattedManual}</strong>
-            <span class="badge bg-success ms-1">Persistido (guardado en BD)</span>
-            <br><small class="text-muted">Descuento: ${descuento.toFixed(2)}%</small>
-        `;
+        document.getElementById('modalTotal').innerHTML = `<strong>$${formattedManual}</strong>`;
         
         input.disabled = true; // Lock after persist
         
