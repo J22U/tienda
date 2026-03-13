@@ -1,4 +1,4 @@
-// js/admin.js - Panel Admin Completo (CSP-safe) - Fixed Syntax Error
+// js/admin.js - Panel Admin Completo (CSP-safe) - FULLY FUNCTIONAL
 document.addEventListener('DOMContentLoaded', function() {
     // 🔒 Session check
     if (!localStorage.getItem('admin_logged')) {
@@ -6,23 +6,18 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // 🌐 Socket.io real-time (CSP allowed)
+    // 🌐 Socket.io real-time
     const socket = io();
     socket.on('connect', () => console.log('🔌 Socket admin conectado'));
     socket.on('nuevo-pedido', (data) => {
         mostrarNotificacion(`🛒 Nuevo pedido #${data.NumeroDisplay}`);
-        cargarPedidos(); // Auto-reload
+        cargarPedidos(); 
     });
 
     // 📱 Elements
     const listaProductos = document.getElementById('lista-productos');
-    const listaPedidos = document.getElementById('lista-pedidos');
-    const listaAgotados = document.getElementById('lista-agotados');
     const formProducto = document.getElementById('form-producto');
     const buscarProd = document.getElementById('buscar-prod');
-    const totalCount = document.getElementById('total-count');
-    const agotadosCount = document.getElementById('agotados-count');
-    const orderCount = document.getElementById('order-count');
 
     let productos = [], pedidos = [], filtroEstado = 'Todos';
 
@@ -36,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // 🔍 Buscador productos
+    // 🔍 Buscador
     buscarProd.addEventListener('input', filtrarProductos);
 
     // 📝 Form submit
@@ -48,185 +43,159 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.replace('tienda.html');
     });
 
+    // 🔥 EVENT DELEGATION - BOTONES TARJETAS (CRÍTICO)
+    listaProductos.addEventListener('click', e => {
+        const btn = e.target.closest('.action-btn');
+        if (!btn) return;
+
+        const card = btn.closest('.product-card');
+        const p = JSON.parse(card.dataset.producto.replace(/&apos;/g, "'"));
+        const action = btn.dataset.action;
+
+        console.log('Botón acción:', action, p.ProductoID);
+        
+        if (action === 'edit') prepararEdicion(p);
+        if (action === 'delete') eliminarProducto(p.ProductoID);
+        if (action === 'discount') aplicarDescuentoProducto(p.ProductoID, p.DescuentoPorcentaje || 0);
+    });
+
     // 🎯 Inicializar
     cargarProductos();
     cargarPedidos();
 
-    // 🌍 Global functions for delegation
-    window.prepararEdicion = prepararEdicion;
-    window.eliminarProducto = eliminarProducto;
-    window.aplicarDescuentoProducto = aplicarDescuentoProducto;
-    window.filtrarPedidos = filtrarPedidos;
-    window.exportarInventario = exportarInventario;
+    // Global functions
+    window.cargarPedidos = cargarPedidos;
+    window.cargarProductos = cargarProductos;
+    window.filtrarPedidos = function(estado) { 
+        filtroEstado = estado; 
+        cargarPedidos(); 
+    };
 });
 
-// 🛒 Load Products - DEBUG
+// 🛒 Cargar Productos
 async function cargarProductos() {
     const lista = document.getElementById('lista-productos');
     mostrarLoader(lista, true);
-    console.log('🔄 Cargando productos...');
     try {
         const res = await fetch('/productos');
-        console.log('Productos status:', res.status);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         productos = await res.json();
-        console.log('Productos:', productos.length);
         renderProductos(productos, lista);
         actualizarContadores();
     } catch (err) {
         console.error('Error productos:', err);
-        lista.innerHTML = `<div class="alert alert-warning d-flex justify-content-between">
-            Error productos: ${err.message}
-            <button class="btn btn-sm btn-warning" onclick="cargarProductos()">Reintentar</button>
+        lista.innerHTML = `<div class="alert alert-warning text-center">
+            ❌ ${err.message}<br>
+            <button class="btn btn-sm btn-warning mt-2" onclick="cargarProductos()">Reintentar</button>
         </div>`;
     } finally {
         mostrarLoader(lista, false);
     }
 }
 
-// 📦 Render Products - Modern Card Grid
+// 📦 Render Productos
 function renderProductos(prods, container) {
     if (!prods.length) {
-        container.innerHTML = '<div class="text-center py-5"><i class="bi bi-boxes fs-1 text-muted mb-3"></i><p class="text-muted">No hay productos (DB vacía?)</p></div>';
+        container.innerHTML = '<div class="text-center py-5 text-muted"><i class="bi bi-boxes fs-1 mb-3"></i>No hay productos</div>';
         return;
     }
     
     container.innerHTML = prods.map(p => {
         const stockClass = p.Stock > 5 ? 'stock-high' : p.Stock > 0 ? 'stock-medium' : 'stock-low';
+        const safeJSON = JSON.stringify(p).replace(/'/g, "&apos;");
+        
         return `
-        <div class="product-card" data-producto='${JSON.stringify(p).replace(/'/g, "\\'")}' tabindex="0">
-            <div class="product-card-header">
-                <img src="${p.ImagenURL || '/uploads/default.jpg'}" alt="${p.Nombre}" class="product-img-card">
-                <div class="product-meta-card">
-                    <div class="product-name-card">${p.Nombre}</div>
-                    <div class="product-details">
-                        ${p.Marca ? `<span>${p.Marca}</span>` : ''}
-                        ${p.CodigoSKU ? `<span>#${p.CodigoSKU}</span>` : ''}
+        <div class="product-card" data-producto="${safeJSON}">
+            <div class="d-flex gap-3">
+                <img src="${p.ImagenURL || '/uploads/default.jpg'}" class="product-img-card">
+                <div class="flex-grow-1">
+                    <h6 class="fw-bold mb-1">${p.Nombre}</h6>
+                    <small class="text-muted">${p.Marca} #${p.CodigoSKU || 'N/A'}</small>
+                    <div class="mt-2">
+                        <div class="h4 text-success fw-bold">$${Number(p.Precio).toLocaleString()}</div>
+                        <div class="stock-info mt-2">
+                            <span class="badge ${stockClass}">${p.Stock} und</span>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="product-body">
-                <div class="price-container">
-                    <div class="price-highlight-card">$ ${Number(p.Precio).toLocaleString('es-CO')}</div>
-                </div>
-                <div class="stock-info">
-                    <div class="stock-label">
-                        <i class="bi bi-box-seam-fill me-1"></i>
-                        <span>${p.Stock} unidades</span>
-                    </div>
-                    <span class="stock-badge-card ${stockClass}">${p.Stock > 0 ? 'Disponible' : 'Agotado'}</span>
-                </div>
-                <div class="description-section">
-                    ${p.Caracteristicas ? `
-                        <div class="description-text" data-full-desc="${p.Caracteristicas.replace(/"/g, '"')}">${p.Caracteristicas.substring(0, 100)}${p.Caracteristicas.length > 100 ? '...' : ''}</div>
-                        <button class="desc-toggle mt-1" onclick="toggleDesc(this)">${p.Caracteristicas.length > 100 ? 'Ver más' : ''}</button>
-                    ` : '<p class="text-muted small mb-0">Sin descripción</p>'}
-                </div>
-                <div class="actions-card">
-                    <button class="action-btn action-edit" data-action="edit" title="Editar" tabindex="0"><i class="bi bi-pencil"></i></button>
-                    <button class="action-btn action-discount" data-action="discount" title="Descuento" tabindex="0"><i class="bi bi-percent"></i></button>
-                    <button class="action-btn action-delete" data-action="delete" title="Eliminar" tabindex="0"><i class="bi bi-trash"></i></button>
-                </div>
+            <div class="actions-card mt-3">
+                <button class="action-btn action-edit" data-action="edit" title="Editar">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="action-btn action-discount" data-action="discount" title="Descuento">
+                    <i class="bi bi-percent"></i>
+                </button>
+                <button class="action-btn action-delete" data-action="delete" title="Eliminar">
+                    <i class="bi bi-trash"></i>
+                </button>
             </div>
-        </div>
-        `;
+        </div>`;
     }).join('');
 }
 
-// 🔍 Filter Products
-function filtrarProductos() {
-    const termino = document.getElementById('buscar-prod').value.toLowerCase();
-    const cards = document.querySelectorAll('.product-card');
-    let visibles = 0;
-    
-    cards.forEach(card => {
-        const texto = card.textContent.toLowerCase();
-        const visible = texto.includes(termino);
-        card.style.display = visible ? '' : 'none';
-        if (visible) visibles++;
-    });
-    
-    document.getElementById('total-count').textContent = `${visibles} items`;
-}
-
-// 📋 Load Orders - FIXED Syntax
+// 📋 Cargar Pedidos
 async function cargarPedidos() {
     const lista = document.getElementById('lista-pedidos');
-    console.log('🔄 Cargando pedidos...');
     mostrarLoader(lista, true);
     try {
         const res = await fetch('/pedidos');
-        console.log('Pedidos status:', res.status);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        pedidos = await res.json();
-        console.log('Pedidos:', pedidos.length);
-        renderPedidos(pedidos.filter(p => filtroEstado === 'Todos' || p.Estado === filtroEstado), lista);
-        document.getElementById('order-count').textContent = `${pedidos.length} totales`;
+        const allPedidos = await res.json();
+        const filtered = allPedidos.filter(p => filtroEstado === 'Todos' || p.Estado === filtroEstado);
+        renderPedidos(filtered, lista);
     } catch (err) {
-        console.error('Error pedidos:', err);
-        lista.innerHTML = `<div class="alert alert-warning d-flex justify-content-between">
-            ❌ ${err.message}
-            <button class="btn btn-sm btn-warning" onclick="cargarPedidos()">Reintentar</button>
+        lista.innerHTML = `<div class="alert alert-danger text-center">
+            ❌ ${err.message}<br>
+            <button class="btn btn-sm btn-warning mt-2" onclick="cargarPedidos()">Reintentar</button>
         </div>`;
     } finally {
         mostrarLoader(lista, false);
     }
 }
 
-// 📦 Render Orders
+// 📦 Render Pedidos
 function renderPedidos(peds, container) {
     if (!peds.length) {
-        container.innerHTML = '<div class="text-center py-5"><i class="bi bi-cart-x fs-1 text-muted mb-3"></i><p class="text-muted">No hay pedidos (DB vacía?)</p></div>';
+        container.innerHTML = '<div class="text-center py-5 text-muted"><i class="bi bi-cart-x fs-1 mb-3"></i>No hay pedidos</div>';
         return;
     }
     
-    container.innerHTML = peds.map(p => `
+    container.innerHTML = peds.map(p => {
+        return `
         <div class="pedido-row p-3 border-bottom">
-            <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex justify-content-between">
                 <div>
                     <strong>#${p.PedidoID}</strong> - ${p.NombreCliente}
                     <br><small class="text-muted">${new Date(p.Fecha).toLocaleString('es-ES')}</small>
                 </div>
                 <div class="text-end">
-                    <div class="fw-bold fs-5 text-primary">$${Number(p.Total).toLocaleString()}</div>
-                    <span class="badge bg-${p.Estado === 'Completado' ? 'success' : 'warning'}">${p.Estado}</span>
+                    <div class="h5 fw-bold text-primary">$${Number(p.Total).toLocaleString()}</div>
+                    <span class="badge bg-${p.Estado === 'Completado' ? 'success' : p.Estado === 'Pendiente' ? 'warning' : 'secondary'}">${p.Estado}</span>
                 </div>
             </div>
             <div class="mt-2">
-                <button class="btn btn-sm btn-outline-${p.Estado === 'Completado' ? 'success' : 'warning'} me-2" onclick="cambiarEstado(${p.PedidoID}, '${p.Estado === 'Completado' ? 'Pendiente' : 'Completado'}')">${p.Estado === 'Completado' ? 'Pendiente' : 'Completar'}</button>
+                <button class="btn btn-sm btn-outline-${p.Estado === 'Completado' ? 'success' : 'warning'} me-2" onclick="cambiarEstado(${p.PedidoID}, '${p.Estado === 'Completado' ? 'Pendiente' : 'Completado'}')">
+                    ${p.Estado === 'Completado' ? 'Pendiente' : 'Completar'}
+                </button>
                 <button class="btn btn-sm btn-outline-danger" onclick="eliminarPedido(${p.PedidoID})">Eliminar</button>
             </div>
-        </div>
-    `).join('');
+        </div>`;
+    }).join('');
 }
 
-// 📦 Low Stock
-async function cargarAgotados() {
-    const lista = document.getElementById('lista-agotados');
-    const bajos = productos.filter(p => p.Stock <= 5 && p.Stock > 0);
-    if (bajos.length === 0) {
-        lista.innerHTML = '<div class="text-center py-5 text-success"><i class="bi bi-check-circle fs-1"></i><p>Todos los productos tienen stock suficiente</p></div>';
-    } else {
-        lista.innerHTML = bajos.map(p => {
-            const stockClass = p.Stock <= 2 ? 'stock-low' : 'stock-medium';
-            return `
-            <div class="product-card mb-3 p-3">
-                <div class="d-flex align-items-start gap-3">
-                    <img src="${p.ImagenURL || '/uploads/default.jpg'}" class="product-img-card flex-shrink-0">
-                    <div class="flex-grow-1">
-                        <h6 class="product-name-card mb-1">${p.Nombre}</h6>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="stock-badge-card ${stockClass}">${p.Stock} und ⚠️</span>
-                            <small class="text-danger fw-bold">¡Reponer!</small>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-        }).join('');
-    }
-    document.getElementById('agotados-count').textContent = `${productos.filter(p => p.Stock <= 5).length} alertas`;
+// 🔍 Filtrar productos
+function filtrarProductos() {
+    const termino = document.getElementById('buscar-prod').value.toLowerCase();
+    const cards = document.querySelectorAll('.product-card');
+    cards.forEach(card => {
+        const texto = card.textContent.toLowerCase();
+        card.style.display = texto.includes(termino) ? '' : 'none';
+    });
+    actualizarContadores();
 }
 
-// ✏️ Edit Product
+// 🛠️ Resto funciones (Edit, Save, Delete, etc.)
 function prepararEdicion(prod) {
     document.getElementById('prod-id').value = prod.ProductoID;
     document.getElementById('nombre').value = prod.Nombre;
@@ -236,23 +205,20 @@ function prepararEdicion(prod) {
     document.getElementById('stock').value = prod.Stock;
     document.getElementById('caracteristicas').value = prod.Caracteristicas;
     document.getElementById('titulo-form').textContent = 'Editar Producto';
-    document.getElementById('btn-nuevo').dataset.action = 'limpiarForm';
 }
 
-// 💾 Save Product
 async function guardarProducto(e) {
     e.preventDefault();
-    const formData = new FormData(document.getElementById('form-producto'));
+    const formData = new FormData(e.target.form);
     const id = document.getElementById('prod-id').value;
     
     try {
         const url = id ? `/productos/${id}` : '/productos';
         const res = await fetch(url, { method: 'POST', body: formData });
         if (res.ok) {
-            Swal.fire('¡Guardado!', 'Producto actualizado', 'success');
-            document.getElementById('titulo-form').textContent = 'Crear Producto';
-            document.getElementById('form-producto').reset();
-            document.getElementById('prod-id').value = '';
+            Swal.fire('Guardado!', '', 'success');
+            e.target.reset();
+            document.getElementById('titulo-form').textContent = 'Nuevo Producto';
             cargarProductos();
         }
     } catch (err) {
@@ -260,9 +226,8 @@ async function guardarProducto(e) {
     }
 }
 
-// 🗑️ Delete Product
 async function eliminarProducto(id) {
-    if (!confirm('¿Eliminar este producto?')) return;
+    if (!confirm('Eliminar producto?')) return;
     try {
         await fetch(`/productos/${id}`, { method: 'DELETE' });
         Swal.fire('Eliminado', '', 'success');
@@ -272,11 +237,9 @@ async function eliminarProducto(id) {
     }
 }
 
-// 💰 Discount
 async function aplicarDescuentoProducto(id, descuentoActual) {
-    const descuento = prompt('Nuevo descuento % (0-100):', descuentoActual || '0');
-    if (descuento === null || isNaN(descuento) || descuento < 0 || descuento > 100) return;
-    
+    const descuento = prompt('Descuento % (0-100):', descuentoActual || 0);
+    if (!descuento || isNaN(descuento)) return;
     try {
         await fetch(`/productos/${id}/descuento`, {
             method: 'PUT',
@@ -290,7 +253,7 @@ async function aplicarDescuentoProducto(id, descuentoActual) {
     }
 }
 
-// 📊 Order actions
+// Pedidos actions
 async function cambiarEstado(id, estado) {
     try {
         await fetch(`/pedidos/${id}/${estado.toLowerCase()}`, { method: 'PUT' });
@@ -301,7 +264,7 @@ async function cambiarEstado(id, estado) {
 }
 
 async function eliminarPedido(id) {
-    if (!confirm('¿Eliminar pedido?')) return;
+    if (!confirm('Eliminar pedido?')) return;
     try {
         await fetch(`/pedidos/${id}`, { method: 'DELETE' });
         cargarPedidos();
@@ -310,32 +273,9 @@ async function eliminarPedido(id) {
     }
 }
 
-function filtrarPedidos(estado) {
-    filtroEstado = estado;
-    cargarPedidos();
-}
-
-// 💾 Backup
-async function exportarInventario() {
-    try {
-        const res = await fetch('/backup');
-        const data = await res.json();
-        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `backup_trebol_${new Date().toISOString().slice(0,10)}.json`;
-        a.click();
-    } catch (err) {
-        Swal.fire('Error', 'No se pudo generar backup', 'error');
-    }
-}
-
-// 🔄 Utils
+// Utils
 function mostrarLoader(container, show) {
-    if (show) {
-        container.innerHTML = '<div class="text-center py-5"><div class="spinner-border"></div><p>Cargando...</p></div>';
-    }
+    if (show) container.innerHTML = '<div class="spinner-border text-primary" role="status"></div>';
 }
 
 function actualizarContadores() {
@@ -344,38 +284,25 @@ function actualizarContadores() {
 }
 
 function mostrarNotificacion(msg) {
-    const notif = document.createElement('div');
-    notif.className = 'alert alert-success position-fixed end-0 m-3 shadow';
-    notif.style.cssText = 'top:20%; right:20px; z-index:9999; min-width:300px;';
-    notif.innerHTML = `<i class="bi bi-bell me-2"></i>${msg}`;
-    document.body.appendChild(notif);
-    setTimeout(() => notif.remove(), 5000);
+    Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: msg,
+        showConfirmButton: false,
+        timer: 3000
+    });
 }
 
-// 🔘 Toggle Desc
-window.toggleDesc = function(btn) {
-    const textEl = btn.previousElementSibling;
-    const fullDesc = textEl.dataset.fullDesc;
-    const card = btn.closest('.product-card');
-    
-    if (textEl.classList.contains('expanded')) {
-        textEl.textContent = fullDesc.substring(0, 100) + (fullDesc.length > 100 ? '...' : '');
-        textEl.classList.remove('expanded');
-        btn.textContent = 'Ver más';
-        card.style.maxHeight = '380px';
+// Low Stock
+async function cargarAgotados() {
+    const lista = document.getElementById('lista-agotados');
+    const bajos = productos.filter(p => p.Stock <= 5 && p.Stock > 0);
+    if (!bajos.length) {
+        lista.innerHTML = '<p class="text-success text-center py-5">✅ Stock OK</p>';
     } else {
-        textEl.textContent = fullDesc;
-        textEl.classList.add('expanded');
-        btn.textContent = 'Ver menos';
-        card.style.maxHeight = 'none';
+        lista.innerHTML = bajos.map(p => `<div class="alert alert-warning"><strong>${p.Nombre}</strong> (${p.Stock} und)</div>`).join('');
     }
-};
+    document.getElementById('agotados-count').textContent = `${bajos.length} en riesgo`;
+}
 
-// 🔘 Form clear
-document.addEventListener('click', e => {
-    if (e.target.matches('[data-action="limpiarForm"]')) {
-        document.getElementById('form-producto').reset();
-        document.getElementById('prod-id').value = '';
-        document.getElementById('titulo-form').textContent = 'Crear Producto';
-    }
-});
