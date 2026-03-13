@@ -1233,11 +1233,19 @@ async function createServerSession() {
 }
 
 async function verificarSesion() {
+    // Prevent infinite loop: Skip if ?view=admin param
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('view') === 'admin') {
+        console.log('[AdminSession] ?view=admin param - force stay on admin');
+        return;
+    }
+    
     // 1. Check local session (now permanent)
     if (!isSessionValid()) {
-        console.log('[AdminSession] Local session invalid → logout');
+        console.log('[AdminSession] Local session invalid → to tienda');
         localStorage.removeItem('admin_logged');
-        window.location.replace('tienda.html');
+        localStorage.removeItem('admin_session');
+        window.location.replace('tienda.html?view=store');
         return;
     }
     
@@ -1256,9 +1264,10 @@ async function verificarSesion() {
     }
     
     if (!serverOk) {
-        console.log('❌ Server session failed → logout');
-        localStorage.clear();
-        window.location.replace('tienda.html');
+        console.log('❌ Server session failed → to tienda');
+        localStorage.removeItem('admin_logged');
+        localStorage.removeItem('admin_session');
+        window.location.replace('tienda.html?view=store');
         return;
     }
     

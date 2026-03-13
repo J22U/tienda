@@ -507,12 +507,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
     const viewStore = urlParams.get('view');
 
-    // Only auto-login to admin if user is NOT explicitly viewing the store
-    // This allows admin to view the store without logging out
-    if (viewStore !== 'store') {
-        autoLoginIfValid();
+    // Prevent infinite loop: Check BOTH conditions
+    // Skip auto-login if: ?view=store OR no valid admin session
+    if (viewStore !== 'store' && localStorage.getItem('admin_logged') === 'true') {
+        if (isSessionValid()) {
+            console.log('[Session] Valid admin session - redirecting to admin.html');
+            window.location.replace('admin.html');
+        } else {
+            console.log('[Session] admin_logged=true but invalid session - clearing');
+            localStorage.removeItem('admin_logged');
+            localStorage.removeItem('admin_session');
+        }
     } else {
-        console.log('[Session] User explicitly viewing store - skipping auto-login');
+        console.log('[Session] Viewing store (?view=store or no session) - no redirect');
     }
 
     // ============================================================================
