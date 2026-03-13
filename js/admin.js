@@ -125,7 +125,6 @@ async function cargarProductos() {
             ❌ ${err.message}<br>
             <button class="btn btn-sm btn-warning mt-2" onclick="cargarProductos()">Reintentar</button>
         </div>`;
-        document.getElementById('order-count').textContent = `${filtered.length} pedidos`;
     } finally {
         mostrarLoader(lista, false);
     }
@@ -141,33 +140,31 @@ function renderProductos(prods, container) {
     container.innerHTML = prods.map(p => {
         const stockClass = p.Stock > 5 ? 'stock-high' : p.Stock > 0 ? 'stock-medium' : 'stock-low';
         const safeJSON = JSON.stringify(p).replace(/'/g, "&apos;");
-        const safePedidosJSON = JSON.stringify(p).replace(/'/g, "&apos;");
         
         return `
-        <div class="pedido-row p-3 border-bottom cursor-pointer" data-pedido-id="${p.PedidoID}" data-pedido='${safePedidosJSON}'>
-            <div class="d-flex justify-content-between">
-                <div>
-                    <strong>#${p.NumeroDisplay || p.PedidoID}</strong> - ${p.NombreCliente}
-                    <br><small class="text-muted">${new Date(p.Fecha).toLocaleString('es-ES')}</small>
-                </div>
-                <div class="text-end">
-                    <div class="h5 fw-bold text-primary">$${Number(p.Total).toLocaleString()}</div>
-                    <span class="badge bg-${p.Estado === 'Completado' ? 'success' : p.Estado === 'Pendiente' ? 'warning' : 'secondary'}">${p.Estado}</span>
+        <div class="product-card" data-producto="${safeJSON}">
+            <div class="d-flex gap-3">
+                <img src="${p.ImagenURL || '/uploads/default.jpg'}" class="product-img-card">
+                <div class="flex-grow-1">
+                    <h6 class="fw-bold mb-1">${p.Nombre}</h6>
+                    <small class="text-muted">${p.Marca} #${p.CodigoSKU || 'N/A'}</small>
+                    <div class="mt-2">
+                        <div class="h4 text-success fw-bold">$${Number(p.Precio).toLocaleString()}</div>
+                        <div class="stock-info mt-2">
+                            <span class="badge ${stockClass}">${p.Stock} und</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="mt-2">
-                <button class="btn btn-sm btn-outline-${btnClass} me-1 pedido-btn-status" 
-                        data-pedido-id="${p.PedidoID}" 
-                        data-new-estado="${newEstado}">
-                    ${btnText}
+            <div class="actions-card mt-3">
+                <button class="action-btn action-edit" data-action="edit" title="Editar">
+                    <i class="bi bi-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-primary me-1 pedido-btn-factura" 
-                        data-pedido-id="${p.PedidoID}">
-                    <i class="bi bi-file-earmark-pdf me-1"></i>Factura
+                <button class="action-btn action-discount" data-action="discount" title="Descuento">
+                    <i class="bi bi-percent"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-danger pedido-btn-delete" 
-                        data-pedido-id="${p.PedidoID}">
-                    Eliminar
+                <button class="action-btn action-delete" data-action="delete" title="Eliminar">
+                    <i class="bi bi-trash"></i>
                 </button>
             </div>
         </div>`;
