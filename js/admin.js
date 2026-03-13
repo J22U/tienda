@@ -151,7 +151,13 @@ function renderProductos(prods, container) {
                     <h6 class="fw-bold mb-1">${p.Nombre}</h6>
                     <small class="text-muted">${p.Marca} #${p.CodigoSKU || 'N/A'}</small>
                     <div class="mt-2">
-                        <div class="h4 text-success fw-bold">$${Number(p.Precio).toLocaleString()}</div>
+                        ${p.DescuentoPorcentaje && p.DescuentoPorcentaje > 0 ? `
+                            <div class="text-decoration-line-through text-muted fs-6 mb-1">$${Number(p.Precio).toLocaleString()}</div>
+                            <div class="h4 text-success fw-bold mb-1">$${Number(p.Precio * (1 - p.DescuentoPorcentaje / 100)).toLocaleString()}
+                                <small class="badge bg-success ms-1">${p.DescuentoPorcentaje}% OFF</small>
+                            </div>` : `
+                            <div class="h4 text-success fw-bold">$${Number(p.Precio).toLocaleString()}</div>`
+                        }
                         <div class="stock-info mt-2">
                             <span class="badge ${stockClass}">${p.Stock} und</span>
                         </div>
@@ -182,10 +188,10 @@ async function cargarPedidos() {
         const res = await fetch('/pedidos');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         let allPedidos = await res.json();
-        // 🔄 Sort by NumeroDisplay DESC (highest # first)
+        // 🔄 Sort DESC - highest NumeroDisplay (latest=4) first
         allPedidos.sort((a, b) => {
-            const numA = parseInt(a.NumeroDisplay || a.PedidoID) || 0;
-            const numB = parseInt(b.NumeroDisplay || b.PedidoID) || 0;
+            const numA = parseInt(a.NumeroDisplay || '0');
+            const numB = parseInt(b.NumeroDisplay || '0');
             return numB - numA;
         });
         const filtered = allPedidos.filter(p => (window.filtroEstado || 'Todos') === 'Todos' || p.Estado === (window.filtroEstado || 'Todos'));
