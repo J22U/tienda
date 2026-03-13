@@ -579,11 +579,13 @@ async function mostrarDetallesPedido(pedidoId) {
         descuentoInput.dataset.productoId = '';
         descuentoInput.value = '';
         
-        // Total limpio siempre
+        // Total limpio + mostrar descuento aplicado
         const formattedTotal = Number(p.TotalManual || p.Total).toLocaleString();
-        modalTotalEl.innerHTML = `<strong>$${formattedTotal}</strong>`;
+        const descuentoBadge = p.DescuentoPorcentaje > 0 ? `<br><small class="badge bg-warning">Descuento ${p.DescuentoPorcentaje}% aplicado</small>` : '';
+        modalTotalEl.innerHTML = `<strong>$${formattedTotal}</strong>${descuentoBadge}`;
         
-        descuentoInput.disabled = false;
+        descuentoInput.value = p.DescuentoPorcentaje || '';
+        descuentoInput.disabled = p.DescuentoPorcentaje > 0;
         renderModalItems();
         descuentoInput.addEventListener('input', livePreviewTotal);
         
