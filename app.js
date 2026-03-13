@@ -635,16 +635,20 @@ app.get('/unread-count', async (req, res) => {
 
 // 🔐 NUEVO LOGIN JWT (FASE 1)
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
-const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH || '$2a$10$bqrTKR9SvU.avboEhp6tdex8xCcA.0XnIJ/7A87ak8m12il7KPK7a'; // newpass123
+const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH || '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'; // bcrypt("password") Fallback - CAMBIAR
 
 app.post('/api/login', async (req, res) => {
   const { user, pass } = req.body;
+  
+  console.log('🔐 Login attempt:', { user: user?.substring(0,3)+'***' });
   
   if (user !== ADMIN_USER) {
     return res.status(401).json({ error: 'Usuario inválido' });
   }
   
   const valid = await bcrypt.compare(pass, ADMIN_PASS_HASH);
+  console.log('🔐 bcrypt.compare result:', valid);
+  
   if (!valid) {
     return res.status(401).json({ error: 'Contraseña inválida' });
   }
