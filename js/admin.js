@@ -1,4 +1,4 @@
-// js/admin.js - Panel Admin Completo (CSP-safe)
+// js/admin.js - Panel Admin Completo (CSP-safe) - Updated for Screenshot Layout
 document.addEventListener('DOMContentLoaded', function() {
     // 🔒 Session check
     if (!localStorage.getItem('admin_logged')) {
@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let productos = [], pedidos = [], filtroEstado = 'Todos';
 
     // 🎛️ Tabs
-    document.querySelectorAll('[data-bs-toggle=\"pill\"]').forEach(btn => {
+    document.querySelectorAll('[data-bs-toggle="pill"]').forEach(btn => {
         btn.addEventListener('shown.bs.tab', (e) => {
             const tab = e.target.dataset.tab;
             if (tab === 'inventario') cargarProductos();
@@ -71,36 +71,36 @@ async function cargarProductos() {
         renderProductos(productos, lista);
         actualizarContadores();
     } catch (err) {
-        lista.innerHTML = `<div class=\"alert alert-warning\">Error cargando productos: ${err.message}</div>`;
+        lista.innerHTML = `<div class="alert alert-warning">Error cargando productos: ${err.message}</div>`;
     } finally {
         mostrarLoader(lista, false);
     }
 }
 
-// 📦 Render Products
+// 📦 Render Products - Fixed for Screenshot Layout
 function renderProductos(prods, container) {
     if (!prods.length) {
-        container.innerHTML = '<div class=\"text-center py-5\"><i class=\"bi bi-boxes fs-1 text-muted mb-3\"></i><p class=\"text-muted\">No hay productos</p></div>';
+        container.innerHTML = '<div class="text-center py-5"><i class="bi bi-boxes fs-1 text-muted mb-3"></i><p class="text-muted">No hay productos</p></div>';
         return;
     }
     
     container.innerHTML = prods.map(p => `
-data-producto='${JSON.stringify(p).replace(/&#39;/g,"'").replace(/\n/g," ")}'
-            <div class=\"flex-shrink-0\">
-                <img src=\"${p.ImagenURL || '/uploads/default.jpg'}\" class=\"rounded\" style=\"width:60px;height:60px;object-fit:cover;\">
+        <div class="product-row" data-producto='${JSON.stringify(p).replace(/'/g, "\\'")}'>
+            <div class="actions-left">
+                <button class="action-btn btn btn-sm btn-outline-primary me-1" data-action="edit" title="Editar"><i class="bi bi-pencil"></i></button>
+                <button class="action-btn btn btn-sm btn-outline-danger me-1" data-action="delete" title="Eliminar"><i class="bi bi-trash"></i></button>
+                <button class="action-btn btn btn-sm btn-outline-warning" data-action="discount" title="Descuento"><i class="bi bi-percent"></i></button>
             </div>
-            <div class=\"flex-grow-1 ms-3\">
-                <div class=\"fw-bold\">${p.Nombre}</div>
-                <small class=\"text-muted\">${p.Marca} ${p.CodigoSKU ? '|' + p.CodigoSKU : ''}</small>
+            <div class="product-img flex-shrink-0 ms-2">
+                <img src="${p.ImagenURL || '/uploads/default.jpg'}" class="rounded" style="width:50px;height:50px;object-fit:cover;">
             </div>
-            <div class=\"text-end\">
-                <div class=\"fw-bold text-success fs-5\">$${Number(p.Precio).toLocaleString()}</div>
-                <small class=\"badge ${p.Stock > 5 ? 'bg-success' : p.Stock > 0 ? 'bg-warning' : 'bg-danger'}\">${p.Stock} und</small>
+            <div class="product-info flex-grow-1 ps-2">
+                <div class="product-name fw-bold">${p.Nombre}</div>
+                <small class="text-muted product-meta">${p.Marca || ''} ${p.CodigoSKU ? '| ' + p.CodigoSKU : ''}</small>
             </div>
-            <div class=\"ms-3\">
-                <button class=\"action-btn btn btn-sm btn-outline-primary me-1\" data-action=\"edit\"><i class=\"bi bi-pencil\"></i></button>
-                <button class=\"action-btn btn btn-sm btn-outline-danger me-1\" data-action=\"delete\"><i class=\"bi bi-trash\"></i></button>
-                <button class=\"action-btn btn btn-sm btn-outline-warning\" data-action=\"discount\"><i class=\"bi bi-percent\"></i></button>
+            <div class="product-right text-end pe-2">
+                <div class="price-highlight fw-bold fs-5">$ ${Number(p.Precio).toLocaleString('es-CO')}</div>
+                <small class="badge stock-badge ${p.Stock > 5 ? 'bg-success' : p.Stock > 0 ? 'bg-warning' : 'bg-danger'}">${p.Stock} und</small>
             </div>
         </div>
     `).join('');
@@ -122,7 +122,7 @@ function filtrarProductos() {
     document.getElementById('total-count').textContent = `${visibles} items`;
 }
 
-// 📋 Load Orders
+// 📋 Load Orders - unchanged
 async function cargarPedidos() {
     const lista = document.getElementById('lista-pedidos');
     mostrarLoader(lista, true);
@@ -133,51 +133,51 @@ async function cargarPedidos() {
         renderPedidos(pedidos.filter(p => filtroEstado === 'Todos' || p.Estado === filtroEstado), lista);
         document.getElementById('order-count').textContent = `${pedidos.length} recibidos`;
     } catch (err) {
-        lista.innerHTML = `<div class=\"alert alert-warning\">Error cargando pedidos: ${err.message}</div>`;
+        lista.innerHTML = `<div class="alert alert-warning">Error cargando pedidos: ${err.message}</div>`;
     } finally {
         mostrarLoader(lista, false);
     }
 }
 
-// 📦 Render Orders
+// 📦 Render Orders - unchanged
 function renderPedidos(peds, container) {
     if (!peds.length) {
-        container.innerHTML = '<div class=\"text-center py-5\"><i class=\"bi bi-cart-x fs-1 text-muted mb-3\"></i><p class=\"text-muted\">No hay pedidos</p></div>';
+        container.innerHTML = '<div class="text-center py-5"><i class="bi bi-cart-x fs-1 text-muted mb-3"></i><p class="text-muted">No hay pedidos</p></div>';
         return;
     }
     
     container.innerHTML = peds.map(p => `
-        <div class=\"pedido-row p-3 border-bottom\">
-            <div class=\"d-flex justify-content-between align-items-center\">
+        <div class="pedido-row p-3 border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
                 <div>
                     <strong>#${p.PedidoID}</strong> - ${p.NombreCliente}
-                    <br><small class=\"text-muted\">${new Date(p.Fecha).toLocaleString('es-ES')}</small>
+                    <br><small class="text-muted">${new Date(p.Fecha).toLocaleString('es-ES')}</small>
                 </div>
-                <div class=\"text-end\">
-                    <div class=\"fw-bold fs-5 text-primary\">$${Number(p.Total).toLocaleString()}</div>
-                    <span class=\"badge bg-${p.Estado === 'Completado' ? 'success' : 'warning'}\">${p.Estado}</span>
+                <div class="text-end">
+                    <div class="fw-bold fs-5 text-primary">$${Number(p.Total).toLocaleString()}</div>
+                    <span class="badge bg-${p.Estado === 'Completado' ? 'success' : 'warning'}">${p.Estado}</span>
                 </div>
             </div>
-            <div class=\"mt-2\">
-                <button class=\"btn btn-sm btn-outline-${p.Estado === 'Completado' ? 'success' : 'warning'} me-2\" onclick=\"cambiarEstado(${p.PedidoID}, '${p.Estado === 'Completado' ? 'Pendiente' : 'Completado'}')\">${p.Estado === 'Completado' ? 'Pendiente' : 'Completar'}</button>
-                <button class=\"btn btn-sm btn-outline-danger\" onclick=\"eliminarPedido(${p.PedidoID})\">Eliminar</button>
+            <div class="mt-2">
+                <button class="btn btn-sm btn-outline-${p.Estado === 'Completado' ? 'success' : 'warning'} me-2" onclick="cambiarEstado(${p.PedidoID}, '${p.Estado === 'Completado' ? 'Pendiente' : 'Completado'}')">${p.Estado === 'Completado' ? 'Pendiente' : 'Completar'}</button>
+                <button class="btn btn-sm btn-outline-danger" onclick="eliminarPedido(${p.PedidoID})">Eliminar</button>
             </div>
         </div>
     `).join('');
 }
 
-// 📦 Low Stock
+// 📦 Low Stock - unchanged
 async function cargarAgotados() {
     const lista = document.getElementById('lista-agotados');
     lista.innerHTML = productos
         .filter(p => p.Stock <= 5 && p.Stock > 0)
-        .map(p => `<div class=\"alert alert-warning d-flex\"><img src=\"${p.ImagenURL}\" class=\"rounded me-3\" style=\"width:50px;height:50px\"> <div><strong>${p.Nombre}</strong><br>Stock: <strong>${p.Stock}</strong></div></div>`)
-        .join('') || '<div class=\"text-center py-5 text-success\"><i class=\"bi bi-check-circle fs-1\"></i><p>Todos los productos tienen stock suficiente</p></div>';
+        .map(p => `<div class="alert alert-warning d-flex"><img src="${p.ImagenURL}" class="rounded me-3" style="width:50px;height:50px"> <div><strong>${p.Nombre}</strong><br>Stock: <strong>${p.Stock}</strong></div></div>`)
+        .join('') || '<div class="text-center py-5 text-success"><i class="bi bi-check-circle fs-1"></i><p>Todos los productos tienen stock suficiente</p></div>';
     
     document.getElementById('agotados-count').textContent = `${productos.filter(p => p.Stock <= 5).length} alertas`;
 }
 
-// ✏️ Edit Product
+// ✏️ Edit Product - unchanged
 function prepararEdicion(prod) {
     document.getElementById('prod-id').value = prod.ProductoID;
     document.getElementById('nombre').value = prod.Nombre;
@@ -190,7 +190,7 @@ function prepararEdicion(prod) {
     document.getElementById('btn-nuevo').dataset.action = 'limpiarForm';
 }
 
-// 💾 Save Product
+// 💾 Save Product - unchanged
 async function guardarProducto(e) {
     e.preventDefault();
     const formData = new FormData(document.getElementById('form-producto'));
@@ -215,7 +215,7 @@ async function guardarProducto(e) {
     }
 }
 
-// 🗑️ Delete Product
+// 🗑️ Delete Product - unchanged
 async function eliminarProducto(id) {
     if (!confirm('¿Eliminar este producto?')) return;
     try {
@@ -227,7 +227,7 @@ async function eliminarProducto(id) {
     }
 }
 
-// 💰 Discount
+// 💰 Discount - unchanged
 async function aplicarDescuentoProducto(id, descuentoActual) {
     const descuento = prompt('Nuevo descuento % (0-100):', descuentoActual || '0');
     if (descuento === null || isNaN(descuento) || descuento < 0 || descuento > 100) return;
@@ -235,7 +235,7 @@ async function aplicarDescuentoProducto(id, descuentoActual) {
     try {
         await fetch(`/productos/${id}/descuento`, {
             method: 'PUT',
-headers: {'Content-Type': 'application/json'},
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({descuento: parseFloat(descuento)})
         });
         Swal.fire('Descuento aplicado', '', 'success');
@@ -245,7 +245,7 @@ headers: {'Content-Type': 'application/json'},
     }
 }
 
-// 📊 Order actions
+// 📊 Order actions - unchanged
 async function cambiarEstado(id, estado) {
     try {
         await fetch(`/pedidos/${id}/${estado.toLowerCase()}`, { method: 'PUT' });
@@ -270,7 +270,7 @@ function filtrarPedidos(estado) {
     cargarPedidos();
 }
 
-// 💾 Backup
+// 💾 Backup - unchanged
 async function exportarInventario() {
     try {
         const res = await fetch('/backup');
@@ -286,10 +286,10 @@ async function exportarInventario() {
     }
 }
 
-// 🔄 Utils
+// 🔄 Utils - unchanged
 function mostrarLoader(container, show) {
     if (show) {
-        container.innerHTML = '<div class=\"text-center py-5\"><div class=\"spinner-border\"></div><p>Cargando...</p></div>';
+        container.innerHTML = '<div class="text-center py-5"><div class="spinner-border"></div><p>Cargando...</p></div>';
     }
 }
 
@@ -302,17 +302,16 @@ function mostrarNotificacion(msg) {
     const notif = document.createElement('div');
     notif.className = 'alert alert-success position-fixed end-0 m-3 shadow';
     notif.style.cssText = 'top:20%; right:20px; z-index:9999; min-width:300px;';
-    notif.innerHTML = `<i class=\"bi bi-bell me-2\"></i>${msg}`;
+    notif.innerHTML = `<i class="bi bi-bell me-2"></i>${msg}`;
     document.body.appendChild(notif);
     setTimeout(() => notif.remove(), 5000);
 }
 
-// 🔘 Limpiar form
+// 🔘 Limpiar form - unchanged
 document.addEventListener('click', e => {
-    if (e.target.matches('[data-action=\"limpiarForm\"]')) {
+    if (e.target.matches('[data-action="limpiarForm"]')) {
         document.getElementById('form-producto').reset();
         document.getElementById('prod-id').value = '';
         document.getElementById('titulo-form').textContent = 'Crear Producto';
     }
 });
-
