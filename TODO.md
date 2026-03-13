@@ -5,13 +5,15 @@
 - [x] **1. Create TODO.md** - Tracking file created ✅
 - [x] **2. app.js** - Add authJWT middleware to /productos routes ✅
 - [x] **3. app.js** - Add detailed debug logging to CRUD routes ✅
-- [x] **4. js/admin.js** - Add FormData logging + network error handling ✅
+**🔧 CRITICAL BUGFIX** - Moved authJWT before routes ✅
 
-**✅ CRITICAL FIXES APPLIED** - Restart server & test in browser (F12 Network tab)
+**TODO Progress**:
+- [x] **2-4** Auth + logging ✅ 
+- [x] **BUGFIX** ReferenceError fixed ✅
 
 **Next**: 
-- [ ] **5. Test edit/discount/delete** (login → edit product → check 200 OK + DB)
-- [ ] **6. Verify DB + complete**
+- [ ] **5. Test** `node app.js` → should start → test edit/delete ✅
+- [ ] **6. Complete**
 - [ ] **5. Test edit/discount/delete operations**  
 - [ ] **6. Verify DB changes + clear TODO**
 

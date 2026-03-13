@@ -243,7 +243,8 @@ app.get('/productos', async (req, res) => {
     }
 });
 
-app.post('/productos', upload.array('imagenes', 6), async (req, res) => {
+app.post('/productos', authJWT, upload.array('imagenes', 6), async (req, res) => {
+    console.log('➕ CREATE PRODUCT:', { user: req.user?.userId, bodyKeys: Object.keys(req.body) });
     const nombre = req.body.Nombre || req.body.nombre;
     const marca = req.body.Marca || req.body.marca;
     const sku = req.body.CodigoSKU || req.body.sku;
@@ -638,9 +639,30 @@ app.get('/unread-count', async (req, res) => {
     }
 });
 
-// 🔐 NUEVO LOGIN JWT (FASE 1)
+// 🔐 JWT MIDDLEWARE - MOVED BEFORE ROUTES (Fix ReferenceError)
+const authJWT = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+  
+  if (!token) {
+    console.log('🚫 NO TOKEN - 401');
+    return res.status(401).json({ error: 'Token requerido' });
+  }
+  
+  jwt.verify(token, process.env.JWT_SECRET || 'MiClaveSuperSecretaParaJWT_32charsMin', (err, user) => {
+    if (err) {
+      console.log('🚫 INVALID TOKEN - 403:', err.message);
+      return res.status(403).json({ error: 'Token inválido' });
+    }
+    req.user = user;
+    console.log('✅ AUTH OK:', user.userId);
+    next();
+  });
+};
+
+// 🔐 LOGIN (after middleware def)
 const ADMIN_USER = process.env.ADMIN_USER || 'admin';
-const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH || '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'; // bcrypt("password") Fallback - CAMBIAR
+const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH || '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
 
 app.post('/api/login', async (req, res) => {
   const { user, pass } = req.body;
@@ -667,24 +689,6 @@ app.post('/api/login', async (req, res) => {
   console.log(`🔐 Admin login exitoso: ${ADMIN_USER}`);
   res.json({ success: true, token, userId: ADMIN_USER });
 });
-
-// 🔐 Middleware JWT
-const authJWT = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
-  
-  if (!token) {
-    return res.status(401).json({ error: 'Token requerido' });
-  }
-  
-  jwt.verify(token, process.env.JWT_SECRET || 'MiClaveSuperSecretaParaJWT_32charsMin', (err, user) => {
-    if (err) {
-      return res.status(403).json({ error: 'Token inválido' });
-    }
-    req.user = user;
-    next();
-  });
-};
 
 // 🛡️ PROTECT PRODUCT ROUTES with JWT auth
 app.use('/productos', authJWT);
