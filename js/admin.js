@@ -574,7 +574,7 @@ async function mostrarDetallesPedido(pedidoId) {
 
 function renderModalItems() {
     const productosArr = window.productosModalArr;
-    const tbody = document.querySelector('#modalProductosBody');
+    const tbody = document.querySelector('#modalItemsTable tbody');
     tbody.innerHTML = productosArr.map((item, idx) => {
         const subtotal = item.cantidad * Number(item.Precio);
         return `
@@ -663,11 +663,14 @@ window.aplicarDescuentoModal = async function() {
 document.addEventListener('click', e => {
     const row = e.target.closest('#modalItemsTable tr');
     if (row) {
-        const idx = row.dataset.productoIndex;
-        const input = document.getElementById('modalDescuentoInput');
-        input.dataset.productoId = idx;
-        input.focus();
-        input.placeholder = `Descuento ${window.productosModalArr[idx]?.Nombre || ''}`;
+        const idx = parseInt(row.dataset.productoIndex);
+        if (window.productosModalArr[idx]) {
+            const input = document.getElementById('modalDescuentoInput');
+            input.dataset.productoId = idx;
+            input.value = window.productosModalArr[idx].DescuentoPorcentaje || '';
+            input.focus();
+            input.placeholder = `Descuento ${window.productosModalArr[idx].Nombre}`;
+        }
     }
 
     // 🔥 CSP FIX: Modal discount button (delegation)
