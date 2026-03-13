@@ -162,14 +162,15 @@ function limpiarForm() {
    ============================================================================ */
 
 document.addEventListener('DOMContentLoaded', async function() {
-    // 🚀 ONESIGNAL: Ensure admin subscription + UI ready
+    // 🚀 ONESIGNAL: Enhanced persistence recovery
     try {
         await window.OneSignalInit?.initOneSignal();
         await window.OneSignalInit?.showAdminPrompt();
+        await window.OneSignalInit?.checkAndRecoverSubscription();  // 🆕 FORCE recovery after init
         await window.OneSignalInit?.updateNotificationUI();
-        console.log('🔔 OneSignal admin integration ready');
+        console.log('🔔 OneSignal admin integration + persistence ready');
     } catch (e) {
-        console.warn('OneSignal not available:', e);
+        console.warn('OneSignal init failed:', e);
     }
     
     // PROTECCIÓN DE HISTORIAL - Prevenir back button

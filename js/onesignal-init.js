@@ -320,33 +320,38 @@ function updateToggleUI(enabled) {
 async function checkAndRecoverSubscription() {
   if (!isAdminPage()) return;
   
-  // ✅ PERSISTENTE: Estado guardado sobrevive cerrar pestaña/app
   const savedUserId = localStorage.getItem('onesignal_user_id') || 'admin_trebol';
-  const toggleEnabled = localStorage.getItem('admin_notifications_enabled') === 'true'; // Exact match
+  const toggleEnabled = localStorage.getItem('admin_notifications_enabled') === 'true';
+  const adminLogged = localStorage.getItem('admin_logged') === 'true';
   const savedState = localStorage.getItem('onesignal_subscription_state');
   
-  console.log('🔍 Recovery:', { savedUserId, toggleEnabled, savedState: savedState ? 'exists' : 'none' });
+  console.log('🔍 Recovery check:', { savedUserId, toggleEnabled, adminLogged });
   
-  if (toggleEnabled && OneSignalInstance && savedUserId) {
-    // Restaurar external ID (persiste cross-session)
-    await OneSignalInstance.setExternalUserId(savedUserId);
-    localStorage.setItem('onesignal_admin_id', savedUserId);
-    
-    // Auto-subscribe si estaba activo antes
-    if (savedState) {
-      try {
-        const state = JSON.parse(savedState);
-        if (state.isSubscribed) {
-          console.log('🔄 Restaurando suscripción previa...');
-          await OneSignalInstance.User.PushSubscription.optIn();
-        }
-      } catch (e) {
-        console.warn('Saved state invalid:', e);
+  // 🆕 FORCE PERSISTENCE: If admin session active + toggle on, FORCE login regardless of current state
+  if ((adminLogged || toggleEnabled) && OneSignalInstance && savedUserId === 'admin_trebol') {
+    try {
+      const currentId = await OneSignalInstance.User.getExternalId();
+      console.log('Current externalId:', currentId);
+      
+      if (currentId !== 'admin_trebol') {
+        console.log('🔧 FORCE: Setting admin_trebol externalId');
+        await OneSignalInstance.login('admin_trebol');  // login() sets externalId
+        await OneSignalInstance.User.PushSubscription.optIn();
+        localStorage.setItem('onesignal_user_id', 'admin_trebol');
+        localStorage.setItem('onesignal_admin_id', 'admin_trebol');
+        
+        // Trigger status update
+        await getSubscriptionStatus();
+        updateNotificationUI();
+        console.log('✅ Forced admin_trebol identity - Persistence OK');
+      } else {
+        console.log('✅ externalId already admin_trebol - No action needed');
       }
+    } catch (e) {
+      console.error('Recovery failed:', e);
     }
-    
-    console.log(`🔑 External ID persistente: ${savedUserId} ✅`);
-    updateNotificationUI();
+  } else {
+    console.log('⏭️ Skip recovery: No admin session/toggle');
   }
 }
 
@@ -374,17 +379,52 @@ function setupExternalIdListener() {
   console.log('🔗 External ID listener active');
 }
 
+// 🆕 ENHANCED PERSISTENCE: window.onload for PWA/reloads + 30s heartbeat
+window.addEventListener('load', async () => {
+  console.log('🌐 window.onload - OneSignal persistence check');
+  await checkAndRecoverSubscription();
+});
+
+// 30s heartbeat: Intelligent re-attach if ID lost (user-approved suggestion)
+let persistenceInterval = null;
+function startPersistenceHeartbeat() {
+  if (persistenceInterval) clearInterval(persistenceInterval);
+  
+  persistenceInterval = setInterval(async () => {
+    if (!OneSignalInstance || !isAdminPage()) return;
+    
+    const adminLogged = localStorage.getItem('admin_logged') === 'true';
+    const toggleEnabled = localStorage.getItem('admin_notifications_enabled') === 'true';
+    
+    if (adminLogged && toggleEnabled) {
+      try {
+        const currentId = await OneSignalInstance.User.getExternalId();
+        if (currentId !== 'admin_trebol') {
+          console.log('🔄 Heartbeat: Re-anclando admin_trebol...');
+          await OneSignalInstance.login('admin_trebol');
+          await OneSignalInstance.User.PushSubscription.optIn();
+          localStorage.setItem('onesignal_user_id', 'admin_trebol');
+        }
+      } catch (e) {
+        console.warn('Heartbeat check failed:', e);
+      }
+    }
+  }, 30000); // 30s
+}
+
 // Auto-init + enhanced toggle
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', async () => {
     await initOneSignal();
     initAdminNotificationToggle();
-    await checkAndRecoverSubscription(); // 🔄 Recovery on load
+    await checkAndRecoverSubscription();
+    startPersistenceHeartbeat(); // 🔄 Start 30s heartbeat
   });
 } else {
   initOneSignal();
   initAdminNotificationToggle();
   checkAndRecoverSubscription();
+  startPersistenceHeartbeat();
 }
 
 // Export enhanced API
