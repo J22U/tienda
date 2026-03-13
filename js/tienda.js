@@ -548,21 +548,37 @@ document.addEventListener('DOMContentLoaded', function() {
     if (formLogin) {
 formLogin.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = document.getElementById('admin-email').value;
+            const user = document.getElementById('admin-email').value;
             const pass = document.getElementById('admin-password').value;
 
-            Swal.fire({
-                title: 'Nuevo Sistema de Login Seguro',
-                html: `
-                    <div class="text-center">
-                        <p class="mb-4"><strong>Login ahora vía servidor JWT:</strong></p>
-                        <code class="bg-light p-2 rounded d-block mb-3">POST /api/login<br>{"user":"admin","pass":"newpass123"}</code>
-                        <p class="text-muted small">Para desarrollo, use las credenciales por defecto o configure <code>.env</code></p>
-                    </div>
-                `,
-                icon: 'info',
-                confirmButtonText: 'Cerrar'
-            });
+            try {
+                const res = await fetch(`${BASE_URL}/api/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user, pass })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    // Guardar JWT token
+                    localStorage.setItem('admin_token', data.token);
+                    localStorage.setItem('admin_logged', 'true');
+                    
+                    Swal.fire({
+                        title: '¡Login Exitoso!',
+                        text: 'Redirigiendo al panel admin...',
+                        icon: 'success',
+                        timer: 1500,
+                        willClose: () => {
+                            window.location.replace('admin.html');
+                        }
+                    });
+                } else {
+                    Swal.fire('Error', data.error || 'Credenciales inválidas', 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Error de conexión. Verifique su internet.', 'error');
+            }
         });
     }
 
