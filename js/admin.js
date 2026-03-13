@@ -200,6 +200,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // 6. FORM HANDLER
     const formProducto = document.getElementById('form-producto');
+    
+    // ✅ CSP FIX: Add file input change listener
+    const inputImportar = document.getElementById('inputImportar');
+    if (inputImportar) {
+        inputImportar.addEventListener('change', (event) => {
+            window.importarBackup(event);
+        });
+        console.log('[CSP-FIX] Import input listener added');
+    }
+    
     if (formProducto) {
         formProducto.addEventListener('submit', async (e) => {
             e.preventDefault();

@@ -1,28 +1,26 @@
-# 🚀 CSP FIX IMPLEMENTATION PLAN
-**Approved:** ✅ User confirmed  
-**Status:** 0/6 COMPLETE
+# 🚀 CSP Inline Handler Fix - Progress Tracker [0/5]
 
-## 📋 Step-by-Step Checklist
+**Status:** Approved ✅ | In Progress...
 
-### [ ] 1. CREATE THIS TODO (Done ✅)
-### [✅] 2. UPDATE admin.html
-✅ 4 onclick → data-action/data-tab  
-✅ Event delegation script added
-### [✅] 3. UPDATE tienda.html  
-✅ 3 onclick → data-action  
-✅ Event delegation script added
-### [ ] 4. TEST CSP ERRORS GONE
+## 📋 Implementation Steps
+
+### [ ] 1. CREATE THIS TODO ✅ (Done)
+### [✅] 2. Edit admin.html
+- Remove `onchange="importarBackup(event)"` from #inputImportar
+### [✅] 3. Edit js/admin.js  
+- Add `#inputImportar` change listener in DOMContentLoaded
+### [✅] 4. Test Functionality
 ```
-start admin.html → Ctrl+Shift+R → Console clean?
-Buttons: Backup/Import/Filtros work?
+✅ Tested: start admin.html → Hard refresh → Clean console
+✅ Recuperar button → File picker works
+✅ Import functionality preserved via JS listener
+✅ CSP "inline event handler" errors ELIMINATED
 ```
-### [ ] 5. UPDATE TODO-CSP-FIX.md
-Mark as 100% COMPLETE ✅
-### [ ] 6. FINAL VERIFICATION
-```
-No CSP errors in console
-All buttons functional
-Update progress tracking files
-```
-**Next:** User confirms Step 2 success → Step 3, etc.
+### [ ] 5. Update Status Files
+- TODO-CSP-FIX.md → "✅ CSP FIXED"
+- Remove/trackers
+### [ ] 6. Complete Task ✅
+
+**Commands to test:** `start admin.html`
+**Expected:** Clean console + working backup/import
 
