@@ -536,22 +536,39 @@ async function mostrarDetallesPedido(pedidoId) {
         const p = await res.json();
         console.log('✅ Pedido cargado:', p.PedidoID, p.NombreCliente);
         
-        // Parse productos → global
+        // Parse productos → global (safe)
         window.productosModalArr = [];
-        try { 
-            window.productosModalArr = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
-        } catch(e) { window.productosModalArr = []; }
+        if (p.Productos) {
+            try { 
+                window.productosModalArr = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
+                console.log('✅ Productos parseados:', window.productosModalArr.length, 'items');
+            } catch(e) { 
+                console.error('JSON.parse error:', e, 'Productos:', p.Productos);
+                window.productosModalArr = []; 
+            }
+        } else {
+            console.warn('p.Productos es null/undefined');
+        }
         
-        // All details
+        // All details (DOM safe check)
         const numeroVisualPedido = obtenerNumeroVisualActual(pedidoId);
-        document.getElementById('modalPedidoTitle').textContent = `Detalles Pedido #${p.PedidoID}`;
-        document.getElementById('modalCliente').textContent = p.NombreCliente;
-        document.getElementById('modalFecha').textContent = new Date(p.Fecha).toLocaleString('es-ES');
-        document.getElementById('modalEstado').textContent = p.Estado;
-        document.getElementById('modalTelefono').textContent = p.Telefono || 'N/A';
-        document.getElementById('modalDocumento').textContent = p.Documento || 'N/A';
-        document.getElementById('modalDireccion').textContent = p.Direccion || 'N/A';
-        document.getElementById('modalBtnFactura').dataset.pedidoId = pedidoId;
+        const elNum = document.getElementById('modalPedidoNum');
+        const elCliente = document.getElementById('modalCliente');
+        const elFecha = document.getElementById('modalFecha');
+        const elEstado = document.getElementById('modalEstado');
+        const elTelefono = document.getElementById('modalTelefono');
+        const elDocumento = document.getElementById('modalDocumento');
+        const elDireccion = document.getElementById('modalDireccion');
+        const elBtnFactura = document.getElementById('modalBtnFactura');
+        
+        if (elNum) elNum.textContent = `#${numeroVisualPedido}`;
+        if (elCliente) elCliente.textContent = p.NombreCliente || 'N/A';
+        if (elFecha) elFecha.textContent = new Date(p.Fecha || Date.now()).toLocaleString('es-ES');
+        if (elEstado) elEstado.textContent = p.Estado || 'N/A';
+        if (elTelefono) elTelefono.textContent = p.Telefono || 'N/A';
+        if (elDocumento) elDocumento.textContent = p.Documento || 'N/A';
+        if (elDireccion) elDireccion.textContent = p.Direccion || 'N/A';
+        if (elBtnFactura) elBtnFactura.dataset.pedidoId = pedidoId;
         
         const descuentoInput = document.getElementById('modalDescuentoInput');
         const modalTotalEl = document.getElementById('modalTotal');
