@@ -1,13 +1,28 @@
-# TODO-Steps.md - Completing TODO.md (CSP/JS/Remote Fixes)
+# TODO Steps: Fix Admin Loading Products/Orders
 
-**Status**: 🚀 IMPLEMENTING (✅ Step 1-2/5)
+✅ **1. Create TODO-steps.md** (current)
 
-## Approved Plan Breakdown
-1. ✅ **Create this TODO-steps.md**
-2. ✅ **Patch js/admin.js**: Null-safe socket init (centralize, guards, remove duplicates)
-3. ✅ **Update main TODO.md**: Mark Step 4 complete
-4. ✅ **Test CSP locally**: curl shows script-src includes `https://cdnjs.cloudflare.com https://cdn.onesignal.com`
-5. **Manual verify**: Admin login/socket/RT notifications (local/remote)
-6. **attempt_completion**: All steps done
+✅ **2. Create js/admin.js with complete loading logic**
+   - DOMContentLoaded + auth check
+   - cargarProductos() & cargarPedidos()
+   - Render functions
+   - Tabs + filters
+   - Form handling
+   - Globals for delegation
+   - Socket.io real-time
 
-**Next**: Patch js/admin.js (Step 2/5) → Confirm before edits.
+✅ **3. Test admin.html**  (abierto con `start admin.html` - revisar en navegador F12 Console/Network)"
+
+   - Open in browser
+   - Check Console/Network
+   - Verify data load
+
+⏳ **4. Add test data if empty**
+   - Insert sample products/pedidos via SQL
+
+⏳ **5. Test CRUD operations**
+   - Add/edit/delete product
+   - Mark orders complete
+
+⏳ **6. attempt_completion**
+
