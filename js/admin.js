@@ -1316,19 +1316,49 @@ cargarAgotados();
    NOTIFICACIONES EN TIEMPO REAL CON SOCKET.IO
    ============================================================================ */
 
-// Inicializar conexión Socket.io CON AUTENTICACIÓN
-const serverToken = localStorage.getItem('server_session_token');
-console.log('🔌 Socket connecting with token:', serverToken ? `${serverToken.slice(0,8)}...` : 'NO TOKEN');
+// 🔧 DELAYED SOCKET - Wait for token refresh
+let socket = null;
+let socketReady = false;
 
-const socket = io({
-  auth: {
-    token: serverToken
+async function initSocketAfterSession() {
+  await verificarSesion(); // Ensure fresh token FIRST
+  
+  const freshToken = localStorage.getItem('server_session_token');
+  if (!freshToken) {
+    console.error('❌ No token after session check - retrying in 2s');
+    setTimeout(initSocketAfterSession, 2000);
+    return;
   }
-});
-
-if (!serverToken) {
-  console.warn('⚠️ No server_session_token - will refresh on verificarSesion()');
+  
+  console.log('🔌 Initializing socket with FRESH token:', freshToken.slice(0,8)+'...');
+  
+  socket = io({
+    auth: { token: freshToken }
+  });
+  
+  // Socket event handlers...
+  socket.on('connect', () => {
+    console.log('✅ SOCKET.CONNECTED - Permanent session active!');
+    socketReady = true;
+  });
+  
+  socket.on('disconnect', (reason) => {
+    console.log('🔌 Socket disconnect:', reason);
+    if (reason === 'io client disconnect') return; // Normal page leave
+    
+    // Auto-reconnect with fresh token
+    setTimeout(async () => {
+      await refreshServerSession();
+      if (socket) socket.connect();
+    }, 1000);
+  });
 }
+
+// Init socket AFTER DOM + session check
+document.addEventListener('DOMContentLoaded', async () => {
+  await initSocketAfterSession();
+  // ... rest of init
+});
 
 // Estado de conexión + reconnect logic
 let socketConectado = false;
