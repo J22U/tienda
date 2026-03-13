@@ -537,7 +537,7 @@ async function mostrarDetallesPedido(pedidoId) {
         
         // All details
         const numeroVisualPedido = obtenerNumeroVisualActual(pedidoId);
-        document.getElementById('modalPedidoNum').textContent = `#${numeroVisualPedido}`;
+        document.getElementById('modalPedidoTitle').textContent = `Detalles Pedido #${p.PedidoID}`;
         document.getElementById('modalCliente').textContent = p.NombreCliente;
         document.getElementById('modalFecha').textContent = new Date(p.Fecha).toLocaleString('es-ES');
         document.getElementById('modalEstado').textContent = p.Estado;
@@ -556,7 +556,7 @@ async function mostrarDetallesPedido(pedidoId) {
             descuentoInput.value = p.DescuentoPorcentaje.toFixed(2);
             descuentoInput.disabled = true; // Locked when persisted
             
-            const formattedTotal = Number(p.TotalManual).toLocaleString();
+            const formattedTotal = Number(p.TotalManual || p.Total).toLocaleString();
             modalTotalEl.innerHTML = `<strong>$${formattedTotal}</strong>`;
         } else {
             descuentoInput.disabled = false;
@@ -637,7 +637,7 @@ window.aplicarDescuentoModal = async function() {
         const data = await res.json();
         
         // ✅ Update modal total (clean)
-        const formattedManual = Number(data.totalManual).toLocaleString();
+        const formattedManual = Number(data.totalManual || data.Total).toLocaleString();
         document.getElementById('modalTotal').innerHTML = `<strong>$${formattedManual}</strong>`;
         
         input.disabled = true; // Lock after persist
