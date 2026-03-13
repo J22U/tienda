@@ -219,15 +219,16 @@ function renderPedidos(peds, container) {
         return;
     }
     
-    container.innerHTML = peds.map(p => {
+    container.innerHTML = peds.map((p, index) => {
         const newEstado = p.Estado === 'Completado' ? 'Pendiente' : 'Completado';
         const btnClass = p.Estado === 'Completado' ? 'success' : 'warning';
         const btnText = p.Estado === 'Completado' ? 'Pendiente' : 'Completar';
+        const numeroVisual = peds.length - index;
         return `
         <div class="pedido-row p-3 border-bottom">
             <div class="d-flex justify-content-between">
                 <div>
-                    <strong>#${p.NumeroDisplay || p.PedidoID}</strong> - ${p.NombreCliente}
+                    <strong>#${numeroVisual}</strong> - ${p.NombreCliente}
                     <br><small class="text-muted">${new Date(p.Fecha).toLocaleString('es-ES')}</small>
                 </div>
                 <div class="text-end">
