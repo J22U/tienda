@@ -6,18 +6,23 @@ document.addEventListener('click', function(e) {
   const row = btn.closest('[data-producto]');
   if (!row) return;
   
-  const prodData = JSON.parse(row.dataset.producto);
-  
-  switch(btn.dataset.action) {
-    case 'edit':
-      window.prepararEdicion(prodData);
-      break;
-    case 'delete':
-      window.eliminarProducto(prodData.ProductoID);
-      break;
-    case 'discount':
-      window.aplicarDescuentoProducto(prodData.ProductoID, prodData.DescuentoPorcentaje || 0);
-      break;
+  try {
+    const prodData = JSON.parse(decodeURIComponent(row.dataset.producto));
+    
+    switch(btn.dataset.action) {
+      case 'edit':
+        window.prepararEdicion(prodData);
+        break;
+      case 'delete':
+        window.eliminarProducto(prodData.ProductoID);
+        break;
+      case 'discount':
+        window.aplicarDescuentoProducto(prodData.ProductoID, prodData.DescuentoPorcentaje || 0);
+        break;
+    }
+  } catch (err) {
+    console.error('Error parsing producto JSON:', err);
+    window.Swal?.fire('Error', 'Datos del producto corruptos. Recarga la página.', 'error');
   }
 });
 

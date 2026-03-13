@@ -59,14 +59,19 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!btn) return;
 
         const card = btn.closest('.product-card');
-        const p = JSON.parse(card.dataset.producto.replace(/&apos;/g, "'"));
-        const action = btn.dataset.action;
+        try {
+            const p = JSON.parse(decodeURIComponent(card.dataset.producto));
+            const action = btn.dataset.action;
 
-        console.log('Botón acción:', action, p.ProductoID);
-        
-        if (action === 'edit') prepararEdicion(p);
-        if (action === 'delete') eliminarProducto(p.ProductoID);
-        if (action === 'discount') aplicarDescuentoProducto(p.ProductoID, p.DescuentoPorcentaje || 0);
+            console.log('Botón acción:', action, p.ProductoID);
+            
+            if (action === 'edit') prepararEdicion(p);
+            if (action === 'delete') eliminarProducto(p.ProductoID);
+            if (action === 'discount') aplicarDescuentoProducto(p.ProductoID, p.DescuentoPorcentaje || 0);
+        } catch (err) {
+            console.error('Error parsing producto JSON:', err);
+            Swal.fire('Error', 'Datos del producto corruptos. Recarga la página.', 'error');
+        }
     });
 
     // 🔥 EVENT DELEGATION - PEDIDOS (CSP FIX)
@@ -148,10 +153,10 @@ function renderProductos(prods, container) {
     
     container.innerHTML = prods.map(p => {
         const stockClass = p.Stock > 5 ? 'stock-high' : p.Stock > 0 ? 'stock-medium' : 'stock-low';
-        const safeJSON = JSON.stringify(p).replace(/'/g, "&apos;");
+        const productoSafe = encodeURIComponent(JSON.stringify(p));
         
         return `
-        <div class="product-card" data-producto="${safeJSON}">
+        <div class="product-card" data-producto="${productoSafe}">
             <div class="d-flex gap-3">
                 <img src="${p.ImagenURL || '/uploads/default.jpg'}" class="product-img-card">
                 <div class="flex-grow-1">
