@@ -77,45 +77,59 @@ async function cargarProductos() {
     }
 }
 
-// 📦 Render Products - Fixed for Screenshot Layout
+// 📦 Render Products - Modern Card Grid
 function renderProductos(prods, container) {
     if (!prods.length) {
         container.innerHTML = '<div class="text-center py-5"><i class="bi bi-boxes fs-1 text-muted mb-3"></i><p class="text-muted">No hay productos</p></div>';
         return;
     }
     
-    container.innerHTML = prods.map(p => `
-        <div class="product-row" data-producto='${JSON.stringify(p).replace(/'/g, "\\'")}'>
-            <div class="actions-left">
-                <button class="action-btn btn btn-sm btn-outline-primary me-1" data-action="edit" title="Editar"><i class="bi bi-pencil"></i></button>
-                <button class="action-btn btn btn-sm btn-outline-danger me-1" data-action="delete" title="Eliminar"><i class="bi bi-trash"></i></button>
-                <button class="action-btn btn btn-sm btn-outline-warning" data-action="discount" title="Descuento"><i class="bi bi-percent"></i></button>
+    container.innerHTML = prods.map(p => {
+        const stockClass = p.Stock > 5 ? 'stock-high' : p.Stock > 0 ? 'stock-medium' : 'stock-low';
+        return `
+        <div class="product-card" data-producto='${JSON.stringify(p).replace(/'/g, "\\'")}' tabindex="0">
+            <div class="product-card-header">
+                <img src="${p.ImagenURL || '/uploads/default.jpg'}" alt="${p.Nombre}" class="product-img-card">
+                <div class="product-meta-card">
+                    <div class="product-name-card">${p.Nombre}</div>
+                    <div class="product-details">
+                        ${p.Marca ? `<span>${p.Marca}</span>` : ''}
+                        ${p.CodigoSKU ? `<span>#${p.CodigoSKU}</span>` : ''}
+                    </div>
+                </div>
             </div>
-            <div class="product-img flex-shrink-0 ms-2">
-                <img src="${p.ImagenURL || '/uploads/default.jpg'}" class="rounded" style="width:50px;height:50px;object-fit:cover;">
-            </div>
-            <div class="product-info flex-grow-1 ps-2">
-                <div class="product-name fw-bold">${p.Nombre}</div>
-                <small class="text-muted product-meta">${p.Marca || ''} ${p.CodigoSKU ? '| ' + p.CodigoSKU : ''}</small>
-            </div>
-            <div class="product-right text-end pe-2">
-                <div class="price-highlight fw-bold fs-5">$ ${Number(p.Precio).toLocaleString('es-CO')}</div>
-                <small class="badge stock-badge ${p.Stock > 5 ? 'bg-success' : p.Stock > 0 ? 'bg-warning' : 'bg-danger'}">${p.Stock} und</small>
+            <div class="product-body">
+                <div class="price-container">
+                    <div class="price-highlight-card">$ ${Number(p.Precio).toLocaleString('es-CO')}</div>
+                </div>
+                <div class="stock-info">
+                    <div class="stock-label">
+                        <i class="bi bi-box-seam-fill me-1"></i>
+                        <span>${p.Stock} unidades</span>
+                    </div>
+                    <span class="stock-badge-card ${stockClass}">${p.Stock > 0 ? 'Disponible' : 'Agotado'}</span>
+                </div>
+                <div class="actions-card">
+                    <button class="action-btn action-edit" data-action="edit" title="Editar" tabindex="0"><i class="bi bi-pencil"></i></button>
+                    <button class="action-btn action-discount" data-action="discount" title="Descuento" tabindex="0"><i class="bi bi-percent"></i></button>
+                    <button class="action-btn action-delete" data-action="delete" title="Eliminar" tabindex="0"><i class="bi bi-trash"></i></button>
+                </div>
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 // 🔍 Filter Products
 function filtrarProductos() {
     const termino = document.getElementById('buscar-prod').value.toLowerCase();
-    const rows = document.querySelectorAll('.product-row');
+    const cards = document.querySelectorAll('.product-card');
     let visibles = 0;
     
-    rows.forEach(row => {
-        const texto = row.textContent.toLowerCase();
+    cards.forEach(card => {
+        const texto = card.textContent.toLowerCase();
         const visible = texto.includes(termino);
-        row.style.display = visible ? '' : 'none';
+        card.style.display = visible ? '' : 'none';
         if (visible) visibles++;
     });
     
@@ -169,10 +183,27 @@ function renderPedidos(peds, container) {
 // 📦 Low Stock - unchanged
 async function cargarAgotados() {
     const lista = document.getElementById('lista-agotados');
-    lista.innerHTML = productos
-        .filter(p => p.Stock <= 5 && p.Stock > 0)
-        .map(p => `<div class="alert alert-warning d-flex"><img src="${p.ImagenURL}" class="rounded me-3" style="width:50px;height:50px"> <div><strong>${p.Nombre}</strong><br>Stock: <strong>${p.Stock}</strong></div></div>`)
-        .join('') || '<div class="text-center py-5 text-success"><i class="bi bi-check-circle fs-1"></i><p>Todos los productos tienen stock suficiente</p></div>';
+    const bajos = productos.filter(p => p.Stock <= 5 && p.Stock > 0);
+    if (bajos.length === 0) {
+        lista.innerHTML = '<div class="text-center py-5 text-success"><i class="bi bi-check-circle fs-1"></i><p>Todos los productos tienen stock suficiente</p></div>';
+    } else {
+        lista.innerHTML = bajos.map(p => {
+            const stockClass = p.Stock <= 2 ? 'stock-low' : 'stock-medium';
+            return `
+            <div class="product-card mb-3 p-3">
+                <div class="d-flex align-items-start gap-3">
+                    <img src="${p.ImagenURL || '/uploads/default.jpg'}" class="product-img-card flex-shrink-0">
+                    <div class="flex-grow-1">
+                        <h6 class="product-name-card mb-1">${p.Nombre}</h6>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="stock-badge-card ${stockClass}">${p.Stock} und ⚠️</span>
+                            <small class="text-danger fw-bold">¡Reponer!</small>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    }
     
     document.getElementById('agotados-count').textContent = `${productos.filter(p => p.Stock <= 5).length} alertas`;
 }

@@ -1,12 +1,1 @@
-# TODO: Match Admin Product List to Screenshot
-Status: 🚀 In Progress (Plan Approved)
-
-## Steps:
-- ✅ 1. Fix js/admin.js renderProductos(): Proper data-producto attr, $25.000 es-CO, green price, und badge, actions left, clean HTML.
-- ✅ 2. Update css/admin.css: Compact .product-row (small img left, name bold, Marca|SKU muted, price right green #27ae60 bold, stock badge right, hover effects).
-- [ ] 3. Test layout in admin.html.
-- [ ] 4. Responsive mobile (stack properly).
-- [ ] 5. View with `start admin.html` → attempt_completion.
-
-Next: Edit js/admin.js.
-
+# TODO - Mejora Visual Productos Admin\n\n✅ **Paso 1:** Crear TODO.md con plan aprobado\n\n⏳ **Paso 2:** Leer y confirmar archivos existentes (admin.html, js/admin.js, css/admin.css)\n\n⏳ **Paso 3:** Actualizar CSS en css/admin.css - nuevo diseño tarjetas productos\n\n⏳ **Paso 4:** Actualizar JS en js/admin.js - nueva función renderProductos() con cards\n\n⏳ **Paso 5:** Actualizaciones menores en admin.html si necesario\n\n⏳ **Paso 6:** Probar cambios - abrir admin.html y verificar visual\n\n⏳ **Paso 7:** Completar tarea con attempt_completion\n\n**Estado:** Plan aprobado por usuario. Procediendo paso a paso.
