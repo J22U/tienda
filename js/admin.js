@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.replace('tienda.html');
     });
 
-    // 🔥 EVENT DELEGATION - BOTONES TARJETAS (CRÍTICO)
+// 🔥 EVENT DELEGATION - PRODUCTOS
     listaProductos.addEventListener('click', e => {
         const btn = e.target.closest('.action-btn');
         if (!btn) return;
@@ -57,6 +57,24 @@ document.addEventListener('DOMContentLoaded', function() {
         if (action === 'edit') prepararEdicion(p);
         if (action === 'delete') eliminarProducto(p.ProductoID);
         if (action === 'discount') aplicarDescuentoProducto(p.ProductoID, p.DescuentoPorcentaje || 0);
+    });
+
+    // 🔥 EVENT DELEGATION - PEDIDOS (CSP FIX)
+    const listaPedidos = document.getElementById('lista-pedidos');
+    listaPedidos.addEventListener('click', e => {
+        const statusBtn = e.target.closest('.pedido-btn-status');
+        if (statusBtn) {
+            const id = statusBtn.dataset.pedidoId;
+            const estado = statusBtn.dataset.newEstado;
+            cambiarEstado(id, estado);
+            return;
+        }
+        
+        const deleteBtn = e.target.closest('.pedido-btn-delete');
+        if (deleteBtn) {
+            const id = deleteBtn.dataset.pedidoId;
+            eliminarPedido(id);
+        }
     });
 
     // 🎯 Inicializar
@@ -162,6 +180,9 @@ function renderPedidos(peds, container) {
     }
     
     container.innerHTML = peds.map(p => {
+        const newEstado = p.Estado === 'Completado' ? 'Pendiente' : 'Completado';
+        const btnClass = p.Estado === 'Completado' ? 'success' : 'warning';
+        const btnText = p.Estado === 'Completado' ? 'Pendiente' : 'Completar';
         return `
         <div class="pedido-row p-3 border-bottom">
             <div class="d-flex justify-content-between">
@@ -175,10 +196,15 @@ function renderPedidos(peds, container) {
                 </div>
             </div>
             <div class="mt-2">
-                <button class="btn btn-sm btn-outline-${p.Estado === 'Completado' ? 'success' : 'warning'} me-2" onclick="cambiarEstado(${p.PedidoID}, '${p.Estado === 'Completado' ? 'Pendiente' : 'Completado'}')">
-                    ${p.Estado === 'Completado' ? 'Pendiente' : 'Completar'}
+                <button class="btn btn-sm btn-outline-${btnClass} me-2 pedido-btn-status" 
+                        data-pedido-id="${p.PedidoID}" 
+                        data-new-estado="${newEstado}">
+                    ${btnText}
                 </button>
-                <button class="btn btn-sm btn-outline-danger" onclick="eliminarPedido(${p.PedidoID})">Eliminar</button>
+                <button class="btn btn-sm btn-outline-danger pedido-btn-delete" 
+                        data-pedido-id="${p.PedidoID}">
+                    Eliminar
+                </button>
             </div>
         </div>`;
     }).join('');
