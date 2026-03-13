@@ -16,9 +16,10 @@ class AdminSessions {
     this.sessions.set(token, {
       userId,
       logged: true,
-      timestamp: Date.now(),
-      lastActivity: Date.now()
+      permanent: true,  // ✅ Never expires
+      created: Date.now()
     });
+    console.log(`🔑 Permanent session created: ${userId}`);
     return token;
   }
 
@@ -27,14 +28,11 @@ class AdminSessions {
     const session = this.sessions.get(token);
     if (!session) return null;
 
-    // Auto-cleanup expired sessions (>24h)
-    if (Date.now() - session.timestamp > 24 * 60 * 60 * 1000) {
-      this.sessions.delete(token);
-      return null;
+    // ✅ PERMANENT SESSIONS: No expiry - manual logout only
+    // Update last activity (for stats only)
+    if (session.lastActivity) {
+      session.lastActivity = Date.now();
     }
-
-    // Update last activity
-    session.lastActivity = Date.now();
     return session;
   }
 
@@ -55,13 +53,9 @@ class AdminSessions {
   }
 
   // Cleanup expired sessions (run periodically)
+  // REMOVED: No cleanup - permanent sessions
   cleanup() {
-    const now = Date.now();
-    for (const [token, session] of this.sessions.entries()) {
-      if (now - session.timestamp > 24 * 60 * 60 * 1000) {
-        this.sessions.delete(token);
-      }
-    }
+    console.log('🧹 Session cleanup: SKIPPED (permanent mode)');
   }
 
   // Generate secure random token

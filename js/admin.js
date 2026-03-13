@@ -1089,10 +1089,8 @@ function isPWA() {
            window.navigator.standalone === true;
 }
 
-const SESSION_CONFIG = {
-    browserSessionDuration: 24 * 60 * 60 * 1000,
-    pwaSessionDuration: 30 * 24 * 60 * 60 * 1000
-};
+// REMOVED: No more expiry - permanent sessions
+// const SESSION_CONFIG = { ... };
 
 function isSessionValid() {
     const sessionStr = localStorage.getItem('admin_session');
@@ -1105,24 +1103,19 @@ function isSessionValid() {
         const session = JSON.parse(sessionStr);
         console.log('[AdminSession] Parsed session:', session);
         
+        // ✅ PERMANENT SESSION: Only check logged flag
         if (session.logged !== true) {
             console.log('[AdminSession] Session not logged in');
             return false;
         }
         
-        if (isPWA() || session.isPWA === true) {
-            console.log('[AdminSession] PWA mode - session valid');
+        // PWA always valid (unchanged)
+        if (isPWA() || session.isPWA === true || session.permanent === true) {
+            console.log('[AdminSession] Permanent/PWA mode - session valid FOREVER');
             return true;
         }
         
-        if (session.timestamp) {
-            const elapsed = Date.now() - session.timestamp;
-            const isValid = elapsed < SESSION_CONFIG.browserSessionDuration;
-            console.log('[AdminSession] Browser check:', elapsed, 'valid:', isValid);
-            return isValid;
-        }
-        
-        return false;
+        return false; // Legacy sessions invalid
     } catch (e) {
         console.log('[AdminSession] Parse error:', e);
         return false;
@@ -1177,7 +1170,7 @@ async function createServerSession() {
 }
 
 async function verificarSesion() {
-    // 1. Check local session
+    // 1. Check local session (now permanent)
     if (!isSessionValid()) {
         console.log('[AdminSession] Local session invalid → logout');
         localStorage.removeItem('admin_logged');
@@ -1185,22 +1178,38 @@ async function verificarSesion() {
         return;
     }
     
-    // 2. Validate/refresh server session
-    const serverOk = await refreshServerSession();
+    console.log('✅ Local session PERMANENT - valid');
+    
+    // 2. ALWAYS ensure fresh server token (critical for socket)
+    const existingToken = localStorage.getItem('server_session_token');
+    let serverOk = true;
+    
+    if (!existingToken) {
+        console.log('🔄 No server token → creating new');
+        serverOk = await createServerSession();
+    } else {
+        // Test + refresh if needed
+        serverOk = await refreshServerSession();
+    }
+    
     if (!serverOk) {
-        console.log('[AdminSession] Server session refresh failed → logout');
+        console.log('❌ Server session failed → logout');
         localStorage.clear();
         window.location.replace('tienda.html');
         return;
     }
     
-    console.log('✅ Complete session verification passed');
+    console.log('✅ Server session fresh & ready');
     
-    // 3. Update socket with fresh token
+    // 3. FORCE socket reconnect with FRESH token
     const freshToken = localStorage.getItem('server_session_token');
-    if (socket && freshToken && socket.auth?.token !== freshToken) {
-        socket.auth.token = freshToken;
-        if (!socket.connected) socket.connect();
+    if (socket) {
+        socket.auth = { token: freshToken };
+        if (socket.connected) {
+            socket.disconnect();
+        }
+        socket.connect();
+        console.log('🔌 Socket reconnected with fresh token:', freshToken.slice(0,8)+'...');
     }
 }
 

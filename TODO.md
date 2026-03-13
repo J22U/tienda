@@ -1,17 +1,31 @@
-# OneSignal Persistence Fix - COMPLETED ✅
+# ✅ PERSISTENT ADMIN SESSION - NO AUTO-LOGOUT
+**Goal**: Admin stays logged **forever** until explicit logout (closes tabs/apps OK)
 
-## Changes Applied:
-- ✅ js/onesignal-init.js: Reinforced `checkAndRecoverSubscription()` (force login), added `window.onload` check, 30s intelligent heartbeat interval
-- ✅ js/admin.js: Added explicit `checkAndRecoverSubscription()` after `initOneSignal()`
-- Server push logic already independent of socket ✅
+## Plan Status: ✅ APPROVED - Permanent sessions (manual logout only)
 
-## Test Instructions:
-1. Login admin.html, enable notifications toggle
-2. Close tab/browser
-3. Create test pedido → expect "QUEUED (admin_trebol offline - normal)"
-4. Reopen admin.html → check console: "Current externalId: admin_trebol" 
-5. Create another test pedido → expect "DELIVERED! recipients=1"
+### Step 1: [PENDING] Edit js/admin.js
+- Remove ALL expiry checks in `isSessionValid()`  
+- Force server token refresh on EVERY page load
+- Auto-reconnect socket with fresh token
+- Add `permanent: true` flag
 
-## Result:
-OneSignal externalId "admin_trebol" now persists across sessions. Push notifications will deliver when browser/device online, even if tab closed (only logout on explicit button press).
+### Step 2: [PENDING] Edit js/tienda.js  
+- Login: Set `permanent: true` in session data
+
+### Step 3: [PENDING] Edit sessions.js
+- **Remove server expiry completely**
+- Persist sessions to file (survive restarts)
+- Always accept/refresh valid tokens
+
+### Step 4: [PENDING] Test
+```
+1. Login → Close tab → Reopen → Auto-login + socket OK  
+2. Server restart → Reconnect works
+3. Multiple tabs/devices → All persistent
+4. Only logoutSimple() clears everything
+```
+
+### Step 5: [PENDING] attempt_completion
+
+**Next**: Edit js/admin.js (most critical - socket fix)
 

@@ -73,11 +73,13 @@ function isSessionValid() {
 function saveAdminSession() {
     const sessionData = {
         logged: true,
-        timestamp: Date.now(),
+        permanent: true,  // ✅ FOREVER until manual logout
         isPWA: isPWA()
     };
     localStorage.setItem('admin_session', JSON.stringify(sessionData));
     localStorage.setItem('admin_logged', 'true');
+    
+    console.log('✅ Permanent admin session saved');
     
     // 🔗 ONESIGNAL: Sync external ID after saving session
     setTimeout(async () => {
