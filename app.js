@@ -688,45 +688,64 @@ app.put('/pedidos/:id/descuento-pedido', async (req, res) => {
     }
 });
 
-// 🔥 PEDIDO DISCOUNT ENDPOINT (feedback)
+// 🔥 PEDIDO DISCOUNT ENDPOINT (uses existing columns)
 app.put('/pedidos/:id/descuento', async (req, res) => {
     const { id } = req.params;
-    const { descuentoPorcentaje, totalManual } = req.body;
+    const { descuentoPorcentaje } = req.body; // Frontend sends %
     
     try {
         const pool = await poolPromise;
         
-        // Get original total for validation
+        // Get current Total (original/base)
         const pedido = await pool.request()
             .input('id', sql.Int, id)
-            .query('SELECT Total as originalTotal FROM Pedidos WHERE PedidoID = @id');
+            .query('SELECT Total as totalBase FROM Pedidos WHERE PedidoID = @id');
             
         if (pedido.recordset.length === 0) {
             return res.status(404).json({ error: 'Pedido no encontrado' });
         }
         
-        const originalTotal = parseFloat(pedido.recordset[0].originalTotal);
+        const totalBase = parseFloat(pedido.recordset[0].totalBase);
         const descuento = parseFloat(descuentoPorcentaje) || 0;
-        const nuevoTotal = parseFloat(totalManual) || originalTotal * (1 - descuento / 100);
+        const totalManual = totalBase * (1 - descuento / 100);
         
         await pool.request()
             .input('id', sql.Int, id)
             .input('desc', sql.Decimal(5,2), descuento)
-            .input('total', sql.Decimal(18,2), nuevoTotal)
-            .query('UPDATE Pedidos SET DescuentoPorcentaje = @desc, TotalManual = @total WHERE PedidoID = @id');
+            .input('totalManual', sql.Decimal(18,2), totalManual)
+            .query('UPDATE Pedidos SET DescuentoPorcentaje = @desc, TotalManual = @totalManual WHERE PedidoID = @id');
             
-        console.log(`💰 Pedido ${id}: ${descuento}% descuento → Total $${nuevoTotal.toLocaleString()}`);
+        // Update /pedidos to show TotalManual if exists
+        console.log(`💰 Pedido ${id}: ${descuento}% → TotalManual $${totalManual.toLocaleString()} (persists!)`);
         
         res.json({
             success: true,
             descuentoPorcentaje: descuento,
-            totalManual: nuevoTotal,
-            originalTotal
+            totalManual,
+            totalBase
         });
     } catch (err) {
         console.error('Pedido descuento error:', err);
         res.status(500).json({ error: err.message });
     }
+});
+
+// Update /pedidos GET to prioritize TotalManual
+app.get('/pedidos', async (req, res) => {
+    try {
+        const pool = await poolPromise;
+        const result = await pool.request().query(`
+            SELECT *, 
+            CASE 
+                WHEN TotalManual IS NOT NULL AND TotalManual > 0 THEN TotalManual 
+                ELSE Total 
+            END as TotalDisplay,
+            (SELECT COUNT(*) FROM Pedidos p2 WHERE p2.Fecha >= p1.Fecha) as NumeroDisplay
+            FROM Pedidos p1 
+            ORDER BY Fecha DESC
+        `);
+        res.json(result.recordset);
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ===== BADGE SUPPORT - Unread Count Endpoint =====
