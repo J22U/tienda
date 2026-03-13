@@ -9,7 +9,11 @@ const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const http = require('http');
 const { Server } = require('socket.io');
 const https = require('https');
-const adminSessions = require('./sessions.js');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
+const morgan = require('morgan'); // Logging
 require('dotenv').config();
 
 // OneSignal Configuration
@@ -118,9 +122,29 @@ io.on('connection', (socket) => {
     });
 });
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
+      scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.socket.io', 'https://jsdelivr.net'],
+      imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com'],
+      connectSrc: ["'self'", 'wss://tienda-1vps.onrender.com', 'https://tienda-1vps.onrender.com']
+    }
+  }
+}));
+app.use(morgan('combined'));
+
+const limiterLogin = rateLimit({
+  windowMs: (parseInt(process.env.RATE_LIMIT_WINDOW) || 15) * 60 * 1000, // Default 15 min
+  max: 5,
+  message: 'Demasiados intentos de login, intente en 15 min',
+  standardHeaders: true
+});
+
+app.use('/api/login', limiterLogin);
 
 // Configuración MIME types para PWA
 app.use((req, res, next) => {
@@ -134,9 +158,9 @@ app.use((req, res, next) => {
 });
 
 cloudinary.config({
-    cloud_name: 'donc8a6tc',
-    api_key: '781626543592578',
-    api_secret: 'jxp0bDLONGpIyMxm5TPtl1tkVhU'
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -609,44 +633,64 @@ app.get('/unread-count', async (req, res) => {
     }
 });
 
-// 🆕 ENDPOINTS SESIÓN ADMIN - DETECCIÓN AUTOMÁTICA
-app.get('/api/admin-session', (req, res) => {
-    const token = req.headers['x-session-token'] || req.query.token;
-    const session = adminSessions.get(token);
-    
-    if (session) {
-        res.json({ 
-            success: true, 
-            userId: session.userId, 
-            logged: true,
-            token 
-        });
-        console.log(`✅ Admin activo: ${session.userId}`);
-    } else {
-        res.json({ 
-            success: false, 
-            userId: null, 
-            logged: false,
-            message: 'No hay admin logueado'
-        });
-    }
+// 🔐 NUEVO LOGIN JWT (FASE 1)
+const ADMIN_USER = process.env.ADMIN_USER || 'admin';
+const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH || '$2a$10$bqrTKR9SvU.avboEhp6tdex8xCcA.0XnIJ/7A87ak8m12il7KPK7a'; // newpass123
+
+app.post('/api/login', async (req, res) => {
+  const { user, pass } = req.body;
+  
+  if (user !== ADMIN_USER) {
+    return res.status(401).json({ error: 'Usuario inválido' });
+  }
+  
+  const valid = await bcrypt.compare(pass, ADMIN_PASS_HASH);
+  if (!valid) {
+    return res.status(401).json({ error: 'Contraseña inválida' });
+  }
+  
+  const token = jwt.sign(
+    { userId: ADMIN_USER, role: 'admin' },
+    process.env.JWT_SECRET || 'MiClaveSuperSecretaParaJWT_32charsMin',
+    { expiresIn: '24h' }
+  );
+  
+  console.log(`🔐 Admin login exitoso: ${ADMIN_USER}`);
+  res.json({ success: true, token, userId: ADMIN_USER });
 });
 
-app.post('/api/admin-session', express.json(), (req, res) => {
-    const { action, userId = "admin_trebol" } = req.body;
-    
-    if (action === 'login') {
-        const token = adminSessions.create(userId);
-        res.json({ success: true, token, userId });
-        console.log(`🔑 Login admin: ${userId}`);
-    } else if (action === 'logout') {
-        const token = req.body.token;
-        adminSessions.destroy(token);
-        res.json({ success: true });
-        console.log(`🚪 Logout admin`);
-    } else {
-        res.status(400).json({ error: 'action: login|logout' });
+// 🔐 Middleware JWT
+const authJWT = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+  
+  if (!token) {
+    return res.status(401).json({ error: 'Token requerido' });
+  }
+  
+  jwt.verify(token, process.env.JWT_SECRET || 'MiClaveSuperSecretaParaJWT_32charsMin', (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: 'Token inválido' });
     }
+    req.user = user;
+    next();
+  });
+};
+
+// Proteger rutas admin
+app.use('/api/admin/', authJWT);
+app.use('/backup', authJWT);
+app.use('/restore', authJWT);
+
+// OLD sessions - deprecated (mantener para compatibilidad temporal)
+app.get('/api/admin-session', (req, res) => {
+    const token = req.headers['x-session-token'] || req.query.token;
+    // Fallback legacy
+    res.json({ 
+        success: false, 
+        message: 'Use /api/login para nueva auth JWT',
+        deprecated: true
+    });
 });
 
 app.get('/logout', (req, res) => {
