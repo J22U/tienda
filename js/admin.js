@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const facturaBtn = e.target.closest('.pedido-btn-factura');
         if (facturaBtn) {
             const id = facturaBtn.dataset.pedidoId;
-            generarFacturaPDF(id);
+            generarFacturaPDFParaPedido(id);
         }
     });
 
@@ -311,6 +311,171 @@ async function eliminarPedido(id) {
     } catch (err) {
         Swal.fire('Error', err.message, 'error');
     }
+}
+
+// 🚀 FACTURA GENERATOR (User-provided)
+async function generarFacturaPDFParaPedido(pedidoId) {
+    try {
+        const res = await fetch(`/pedidos/${pedidoId}`);
+        if (!res.ok) throw new Error('Pedido no encontrado');
+        const p = await res.json();
+        const numeroPedido = p.NumeroDisplay || p.PedidoID || pedidoId;
+        generarFacturaPDF(p, numeroPedido);
+    } catch(err) {
+        Swal.fire('Error', `No se pudo cargar factura: ${err.message}`, 'error');
+    }
+}
+
+// Your existing function (copied exactly)
+async function generarFacturaPDF(p, numeroPedido) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    let productosArr = [];
+    try { 
+        productosArr = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
+    } catch (e) { productosArr = []; }
+
+    // --- CONFIGURACIÓN DE COLORES ---
+    const primaryColor = [34, 74, 43]; // Verde Trébol Profundo
+    const accentColor = [108, 92, 231]; // Morado suave (opcional para detalles)
+    const textColor = [45, 52, 54];
+    const lightGray = [240, 242, 245];
+
+    // 1. BARRA LATERAL DE DISEÑO (Opcional, da un toque moderno)
+    doc.setFillColor(34, 74, 43);
+    doc.rect(0, 0, 5, 297, 'F');
+
+    // 2. ENCABEZADO: LOGO Y DATOS EMPRESA
+    // Si tienes el logo en URL, jsPDF puede tardar. Aquí usamos texto con estilo de marca.
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(28);
+    doc.setTextColor(34, 74, 43);
+    doc.text("TRÉBOL S.A.S", 20, 25);
+    
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.setFont("helvetica", "normal");
+    doc.text("Herramientas profesionales", 20, 31);
+    doc.text("NIT: 900.555.123-1", 20, 36);
+    doc.text("El Peñol, Antioquia | Cel: 310 123 4567", 20, 41);
+    doc.text("trebol@gmail.com", 20, 46);
+
+    // 3. BLOQUE DE INFO DE FACTURA (Cuadro elegante)
+    doc.setFillColor(248, 249, 250);
+    doc.roundedRect(130, 15, 65, 35, 3, 3, 'F');
+    doc.setDrawColor(230);
+    doc.roundedRect(130, 15, 65, 35, 3, 3, 'D');
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.setFontSize(10);
+    doc.text("ORDEN DE SERVICIO", 135, 25);
+    doc.setFontSize(20);
+    doc.text(`# ${numeroPedido.toString().padStart(4, '0')}`, 135, 35);
+    doc.setFontSize(9);
+    doc.setTextColor(120);
+    doc.text(`Fecha: ${new Date(p.Fecha).toLocaleDateString()}`, 135, 43);
+
+    // 4. INFORMACIÓN DEL CLIENTE (Diseño en columnas)
+    doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.setLineWidth(0.5);
+    doc.line(20, 55, 195, 55);
+
+    doc.setFontSize(10);
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.text("FACTURADO A:", 20, 65);
+    
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.setFont("helvetica", "bold");
+    doc.text(p.NombreCliente.toUpperCase(), 20, 72);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(80);
+    doc.text(`C.C./NIT: ${p.Documento || '---'}`, 20, 78);
+    doc.text(`Teléfono: ${p.Telefono}`, 20, 83);
+    doc.text(`Dirección: ${p.Direccion || 'Entrega en local'}`, 20, 88);
+
+    // 5. TABLA DE PRODUCTOS (Estilo moderno y limpio)
+    const rows = productosArr.map(item => [
+        item.cantidad,
+        { content: item.Nombre, styles: { fontStyle: 'bold' } },
+        `$ ${Number(item.Precio).toLocaleString()}`,
+        `$ ${(item.cantidad * item.Precio).toLocaleString()}`
+    ]);
+
+    doc.autoTable({
+        startY: 95,
+        head: [['CANT.', 'DESCRIPCIÓN', 'VALOR UNIT.', 'SUBTOTAL']],
+        body: rows,
+        headStyles: { 
+            fillColor: primaryColor, 
+            textColor: [255, 255, 255], 
+            fontSize: 10,
+            halign: 'center'
+        },
+        bodyStyles: { 
+            fontSize: 9, 
+            cellPadding: 5 
+        },
+        columnStyles: {
+            0: { halign: 'center', cellWidth: 20 },
+            2: { halign: 'right' },
+            3: { halign: 'right' }
+        },
+        theme: 'striped',
+        margin: { left: 20, right: 15 }
+    });
+
+    // 6. RESUMEN DE TOTALES
+    const finalY = doc.lastAutoTable.finalY + 10;
+    
+    doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.rect(130, finalY, 65, 12, 'F');
+    
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(255, 255, 255);
+    doc.text("TOTAL NETO:", 135, finalY + 8);
+    doc.text(`$ ${Number(p.Total).toLocaleString()}`, 190, finalY + 8, { align: 'right' });
+
+    // 7. MÉTODOS DE PAGO Y NOTAS
+    const notasY = finalY + 25;
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.setFontSize(10);
+    doc.text("MÉTODOS DE PAGO:", 20, notasY);
+    
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.setFont("helvetica", "normal");
+    doc.text("• Nequi / Bancolombia: 310 123 4567", 20, notasY + 6);
+    doc.text("• Efectivo en local", 20, notasY + 11);
+
+    // 8. PIE DE PÁGINA LEGAL (Muy importante para la validez)
+    doc.setFontSize(7);
+    doc.setTextColor(150);
+    const legal1 = "Esta es una representación gráfica de una cuenta de cobro / orden de venta interna.";
+    const legal2 = "No somos responsables de IVA. Régimen Simplificado. Art. 774 del Código de Comercio.";
+    doc.text(legal1, 105, 280, { align: 'center' });
+    doc.text(legal2, 105, 284, { align: 'center' });
+    
+    // Frase final
+    doc.setFontSize(10);
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.setFont("helvetica", "bold");
+    doc.text("¡GRACIAS POR SU COMPRA!", 105, 270, { align: 'center' });
+
+    // Descargar
+    doc.save(`Factura_Trebol_${numeroPedido}.pdf`);
+    
+    Swal.fire({
+        title: 'Factura Generada',
+        text: 'Se ha descargado la factura exitosamente.',
+        icon: 'success',
+        confirmButtonColor: '#224a2b'
+    });
 }
 
 // Utils
