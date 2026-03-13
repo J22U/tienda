@@ -1,21 +1,17 @@
-# FIX Server Crash - adminSessions undefined
+## TODO - Fix JS Syntax Errors in Admin Panel
 
-**Estado:** ✅ **Paso 1 COMPLETADO**
+**Status**: 🚀 In Progress  
+**Target**: c:/Users/johnr/Ferreteria/js/admin.js  
+**Errors Fixed**: Declaration expected, '}' expected, brace mismatch
 
-## Pasos del Plan (2/4):
+### ✅ Steps Completed
+- [x] Plan approved by user
+- [x] TODO.md created
+- [ ] Clean js/admin.js (remove duplicates)
+- [ ] Verify syntax in VSCode
+- [ ] Test admin functionality
+- [ ] Update TODO.md ✅
+- [ ] attempt_completion
 
-### 1. ✅ **COMPLETADO** Editar app.js
-```
-✅ const adminSessions = require('./sessions'); agregado
-```
+**Next**: Edit js/admin.js → remove duplicate socket code + fix braces
 
-### 2. **PENDIENTE** Test Local
-```
-npm start
-```
-**Esperado:** Sin ReferenceError, Socket.io listo.
-
-### 3. **Test Endpoints** `/api/login`, socket
-### 4. **Deploy Render** (git push)
-
-**Progress: 1/4**

@@ -405,6 +405,11 @@ async function prepararFacturaPorId(pedidoId, numeroPedido) {
 }
 
 async function generarFacturaPDF(p, numeroPedido) {
+    if (typeof window.jspdf === 'undefined') {
+      console.error('❌ jsPDF not loaded - CDN blocked?');
+      Swal.fire('Error', 'jsPDF library failed to load. Check CSP.', 'error');
+      return;
+    }
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 

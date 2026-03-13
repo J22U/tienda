@@ -13,16 +13,17 @@
     <!-- Tipografía -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;800&display=swap" rel="stylesheet">
     
-    <!-- PDF y utilidades externas -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
-    
     <!-- Estilos personalizados -->
     <link rel="stylesheet" href="css/admin.css">
     
-    <!-- Optimized Session + OneSignal Toggle + ✅ OneSignal v16 SDK -->
-    <!-- CRITICAL: OneSignal SDK v16 (missing before) -->
+    <!-- Socket.io LOCAL (CSP-safe) -->
+    <script src="/socket.io/socket.io.js"></script>
+    
+    <!-- ✅ jsPDF CSP-SAFE CDN (jsdelivr.net only) -->
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.6.0/dist/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- OneSignal v16 (CSP now allows) -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     
     <script>
@@ -55,7 +56,7 @@
                 
 
 
-                <button type="button" id="btn-logout" class="btn btn-danger rounded-pill px-4 fw-bold btn-sm" onclick="logoutSimple()">
+                <button type="button" id="btn-logout" class="btn btn-danger rounded-pill px-4 fw-bold btn-sm" data-action="logout">
                     <i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión
                 </button>
             </div>
@@ -68,7 +69,7 @@
                 <div class="bento-card">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h4 class="fw-bold m-0" id="titulo-form">Crear Producto</h4>
-                        <button type="button" class="btn btn-light btn-sm fw-bold" onclick="limpiarForm()">
+                        <button type="button" id="btn-nuevo" class="btn btn-light btn-sm fw-bold" data-action="limpiarForm">
                             <i class="bi bi-plus-lg"></i> NUEVO
                         </button>
                     </div>
@@ -124,31 +125,31 @@
                     <!-- TABS -->
                     <ul class="nav nav-pills mb-4 gap-2" id="adminTabs" role="tablist">
                         <li class="nav-item">
-                            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-inventario" type="button" onclick="cargarInventario()">
+                            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-inventario" type="button" data-tab="inventario">
                                 <i class="bi bi-box-seam me-2"></i>Inventario
                             </button>
                         </li>
                         <li class="nav-item">
-                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-agotados" type="button" onclick="cargarAgotados()">
+                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-agotados" type="button" data-tab="agotados">
                                 <i class="bi bi-exclamation-triangle me-2"></i>Agotados
                             </button>
                         </li>
                         <li class="nav-item">
-                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-pedidos" type="button" onclick="cargarPedidos()">
+                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-pedidos" type="button" data-tab="pedidos">
                                 <i class="bi bi-cart-check me-2"></i>Pedidos
                             </button>
                         </li>
                         <li class="nav-item ms-md-auto d-flex align-items-center gap-2">
                             <button class="btn btn-outline-success btn-sm rounded-pill fw-bold px-3" 
                                     style="min-width: 120px;" 
-                                    onclick="exportarInventario()" 
+id="btn-backup" data-action="exportar"
                                     title="Descargar copia de seguridad">
                                 <i class="bi bi-cloud-arrow-down-fill me-2"></i>Backup
                             </button>
 
                             <button class="btn btn-outline-warning btn-sm rounded-pill fw-bold px-3" 
                                     style="min-width: 120px;" 
-                                    onclick="document.getElementById('inputImportar').click()" 
+id="btn-importar" data-action="importar"
                                     title="Restaurar desde archivo">
                                 <i class="bi bi-cloud-arrow-up-fill me-2"></i>Recuperar
                             </button>
@@ -165,7 +166,7 @@
                                 <h5 class="fw-bold m-0">Productos</h5>
                                 <div class="input-group input-group-sm" style="max-width: 250px;">
                                     <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
-                                    <input type="text" id="buscar-prod" class="form-control border-start-0 bg-light" placeholder="Filtrar por nombre o SKU..." onkeyup="filtrarProductos()">
+                                    <input type="text" id="buscar-prod" class="form-control border-start-0 bg-light" placeholder="Filtrar por nombre o SKU..." data-action="filtrar">
                                 </div>
                                 <span class="badge bg-dark rounded-pill" id="total-count">0 items</span>
                             </div>
@@ -189,13 +190,13 @@
                             </div>
 
                             <div class="d-flex gap-2 mb-4 p-2 bg-light rounded-4 justify-content-center shadow-sm">
-                                <button class="btn btn-sm btn-dark rounded-pill px-3 fw-bold" id="btn-filtro-Todos" onclick="filtrarPedidos('Todos')">
+                                <button class="btn btn-sm btn-dark rounded-pill px-3 fw-bold" id="btn-filtro-Todos" data-tab="Todos">
                                     TODOS
                                 </button>
-                                <button class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-bold" id="btn-filtro-Pendiente" onclick="filtrarPedidos('Pendiente')">
+data-tab="Pendiente"
                                     PENDIENTES
                                 </button>
-                                <button class="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold" id="btn-filtro-Completado" onclick="filtrarPedidos('Completado')">
+data-tab="Completado"
                                     COMPLETADOS
                                 </button>
                             </div>
@@ -216,7 +217,18 @@
     
     <!-- 🔔 ONESIGNAL v16 Fixed -->
     <script src="js/onesignal-v16-fixed.js" defer></script>
+    
+    <!-- CSP Event Delegation -->
+    <script>
+document.addEventListener('click', function(e) {
+  if(e.target.matches('#btn-backup, [data-action="exportar"]')) return window.exportarInventario();
+  if(e.target.matches('#btn-importar, [data-action="importar"]')) return document.getElementById('inputImportar').click();
+  const tabTarget = e.target.closest('[data-tab="Pendiente"], [data-tab="Completado"]');
+  if(tabTarget) return window.filtrarPedidos(tabTarget.dataset.tab);
+});
+    </script>
     <script src="js/admin.js" defer></script>
+
 </body>
 </html>
 
