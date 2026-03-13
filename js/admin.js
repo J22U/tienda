@@ -188,8 +188,17 @@ async function cargarPedidos() {
         const res = await fetch('/pedidos');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         let allPedidos = await res.json();
-        // 🔄 Sort by Fecha DESC - newest first (latest arriba)
-        allPedidos.sort((a, b) => new Date(b.Fecha) - new Date(a.Fecha));
+// 🔄 Sort newest first (Fecha DESC) + highest # stable
+        allPedidos.sort((a, b) => {
+            const dateA = new Date(a.Fecha);
+            const dateB = new Date(b.Fecha);
+            if (dateB > dateA) return 1;
+            if (dateA > dateB) return -1;
+            // Same date: highest NumeroDisplay
+            const numA = parseInt(a.NumeroDisplay || '0');
+            const numB = parseInt(b.NumeroDisplay || '0');
+            return numB - numA;
+        });
         const filtered = allPedidos.filter(p => (window.filtroEstado || 'Todos') === 'Todos' || p.Estado === (window.filtroEstado || 'Todos'));
         renderPedidos(filtered, lista);
         document.getElementById('order-count').textContent = `${filtered.length} pedidos`;
@@ -516,13 +525,17 @@ async function mostrarDetallesPedido(pedidoId) {
             productosArr = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
         } catch(e) { productosArr = []; }
         
-        // Fill modal
+        // All details
         document.getElementById('modalPedidoNum').textContent = `#${p.NumeroDisplay || p.PedidoID}`;
         document.getElementById('modalCliente').textContent = p.NombreCliente;
         document.getElementById('modalFecha').textContent = new Date(p.Fecha).toLocaleString('es-ES');
         document.getElementById('modalEstado').textContent = p.Estado;
         document.getElementById('modalTotal').textContent = `$${Number(p.Total).toLocaleString()}`;
+        document.getElementById('modalTelefono').textContent = p.Telefono || 'N/A';
+        document.getElementById('modalDocumento').textContent = p.Documento || 'N/A';
+        document.getElementById('modalDireccion').textContent = p.Direccion || 'N/A';
         document.getElementById('modalBtnFactura').dataset.pedidoId = pedidoId;
+        document.getElementById('modalDescuentoInput').dataset.productoId = ''; // Reset
         
         // Items table with descuentos
         const tbody = document.querySelector('#modalItemsTable tbody');
