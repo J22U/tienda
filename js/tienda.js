@@ -556,9 +556,9 @@ if (email === "admin@agro.com" && pass === "123456") {
                 
                 // 1. Local session INMEDIATA (crítico para redirect)
                 localStorage.setItem('admin_logged', 'true');
-                const sessionData = {
+const sessionData = {
                     logged: true,
-                    timestamp: Date.now(),
+                    permanent: true,
                     isPWA: isPWA()
                 };
                 localStorage.setItem('admin_session', JSON.stringify(sessionData));

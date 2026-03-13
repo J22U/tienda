@@ -3,9 +3,17 @@
    ============================================================================ */
 
 const BASE_URL = 'https://tienda-1vps.onrender.com';
-let editando = false;
+
+/* GLOBAL VARS - HOISTED (Step 2) - FIXED DUPLICATES */
+let socket = null;
+let socketReady = false;
+let socketConectado = false;
+let reconnectAttempts = 0;
+const MAX_RECONNECTS = 5;
 let cargandoPedidosFlag = false;
 let productosLocal = []; 
+let editando = false;  // FIXED: Single declaration
+let OneSignalInitialized = false;
 
 /* ============================================================================
    PRODUCTOS - RENDERIZADO Y CARGA
@@ -161,87 +169,64 @@ function limpiarForm() {
    FORMULARIO - GUARDAR PRODUCTO
    ============================================================================ */
 
+// 🚀 SINGLE MASTER DOMContentLoaded HANDLER (Fixes line 316 duplicates)
 document.addEventListener('DOMContentLoaded', async function() {
-    // 🚀 ONESIGNAL: Enhanced persistence recovery + tab listeners
+    console.log('[AdminInit] 🚀 SINGLE MASTER DOMCONTENTLOADED START');
+    
+    // 1. SESSION FIRST - Critical (fixes line 181 scope)
+    await verificarSesion();
+    if (!isSessionValid()) {
+        console.error('[AdminInit] Session invalid → EXIT');
+        return;
+    }
+    console.log('[AdminInit] ✅ Session OK');
+    
+    // 2. OneSignal init (safe ?. )
     try {
         await window.OneSignalInit?.initOneSignal();
         await window.OneSignalInit?.showAdminPrompt();
         await window.OneSignalInit?.checkAndRecoverSubscription();
         await window.OneSignalInit?.updateNotificationUI();
-        console.log('🔔 OneSignal admin integration + persistence ready');
+        console.log('🔔 OneSignal ready');
     } catch (e) {
-        console.warn('OneSignal init failed:', e);
+        console.warn('OneSignal init:', e);
     }
     
-    // 🆕 TAB REOPEN LISTENERS - Force recovery on focus/visibility
-    window.addEventListener('focus', () => {
-        console.log('👁️ Tab focused - OneSignal recovery check');
-        window.OneSignalInit?.checkAndRecoverSubscription();
-    });
-    
+    // 3. TAB FOCUS/VISIBILITY LISTENERS
+    window.addEventListener('focus', () => window.OneSignalInit?.checkAndRecoverSubscription());
     document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) {
-            console.log('👁️ Tab visible - OneSignal recovery check');
-            window.OneSignalInit?.checkAndRecoverSubscription();
-        }
+        if (!document.hidden) window.OneSignalInit?.checkAndRecoverSubscription();
     });
     
-    // PROTECCIÓN DE HISTORIAL - Prevenir back button
+    // 4. HISTORY PROTECTION
     window.history.pushState(null, null, window.location.href);
-    window.addEventListener('popstate', function() {
-        window.history.pushState(null, null, window.location.href);
-    });
+    window.addEventListener('popstate', () => window.history.pushState(null, null, window.location.href));
     
-    // 🆕 EXPOSE TEST FUNCTIONS (for debug button) + UI
-    window.testNotification = async function() {
-      const result = await window.OneSignalTest?.testAdminNotification();
-      if (result) {
-        Swal.fire('✅', 'Test notification sent to admin_trebol!', 'success');
-      } else {
-        Swal.fire('❌', 'Test failed - check console', 'error');
-      }
-      updatePersistenceStatus();
+    // 5. EXPOSE GLOBAL FUNCTIONS (after deps ready)
+    window.testNotification = async () => {
+        const result = await window.OneSignalTest?.testAdminNotification();
+        Swal.fire('Test', result ? '✅ Sent!' : '❌ Failed', result ? 'success' : 'error');
+        window.updatePersistenceStatus?.();
     };
-    
-    window.forceRecovery = async function() {
-      await window.OneSignalTest?.forceRecovery();
-      Swal.fire('🔄', 'Recovery triggered - check console', 'success');
-      setTimeout(updatePersistenceStatus, 2000);
+    window.forceRecovery = async () => {
+        await window.OneSignalTest?.forceRecovery();
+        Swal.fire('🔄', 'Recovery triggered', 'success');
     };
-    
-    // 🆕 Update debug status UI
     window.updatePersistenceStatus = async function() {
-      const statusEl = document.getElementById('persistence-status');
-      if (!statusEl) return;
-      
-      const onesignalStatus = await window.OneSignalInit?.getSubscriptionStatus();
-      const adminLogged = localStorage.getItem('admin_logged') === 'true';
-      
-      let badgeClass = 'text-muted', statusText = 'Unknown';
-      let externalId = onesignalStatus?.externalId || 'none';
-      
-      if (adminLogged && externalId === 'admin_trebol') {
-        badgeClass = 'text-success';
-        statusText = '✅ PERSISTENT (ID: admin_trebol)';
-      } else if (adminLogged) {
-        badgeClass = 'text-warning';
-        statusText = '⚠️ Recovery needed';
-      } else {
-        badgeClass = 'text-danger';
-        statusText = '❌ No admin session';
-      }
-      
-      statusEl.innerHTML = `<span class="${badgeClass} fw-bold">${statusText}</span> | ID: <code>${externalId}</code>`;
-      
-      // Show debug section after init
-      const debugSection = document.getElementById('debug-section');
-      if (debugSection) debugSection.classList.remove('d-none');
-    }
+        const statusEl = document.getElementById('persistence-status');
+        if (!statusEl) return;
+        const onesignalStatus = await window.OneSignalInit?.getSubscriptionStatus?.();
+        const adminLogged = localStorage.getItem('admin_logged') === 'true';
+        let badgeClass = 'text-muted', statusText = 'Unknown', externalId = onesignalStatus?.externalId || 'none';
+        if (adminLogged && externalId === 'admin_trebol') { badgeClass = 'text-success'; statusText = '✅ PERSISTENT'; }
+        else if (adminLogged) { badgeClass = 'text-warning'; statusText = '⚠️ Recovery needed'; }
+        else { badgeClass = 'text-danger'; statusText = '❌ No session'; }
+        statusEl.innerHTML = `<span class="${badgeClass} fw-bold">${statusText}</span> | ID: <code>${externalId}</code>`;
+        document.getElementById('debug-section')?.classList.remove('d-none');
+    };
+    setTimeout(() => window.updatePersistenceStatus?.(), 3000);
     
-    // Init debug UI
-    setTimeout(() => updatePersistenceStatus(), 3000);
-
-    
+    // 6. FORM HANDLER
     const formProducto = document.getElementById('form-producto');
     if (formProducto) {
         formProducto.addEventListener('submit', async (e) => {
@@ -249,7 +234,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             const id = document.getElementById('prod-id').value;
             const url = editando ? `${BASE_URL}/productos/${id}` : `${BASE_URL}/productos`;
             const method = editando ? 'PUT' : 'POST';
-
             const formData = new FormData();
             formData.append('Nombre', document.getElementById('nombre').value);
             formData.append('Marca', document.getElementById('marca').value);
@@ -257,53 +241,27 @@ document.addEventListener('DOMContentLoaded', async function() {
             formData.append('Precio', document.getElementById('precio').value);
             formData.append('Stock', document.getElementById('stock').value);
             formData.append('Caracteristicas', document.getElementById('caracteristicas').value);
-
             const fotoInput = document.getElementById('imagenes');
-            if (fotoInput.files.length > 0) {
-                if (fotoInput.files.length > 6) {
-                    Swal.fire('Límite alcanzado', 'Máximo 6 imágenes por producto', 'warning');
-                    return;
-                }
-                for(let i = 0; i < fotoInput.files.length; i++) {
-                    formData.append('imagenes', fotoInput.files[i]);
-                }
+            if (fotoInput?.files.length > 0) {
+                if (fotoInput.files.length > 6) return Swal.fire('Límite', 'Máx 6 imgs', 'warning');
+                for(let i = 0; i < fotoInput.files.length; i++) formData.append('imagenes', fotoInput.files[i]);
             }
-
             try {
-                Swal.fire({ 
-                    title: 'Guardando...', 
-                    allowOutsideClick: false, 
-                    didOpen: () => Swal.showLoading() 
-                });
-
-                const res = await fetch(url, { 
-                    method: method, 
-                    body: formData
-                });
-
+                Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                const res = await fetch(url, { method, body: formData });
                 if (!res.ok) {
                     const errorText = await res.text();
-                    console.error("Server error:", res.status, errorText);
                     throw new Error(`Error ${res.status}: ${errorText.substring(0, 200)}`);
                 }
-
-                const result = await res.json();
-
-                await Swal.fire('¡Éxito!', 'Producto guardado correctamente', 'success');
-                limpiarForm();
-                cargarInventario();
-                cargarAgotados();
+                await Swal.fire('¡Éxito!', 'Guardado', 'success');
+                limpiarForm(); cargarInventario(); cargarAgotados();
             } catch (err) {
-                console.error("Error completo:", err);
-                Swal.fire('Error', err.message || 'Error al guardar producto', 'error');
+                console.error(err); Swal.fire('Error', err.message || 'Error guardando', 'error');
             }
         });
     }
     
-    // Keep original for reference (commented)
-    /*
-    const btnLogout = document.getElementById('btn-logout'); // COMMENTED - now direct onclick
-    */
+    console.log('[AdminInit] ✅ MASTER HANDLER COMPLETE');
 });
 
 // 🔧 SIMPLIFIED LOGOUT - NOW GLOBAL (Fix ReferenceError)
@@ -1273,19 +1231,21 @@ async function verificarSesion() {
     
     console.log('✅ Server session fresh & ready');
     
-    // NEW: OneSignal sync after server session
-    const userId = await window.OneSignalInit?.getCurrentUserId();
+    // NEW: OneSignal sync after server session (Step 4 FIXED)
+    const userId = await window.OneSignalInit?.getCurrentUserId() || 'admin_trebol';
     console.log('🔗 Session verified - userId:', userId);
     
-    // 3. FORCE socket reconnect with FRESH token
+    // 3. SAFE socket reconnect with FRESH token (socket now global)
     const freshToken = localStorage.getItem('server_session_token');
-    if (socket) {
-        socket.auth = { token: freshToken, userId };  // ← Pass userId to socket
-        if (socket.connected) {
-            socket.disconnect();
+    if (socket && freshToken) {
+        try {
+            socket.auth = { token: freshToken, userId };
+            if (socket.connected) socket.disconnect();
+            socket.connect();
+            console.log('🔌 Socket reconnected:', freshToken.slice(0,8)+'...', userId);
+        } catch (sockErr) {
+            console.warn('Socket reconnect failed:', sockErr);
         }
-        socket.connect();
-        console.log('🔌 Socket reconnected:', freshToken.slice(0,8)+'...', userId);
     }
 }
 

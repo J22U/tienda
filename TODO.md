@@ -1,61 +1,21 @@
-# ✅ TODO: COMPLETADO - Notificaciones Persistentes OneSignal
+# TODO: Fix js/admin.js Errors (Approved Plan)
 
-## 📋 ESTADO: 9/9 ✅ FINALIZADO
+## Status: 🚀 IN PROGRESS
 
-### PASO 1: ✅ js/onesignal-init.js
-```
-- getCurrentUserId() dinámico (localStorage/server)
-- initOneSignal() → externalId único por sesión  
-- checkAndRecoverSubscription() mejorado + auto-sync
-- Global functions exposed
-```
+### Steps:
+- [ ] 1. Create/update TODO.md ✅ **DONE**
+- [✅] 2. Hoist global vars (`socket`, flags) to top of js/admin.js
+- [✅] 3. Consolidate ALL DOMContentLoaded into single master handler
+- [✅] 4. Fix verificarSesion(): Declare socket early, await userId safely
+- [ ] 5. Restructure socket init **after** session/OneSignal, merge duplicate handlers
+- [ ] 6. Add null checks (OneSignal?.), try/catch for async
+- [ ] 7. Expose window functions **after** declarations
+- [ ] 8. Initial loads (cargarInventario, etc.) at end
+- [ ] 9. Test: No console red errors, functions work
+- [ ] 10. Mark complete → attempt_completion
 
-### PASO 2: ✅ js/tienda.js (Login)
-```
-- Login genera current_user_id único (`admin_${timestamp}`)
-- OneSignal sync inmediato + save localStorage
-```
+**Next step:** Step 5 - Restructure socket init & handlers in master DOMContentLoaded
 
-### PASO 3: ✅ js/admin.js (Session Load)
-```
-- verificarSesion() → OneSignal recovery
-- focus/visibilitychange auto-recovery
-- Socket reconnect con userId
-```
-
-### PASO 4: ✅ sessions.js
-```
-- create(userId) dinámico (no hardcoded)
-- getActiveUserIds() → array admins activos
-```
-
-### PASO 5: ✅ app.js (Backend)
-```
-- sendPushNotification() → activeUserIds dinámicos
-- POST /pedidos → target real-time active admins
-```
-
-### PASO 6: ✅ admin.html
-```
-- Status UI + test buttons mejorados
-```
-
-### PASO 7: ✅ sw.js
-```
-- OneSignal fetch prioritizado
-```
-
-## 🧪 TESTING COMPLETADO
-```
-✅ Login → F12 → userId único generado
-✅ Close tab → reopen → ID recovered + notifications  
-✅ Multiple logins → cada uno recibe su push
-✅ PWA kill/reopen → SW mantiene subscription  
-✅ Backend logs → targets correct userIds array
-```
-
-## 🚀 RESULTADO FINAL
-**Sistema ahora identifica dinámicamente "quién inició sesión" via unique external_user_id por sesión + envía notificaciones persistentes via SW incluso después de cerrar app/pestañas.**
-
-**Listo para deploy Render.com! 🎉**
+**File:** js/admin.js
+**Errors fixed:** Line 181 col7, 316 col1/2 (syntax)
 
