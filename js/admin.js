@@ -155,6 +155,7 @@ function renderProductos(prods, container) {
                         <div class="stock-info mt-2">
                             <span class="badge ${stockClass}">${p.Stock} und</span>
                         </div>
+                        ${p.Caracteristicas ? `<small class="text-muted d-block mt-1 fs-6">${p.Caracteristicas.length > 100 ? p.Caracteristicas.substring(0, 100) + '...' : p.Caracteristicas}</small>` : ''}
                     </div>
                 </div>
             </div>
@@ -181,8 +182,12 @@ async function cargarPedidos() {
         const res = await fetch('/pedidos');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         let allPedidos = await res.json();
-        // 🔄 Sort DESC (newest/last first - highest numero top)
-        allPedidos.sort((a, b) => new Date(b.Fecha) - new Date(a.Fecha));
+        // 🔄 Sort by NumeroDisplay DESC (highest # first)
+        allPedidos.sort((a, b) => {
+            const numA = parseInt(a.NumeroDisplay || a.PedidoID) || 0;
+            const numB = parseInt(b.NumeroDisplay || b.PedidoID) || 0;
+            return numB - numA;
+        });
         const filtered = allPedidos.filter(p => (window.filtroEstado || 'Todos') === 'Todos' || p.Estado === (window.filtroEstado || 'Todos'));
         renderPedidos(filtered, lista);
         document.getElementById('order-count').textContent = `${filtered.length} pedidos`;
