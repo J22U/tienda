@@ -77,6 +77,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (deleteBtn) {
             const id = deleteBtn.dataset.pedidoId;
             eliminarPedido(id);
+            return;
+        }
+        
+        const facturaBtn = e.target.closest('.pedido-btn-factura');
+        if (facturaBtn) {
+            const id = facturaBtn.dataset.pedidoId;
+            generarFacturaPDF(id);
         }
     });
 
@@ -190,7 +197,7 @@ function renderPedidos(peds, container) {
         <div class="pedido-row p-3 border-bottom">
             <div class="d-flex justify-content-between">
                 <div>
-                    <strong>#${p.PedidoID}</strong> - ${p.NombreCliente}
+                    <strong>#${p.NumeroDisplay || p.PedidoID}</strong> - ${p.NombreCliente}
                     <br><small class="text-muted">${new Date(p.Fecha).toLocaleString('es-ES')}</small>
                 </div>
                 <div class="text-end">
@@ -199,10 +206,14 @@ function renderPedidos(peds, container) {
                 </div>
             </div>
             <div class="mt-2">
-                <button class="btn btn-sm btn-outline-${btnClass} me-2 pedido-btn-status" 
+                <button class="btn btn-sm btn-outline-${btnClass} me-1 pedido-btn-status" 
                         data-pedido-id="${p.PedidoID}" 
                         data-new-estado="${newEstado}">
                     ${btnText}
+                </button>
+                <button class="btn btn-sm btn-primary me-1 pedido-btn-factura" 
+                        data-pedido-id="${p.PedidoID}">
+                    <i class="bi bi-file-earmark-pdf me-1"></i>Factura
                 </button>
                 <button class="btn btn-sm btn-outline-danger pedido-btn-delete" 
                         data-pedido-id="${p.PedidoID}">

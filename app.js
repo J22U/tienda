@@ -556,7 +556,12 @@ app.post('/pedidos', async (req, res) => {
 app.get('/pedidos', async (req, res) => {
     try {
         const pool = await poolPromise;
-        const result = await pool.request().query('SELECT * FROM Pedidos ORDER BY Fecha DESC');
+        const result = await pool.request().query(`
+            SELECT *, 
+            (SELECT COUNT(*) FROM Pedidos p2 WHERE p2.Fecha >= p1.Fecha) as NumeroDisplay
+            FROM Pedidos p1 
+            ORDER BY Fecha DESC
+        `);
         res.json(result.recordset);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
