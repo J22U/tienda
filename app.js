@@ -29,17 +29,23 @@ if (!ONESIGNAL_REST_API_KEY || ONESIGNAL_REST_API_KEY === 'YOUR_REST_API_KEY_HER
 function sendPushNotification(pedidoData) {
     const { numeroPedido, nombreCliente, total, productos } = pedidoData;
     
-    const notification = {
+   const notification = {
         app_id: ONESIGNAL_APP_ID,
         include_external_user_ids: ["admin_trebol"], 
         channel_for_external_user_ids: "push",
-        headings: { es: '🛒 Nuevo Pedido - Trébol' },
+        // AGREGAMOS 'en' a headings
+        headings: { 
+            en: '🛒 Nuevo Pedido - Trébol',
+            es: '🛒 Nuevo Pedido - Trébol' 
+        },
+        // AGREGAMOS 'en' a contents
         contents: { 
+            en: `Pedido #${numeroPedido} de ${nombreCliente}\nTotal: $${Number(total).toLocaleString()}\n${productos} producto(s)`,
             es: `Pedido #${numeroPedido} de ${nombreCliente}\nTotal: $${Number(total).toLocaleString()}\n${productos} producto(s)` 
         },
         url: 'https://tienda-1vps.onrender.com/admin.html',
         priority: 10,
-        ttl: 259200 // 3 días de persistencia si el móvil está apagado
+        ttl: 259200
     };
 
     const postData = JSON.stringify(notification);
