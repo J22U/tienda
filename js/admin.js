@@ -344,19 +344,26 @@ function mostrarNotificacion(msg) {
     setTimeout(() => notif.remove(), 5000);
 }
 
-// 🔘 Description toggle function
-function toggleDesc(btn) {
-    const textEl = btn.previousElementSibling;
+// 🔘 Description toggle function - FIXED full text
+window.toggleDesc = function(btn) {
+    const descSection = btn.closest('.description-section');
+    const textEl = descSection.querySelector('.description-text');
+    const fullDesc = textEl.dataset.fullDesc;
+    
     if (textEl.classList.contains('expanded')) {
+        // Collapse
+        textEl.textContent = fullDesc.substring(0, 100) + (fullDesc.length > 100 ? '...' : '');
         textEl.classList.remove('expanded');
         btn.textContent = 'Ver más';
-        btn.parentElement.parentElement.parentElement.style.maxHeight = '380px';
+        descSection.parentElement.parentElement.style.maxHeight = '380px';
     } else {
+        // Expand
+        textEl.textContent = fullDesc;
         textEl.classList.add('expanded');
         btn.textContent = 'Ver menos';
-        btn.parentElement.parentElement.parentElement.style.maxHeight = 'none';
+        descSection.parentElement.parentElement.style.maxHeight = 'none';
     }
-}
+};
 
 // 🔘 Limpiar form - unchanged
 document.addEventListener('click', e => {
