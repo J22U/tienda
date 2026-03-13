@@ -143,7 +143,7 @@ async function checkAndRecoverSubscription() {
       const currentId = await OneSignalInstance.User.getExternalId();
       if (currentId !== 'admin_trebol') {
         console.log('🔧 FORCE: Setting admin_trebol externalId');
-        await OneSignalInstance.login('admin_trebol');
+        await OneSignalInstance.setExternalUserId('admin_trebol');
         await OneSignalInstance.User.PushSubscription.optIn();
         localStorage.setItem('onesignal_user_id', 'admin_trebol');
         console.log('✅ Forced admin_trebol identity');

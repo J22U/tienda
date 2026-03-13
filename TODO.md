@@ -14,4 +14,10 @@
 
 **Expected Result**: OneSignal loads correctly, admin_trebol external ID sets, pushes work (recipients>0)
 
-**Next**: Step 2 - Edit admin.html
+## 🔄 Issue: Players not subscribed (user consent needed)
+
+**Remaining:**
+- [ ] **Step 5**: Set admin session → `localStorage.setItem('admin_logged', 'true')`
+- [ ] **Step 6**: Reload admin.html → grant notification permission (Allow popup)
+- [ ] **Step 7**: Check `await window.OneSignalInit.getSubscriptionStatus()` → expect subscribed: true
+- [ ] **Step 8**: TEST PUSH button → should reach admin_trebol
