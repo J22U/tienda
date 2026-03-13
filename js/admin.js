@@ -574,7 +574,7 @@ async function mostrarDetallesPedido(pedidoId) {
 
 function renderModalItems() {
     const productosArr = window.productosModalArr;
-    const tbody = document.querySelector('#modalItemsTable tbody');
+    const tbody = document.querySelector('#modalProductosBody');
     tbody.innerHTML = productosArr.map((item, idx) => {
         const subtotal = item.cantidad * Number(item.Precio);
         return `
