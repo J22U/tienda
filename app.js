@@ -131,10 +131,10 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdn.jsdelivr.net'],
       scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.socket.io', 'https://jsdelivr.net', 'https://cdn.jsdelivr.net'],
       imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com', 'https://images.unsplash.com'],
-      connectSrc: ["'self'", 'wss://tienda-1vps.onrender.com', 'https://tienda-1vps.onrender.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com']
+      connectSrc: ["'self'", 'wss://tienda-1vps.onrender.com', 'https://tienda-1vps.onrender.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com', 'https://cdn.jsdelivr.net']
     }
   }
-})); // CSP ajustado para fonts, unsplash, bootstrap CDN
+})); // CSP: + cdn.jsdelivr.net para source maps
 app.use(morgan('combined'));
 
 const limiterLogin = rateLimit({
