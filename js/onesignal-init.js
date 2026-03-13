@@ -75,26 +75,7 @@ async function initOneSignal() {
         // Update UI immediately
         updateNotificationUI();
         
-        // 🆕 PERSISTENCE FIX: Sync externalId with admin_logged state
-        OneSignalDeferred.push(async function(OneSignal) {
-            const adminLogueado = localStorage.getItem('admin_logged') === 'true';
-            const externalId = await OneSignal.User.getExternalId();
-
-            if (adminLogueado) {
-                if (externalId !== "admin_trebol") {
-                    await OneSignal.login("admin_trebol");
-                    await OneSignal.User.PushSubscription.optIn();
-                    console.log("✅ OneSignal: Identidad admin_trebol vinculada automáticamente");
-                }
-            } else {
-                if (externalId === "admin_trebol") {
-                    await OneSignal.logout();
-                    console.log("🔓 OneSignal: Sesión inactiva, identidad removida");
-                }
-            }
-        });
-        
-        resolve(OneSignal);
+// 🆕 PERSISTENCE FIX: Sync externalId with admin_logged state\n        OneSignalDeferred.push(async function(OneSignal) {\n            const adminLogueado = localStorage.getItem('admin_logged') === 'true';\n            const externalId = await OneSignal.User.getExternalId();\n\n            if (adminLogueado) {\n                if (externalId !== "admin_trebol") {\n                    await OneSignal.login("admin_trebol");\n                    await OneSignal.User.PushSubscription.optIn();\n                    console.log("✅ OneSignal: Identidad admin_trebol vinculada automáticamente");\n                }\n            } else {\n                if (externalId === "admin_trebol") {\n                    await OneSignal.logout();\n                    console.log("🔓 OneSignal: Sesión inactiva, identidad removida");\n                }\n            }\n        });\n        \n        // 🔄 REINFORCEMENT: Additional identity sync at end of init (per task)\n        OneSignal.push(async function() {\n            const adminLogueado = localStorage.getItem('admin_logged') === 'true';\n            const currentId = await OneSignal.User.getExternalId();\n\n            if (adminLogueado) {\n                // Si la sesión de Trébol está activa pero OneSignal no te reconoce\n                if (currentId !== "admin_trebol") {\n                    await OneSignal.login("admin_trebol");\n                    await OneSignal.User.PushSubscription.optIn();\n                    console.log("✅ Identidad 'admin_trebol' sincronizada con éxito");\n                }\n            } else {\n                // Seguridad: Si no hay sesión, borramos el rastro\n                if (currentId === "admin_trebol") {\n                    await OneSignal.logout();\n                }\n            }\n        });\n        \n        resolve(OneSignal);
         
       } catch (error) {
         console.error('❌ OneSignal init failed:', error);
