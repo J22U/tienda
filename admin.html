@@ -224,8 +224,8 @@ id="btn-importar" data-action="importar"
 document.addEventListener('click', function(e) {
   if(e.target.matches('#btn-backup, [data-action="exportar"]')) return window.exportarInventario();
   if(e.target.matches('#btn-importar, [data-action="importar"]')) return document.getElementById('inputImportar').click();
-  const tabTarget = e.target.closest('[data-tab="Pendiente"], [data-tab="Completado"]');
-  if(tabTarget) return window.filtrarPedidos(tabTarget.dataset.tab);
+  const tabTarget = e.target.closest('[data-tab="Pendiente"], [data-tab="Completado"], [data-tab="Todos"]');
+  if(tabTarget && window.filtrarPedidos) return window.filtrarPedidos(tabTarget.dataset.tab);
 });
     </script>
     <script src="js/product-delegation.js" defer></script>

@@ -1,4 +1,7 @@
-// js/admin.js - Panel Admin Completo (CSP-safe) - FULLY FUNCTIONAL
+// js/admin.js - Panel Admin Completo (CSP-safe) - filtroEstado FIXED ✅
+// Global filter state for pedidos (fixes ReferenceError)
+window.filtroEstado = 'Todos';
+
 document.addEventListener('DOMContentLoaded', function() {
     // 🔒 Session check
     if (!localStorage.getItem('admin_logged')) {
@@ -19,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const formProducto = document.getElementById('form-producto');
     const buscarProd = document.getElementById('buscar-prod');
 
-    let productos = [], pedidos = [], filtroEstado = 'Todos';
+    let productos = [], pedidos = [];
 
     // 🎛️ Tabs
     document.querySelectorAll('[data-bs-toggle="pill"]').forEach(btn => {
@@ -85,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.cargarPedidos = cargarPedidos;
     window.cargarProductos = cargarProductos;
     window.filtrarPedidos = function(estado) { 
-        filtroEstado = estado; 
+        window.filtroEstado = estado; 
         cargarPedidos(); 
     };
 });
@@ -160,7 +163,7 @@ async function cargarPedidos() {
         const res = await fetch('/pedidos');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const allPedidos = await res.json();
-        const filtered = allPedidos.filter(p => filtroEstado === 'Todos' || p.Estado === filtroEstado);
+        const filtered = allPedidos.filter(p => (window.filtroEstado || 'Todos') === 'Todos' || p.Estado === (window.filtroEstado || 'Todos'));
         renderPedidos(filtered, lista);
     } catch (err) {
         lista.innerHTML = `<div class="alert alert-danger text-center">
