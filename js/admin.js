@@ -1142,43 +1142,49 @@ function isSessionValid() {
 }
 
 async function refreshServerSession() {
-    const serverToken = localStorage.getItem('server_session_token');
-    if (!serverToken) {
-        console.log('[AdminSession] No server token - creating new');
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('server_session_token');
+    if (!token) {
+        console.log('[AdminSession] No token - creating new');
         return createServerSession();
     }
     
     try {
-        const res = await fetch(`${BASE_URL}/api/admin-session?token=${serverToken}`, {
-            headers: { 'x-session-token': serverToken }
+        const res = await fetch(`${BASE_URL}/api/login`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ user: 'admin', pass: 'password' })
         });
-        const session = await res.json();
+        const data = await res.json();
         
-        if (session.logged) {
-            console.log('✅ Server session valid');
+        if (data.success) {
+            console.log('✅ Server session refreshed');
+            localStorage.setItem('jwt_token', data.token);
             return true;
         } else {
-            console.log('🔄 Server session expired - refreshing');
             return createServerSession();
         }
     } catch (e) {
-        console.log('❌ Server check failed:', e);
+        console.log('❌ Refresh failed:', e);
         return createServerSession();
     }
 }
 
 async function createServerSession() {
     try {
-const res = await fetch(`${BASE_URL}/api/login`, {
+        const res = await fetch(`${BASE_URL}/api/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'login', userId: 'admin_trebol' })
+            body: JSON.stringify({ user: 'admin', pass: 'password' })
         });
         const data = await res.json();
         
         if (data.success && data.token) {
             localStorage.setItem('server_session_token', data.token);
-            console.log('✅ New server session created');
+            localStorage.setItem('jwt_token', data.token);
+            console.log('✅ New JWT session created');
             return true;
         }
         return false;
@@ -1198,10 +1204,8 @@ async function verificarSesion() {
     
     // 1. Check local session (now permanent)
     if (!isSessionValid()) {
-        console.log('[AdminSession] Local session invalid → to tienda');
-        localStorage.removeItem('admin_logged');
-        localStorage.removeItem('admin_session');
-        window.location.replace('tienda.html?view=store');
+        console.log('[AdminSession] Local session invalid → stay & show login');
+        // NO redirect - mostrar formulario login
         return;
     }
     
