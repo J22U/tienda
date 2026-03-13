@@ -3,7 +3,7 @@ document.addEventListener('click', function(e) {
   const btn = e.target.closest('.action-btn[data-action]');
   if (!btn) return;
   
-  const row = btn.closest('.product-row[data-producto]');
+  const row = btn.closest('[data-producto]');
   if (!row) return;
   
   const prodData = JSON.parse(row.dataset.producto);

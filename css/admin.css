@@ -119,7 +119,8 @@ body {
     overflow: hidden;
     cursor: pointer;
     backdrop-filter: blur(10px);
-    height: 220px;
+    min-height: 240px;
+    max-height: 380px;
     display: flex;
     flex-direction: column;
 }
@@ -211,7 +212,46 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 8px;
+}
+
+.description-section {
     margin-bottom: 12px;
+    flex-grow: 1;
+}
+
+.description-text {
+    font-size: 0.88rem;
+    color: #555;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    min-height: 2.8em;
+}
+
+.description-text.expanded {
+    display: block;
+    -webkit-line-clamp: unset;
+    min-height: auto;
+}
+
+.desc-toggle {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: 0.2s;
+}
+
+.desc-toggle:hover {
+    background: rgba(108,92,231,0.1);
 }
 
 .stock-badge-card {
@@ -228,15 +268,10 @@ body {
 
 .actions-card {
     display: flex;
-    gap: 6px;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: all 0.3s ease;
-}
-
-.product-card:hover .actions-card {
-    opacity: 1;
-    transform: translateY(0);
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0,0,0,0.05);
 }
 
 .action-btn {
@@ -273,31 +308,7 @@ body {
 /* Fallback for old rows - hide if needed */
 .product-row { display: none; }
 
-/* ============================================================================
-   BOTONES DE ACCIÓN - Compact for Screenshot
-   ============================================================================ */
 
-.action-btn {
-    width: 28px !important;
-    height: 28px !important;
-    border-radius: 6px !important;
-    font-size: 0.85rem !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border: 1px solid !important;
-    padding: 0 !important;
-    line-height: 1 !important;
-    flex-shrink: 0;
-}
-
-.action-btn i {
-    font-size: 0.85rem;
-}
-
-.action-btn:hover {
-    transform: scale(1.05);
-}
 
 /* ============================================================================
    NAVEGACIÓN - unchanged
@@ -318,23 +329,13 @@ body {
    ============================================================================ */
 
 @media (max-width: 768px) {
-    .product-row {
-        height: auto;
-        padding: 16px;
-        flex-direction: column;
-        align-items: stretch;
+    #lista-productos {
+        grid-template-columns: 1fr;
         gap: 12px;
     }
     
-    .actions-left {
-        order: 3;
-        justify-content: center;
-    }
-    
-    .product-right {
-        order: 2;
-        text-align: center;
-        padding-left: 0;
+    .product-card {
+        min-height: auto;
     }
     
     .bento-card { 

@@ -109,6 +109,12 @@ function renderProductos(prods, container) {
                     </div>
                     <span class="stock-badge-card ${stockClass}">${p.Stock > 0 ? 'Disponible' : 'Agotado'}</span>
                 </div>
+                <div class="description-section">
+                    ${p.Caracteristicas ? `
+                        <div class="description-text" data-full-desc="${p.Caracteristicas.replace(/"/g, '"')}">${p.Caracteristicas.substring(0, 100)}${p.Caracteristicas.length > 100 ? '...' : ''}</div>
+                        <button class="desc-toggle mt-1" onclick="toggleDesc(this)">${p.Caracteristicas.length > 100 ? 'Ver más' : ''}</button>
+                    ` : '<p class="text-muted small mb-0">Sin descripción</p>'}
+                </div>
                 <div class="actions-card">
                     <button class="action-btn action-edit" data-action="edit" title="Editar" tabindex="0"><i class="bi bi-pencil"></i></button>
                     <button class="action-btn action-discount" data-action="discount" title="Descuento" tabindex="0"><i class="bi bi-percent"></i></button>
@@ -338,6 +344,20 @@ function mostrarNotificacion(msg) {
     setTimeout(() => notif.remove(), 5000);
 }
 
+// 🔘 Description toggle function
+function toggleDesc(btn) {
+    const textEl = btn.previousElementSibling;
+    if (textEl.classList.contains('expanded')) {
+        textEl.classList.remove('expanded');
+        btn.textContent = 'Ver más';
+        btn.parentElement.parentElement.parentElement.style.maxHeight = '380px';
+    } else {
+        textEl.classList.add('expanded');
+        btn.textContent = 'Ver menos';
+        btn.parentElement.parentElement.parentElement.style.maxHeight = 'none';
+    }
+}
+
 // 🔘 Limpiar form - unchanged
 document.addEventListener('click', e => {
     if (e.target.matches('[data-action="limpiarForm"]')) {
@@ -346,3 +366,4 @@ document.addEventListener('click', e => {
         document.getElementById('titulo-form').textContent = 'Crear Producto';
     }
 });
+
