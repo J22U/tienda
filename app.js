@@ -643,17 +643,47 @@ app.put('/pedidos/:id/total-manual', async (req, res) => {
     }
 });
 
-app.put('/pedidos/:id/descuento', async (req, res) => {
+// 🔥 PEDIDO-LEVEL DISCOUNT (new endpoint)
+app.put('/pedidos/:id/descuento-pedido', async (req, res) => {
     const { id } = req.params;
-    const { descuento } = req.body; 
+    const { descuento } = req.body;
     try {
         const pool = await poolPromise;
+        
+        // Ensure column exists
+        await pool.request().query(`
+            IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+                          WHERE TABLE_NAME = 'Pedidos' AND COLUMN_NAME = 'DescuentoPorcentajePedido')
+            BEGIN
+                ALTER TABLE Pedidos ADD DescuentoPorcentajePedido decimal(5,2) NULL DEFAULT 0;
+                UPDATE Pedidos SET DescuentoPorcentajePedido = 0 WHERE DescuentoPorcentajePedido IS NULL;
+            END
+        `);
+        
+        const pedidoResult = await pool.request().input('id', sql.Int, id).query('SELECT Total as TotalOriginal FROM Pedidos WHERE PedidoID = @id');
+        const totalOriginal = parseFloat(pedidoResult.recordset[0]?.TotalOriginal) || 0;
+        const descuentoPct = parseFloat(descuento) || 0;
+        const totalFinal = totalOriginal * (1 - descuentoPct / 100);
+        
         await pool.request()
             .input('id', sql.Int, id)
-            .input('desc', sql.Decimal(5, 2), parseFloat(descuento) || 0)
-            .query('UPDATE Pedidos SET DescuentoPorcentaje = @desc WHERE PedidoID = @id');
-        res.json({ success: true });
+            .input('desc', sql.Decimal(5, 2), descuentoPct)
+            .input('totalFinal', sql.Decimal(18, 2), totalFinal)
+            .query(`
+                UPDATE Pedidos 
+                SET DescuentoPorcentajePedido = @desc, Total = @totalFinal 
+                WHERE PedidoID = @id
+            `);
+            
+        console.log(`💰 Pedido ${id} descuento ${descuentoPct}%: $${totalOriginal.toLocaleString()} → $${totalFinal.toLocaleString()}`);
+        res.json({ 
+            success: true, 
+            totalOriginal, 
+            descuento: descuentoPct, 
+            totalFinal 
+        });
     } catch (err) {
+        console.error('Descuento pedido error:', err);
         res.status(500).json({ error: err.message });
     }
 });
