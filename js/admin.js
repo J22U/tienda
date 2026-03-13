@@ -143,21 +143,7 @@ function filtrarProductos() {
 }
 
 // 📋 Load Orders - unchanged
-async function cargarPedidos() {
-    const lista = document.getElementById('lista-pedidos');
-    mostrarLoader(lista, true);
-    
-    try {
-        const res = await fetch('/pedidos');
-        pedidos = await res.json();
-        renderPedidos(pedidos.filter(p => filtroEstado === 'Todos' || p.Estado === filtroEstado), lista);
-        document.getElementById('order-count').textContent = `${pedidos.length} recibidos`;
-    } catch (err) {
-        lista.innerHTML = `<div class="alert alert-warning">Error cargando pedidos: ${err.message}</div>`;
-    } finally {
-        mostrarLoader(lista, false);
-    }
-}
+async function cargarPedidos() {\n    const lista = document.getElementById('lista-pedidos');\n    console.log('🔄 Iniciando carga de pedidos...');\n    mostrarLoader(lista, true);\n    \n    try {\n        const res = await fetch('/pedidos');\n        console.log('📡 Response status:', res.status, res.statusText);\n        if (!res.ok) {\n            throw new Error(`HTTP ${res.status}: ${res.statusText}`);\n        }\n        pedidos = await res.json();\n        console.log('✅ Pedidos cargados:', pedidos.length, 'items');\n        renderPedidos(pedidos.filter(p => filtroEstado === 'Todos' || p.Estado === filtroEstado), lista);\n        document.getElementById('order-count').textContent = `${pedidos.length} recibidos`;\n    } catch (err) {\n        console.error('❌ Error cargando pedidos:', err);\n        lista.innerHTML = `\n            <div class="alert alert-warning d-flex justify-content-between align-items-center">\n                <div>\n                    <i class="bi bi-exclamation-triangle me-2"></i>\n                    Error cargando pedidos: <strong>${err.message}</strong>\n                </div>\n                <button class="btn btn-sm btn-outline-warning" onclick="cargarPedidos()">Reintentar</button>\n            </div>\n        `;\n    } finally {\n        mostrarLoader(lista, false);\n    }\n}
 
 // 📦 Render Orders - unchanged
 function renderPedidos(peds, container) {
