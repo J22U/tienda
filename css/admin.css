@@ -348,6 +348,9 @@ body {
 }
 
 /* Modal table responsive */
+#modalItemsTable, .modal-body {
+    overflow-x: hidden !important;
+}
 #modalItemsTable {
     width: 100%;
     table-layout: fixed;
@@ -356,7 +359,7 @@ body {
 #modalItemsTable th:nth-child(2), #modalItemsTable td:nth-child(2) { width: 12%; text-align: center; } /* Cant */
 #modalItemsTable th:nth-child(3), #modalItemsTable td:nth-child(3) { width: 25%; } /* Precio */
 #modalItemsTable th:nth-child(4), #modalItemsTable td:nth-child(4) { width: 23%; text-align: right; } /* Subtotal */
-#modalItemsTable .table-responsive { overflow-x: auto; }
+#modalItemsTable .table-responsive { overflow-x: hidden; }
 
 /* Keep all other unchanged styles for orders, etc. */
 

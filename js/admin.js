@@ -584,7 +584,7 @@ async function mostrarDetallesPedido(pedidoId) {
         
         // Total limpio + mostrar descuento aplicado
         const formattedTotal = Number(p.TotalManual || p.Total).toLocaleString();
-        const descuentoBadge = p.DescuentoPorcentaje > 0 ? `<br><small class="badge bg-warning">Descuento ${p.DescuentoPorcentaje}% aplicado</small>` : '';
+        const descuentoBadge = p.DescuentoPorcentaje > 0 ? `<span style="background:#27ae60; color:white; padding:2px 6px; border-radius:4px; font-size:0.8em; margin-left:10px;">Dto. ${p.DescuentoPorcentaje}%</span>` : '';
         modalTotalEl.innerHTML = `<strong>$${formattedTotal}</strong>${descuentoBadge}`;
         
         descuentoInput.value = p.DescuentoPorcentaje || '';
@@ -607,17 +607,28 @@ function renderModalItems() {
         return;
     }
     let html = '';
+    let sumaTotalCalculada = 0;
+    const descuentoGlobal = window.pedidoModalData?.DescuentoPorcentaje || 0;
     for (let item of productosArr) {
-        const subtotal = item.cantidad * item.Precio;
+        const pDesc = item.Precio * (1 - (descuentoGlobal / 100));
+        const subtotal = item.cantidad * pDesc;
+        sumaTotalCalculada += subtotal;
         html += `<tr>
             <td>${item.Nombre}</td>
             <td>${item.cantidad}</td>
             <td>$${Number(item.Precio).toLocaleString()}</td>
-            <td><strong>$${(subtotal).toLocaleString()}</strong></td>
+            <td><strong>$${Number(subtotal).toLocaleString()}</strong></td>
         </tr>`;
     }
+    html += `
+        <tr style="background-color: #f1f1f1; font-weight: bold; border-top: 2px solid #ddd;">
+            <td colspan="3" style="text-align: right; padding: 10px;">TOTAL PEDIDO:</td>
+            <td style="color: #27ae60; font-size: 1.1em; padding: 10px;">
+                $${Math.round(sumaTotalCalculada).toLocaleString()}
+            </td>
+        </tr>`;
     tbody.innerHTML = html || '<tr><td colspan="4" class="text-center text-muted py-4">Sin productos</td></tr>';
-    console.log('Tabla renderizada:', productosArr.length, 'filas');
+    console.log('Tabla renderizada:', productosArr.length, 'filas, Total:', sumaTotalCalculada);
 }
 
 function recalcularModalTotal() {
