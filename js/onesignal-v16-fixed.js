@@ -1,0 +1,206 @@
+// OneSignal SDK v16 Fixed - Dynamic User ID + Persistence
+// ✅ Fixes: v16 API (login()/User.id), no top-level await, unique externalId per session
+
+const ONESIGNAL_APP_ID = 'a6a0e0fc-4caf-4ce6-adff-5856c98bfffe';
+
+let OneSignalInitialized = false;
+let OneSignalInstance = null;
+
+async function initOneSignal() {
+  if (OneSignalInitialized) {
+    console.log('✅ OneSignal already initialized - checking sync');
+    await checkAndRecoverSubscription();
+    return OneSignalInstance;
+  }
+
+  return new Promise((resolve, reject) => {
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    
+    OneSignalDeferred.push(async function(OneSignal) {
+      try {
+        OneSignalInstance = OneSignal;
+        
+        // Sync user ID immediately
+        await checkAndRecoverSubscription();
+        setupExternalIdListener();
+        
+        // Get current user ID
+        const userId = getCurrentUserId();
+        console.log('🔗 OneSignal init with userId:', userId);
+        
+        await OneSignal.init({
+          appId: ONESIGNAL_APP_ID,
+          allowLocalhostAsSecureOrigin: true,
+          serviceWorkerPath: './OneSignalSDKWorker.js',
+          serviceWorkerParam: { scope: '/' },
+          notifyButton: { enable: false },
+          welcomeNotification: { disable: true },
+          promptOptions: { slidedown: { enabled: false } }
+        });
+        
+        // Set external ID post-init
+        await OneSignalInstance.login(userId);
+        
+        OneSignalInitialized = true;
+        console.log('✅ OneSignal v16 ready - user:', userId);
+        
+        // Status check
+        getSubscriptionStatus().then(status => {
+          console.log('📊 Status:', status);
+          updateNotificationUI();
+        });
+
+        // Event listeners
+        OneSignalInstance.User.PushSubscription.addEventListener('stateChange', (event) => {
+          console.log('📱 Subscription:', event);
+          getSubscriptionStatus().then(updateNotificationUI);
+        });
+
+        resolve(OneSignalInstance);
+      } catch (error) {
+        console.error('❌ OneSignal init ERROR:', error);
+        reject(error);
+      }
+    });
+  });
+}
+
+function getCurrentUserId() {
+  let userId = localStorage.getItem('current_user_id');
+  
+  if (!userId) {
+    userId = localStorage.getItem('server_session_token')?.slice(0,32);
+  }
+  
+  if (!userId) {
+    userId = `admin_${Date.now()}_${Math.random().toString(36).substr(2,6)}`;
+    localStorage.setItem('current_user_id', userId);
+    console.log('🆕 NEW session userId:', userId);
+  }
+  
+  return userId;
+}
+
+async function checkAndRecoverSubscription() {
+  if (!OneSignalInstance) return;
+  
+  try {
+    const userId = getCurrentUserId();
+    const currentId = OneSignalInstance.User.id || 'none';
+    
+    if (currentId !== userId) {
+      console.log(`🔄 Recover: ${currentId} → ${userId}`);
+      await OneSignalInstance.login(userId);
+      
+      // Ensure subscribed
+      const state = await OneSignalInstance.User.PushSubscription.state;
+      if (state !== 'Subscribed') {
+        await OneSignalInstance.User.PushSubscription.optIn();
+      }
+      
+      localStorage.setItem('onesignal_user_id', userId);
+      console.log('✅ Synced:', userId);
+    }
+  } catch (e) {
+    console.error('Recovery failed:', e);
+  }
+}
+
+function setupExternalIdListener() {
+  if (!OneSignalInstance) return;
+  
+  OneSignalInstance.User.PushSubscription.addEventListener('stateChange', async () => {
+    const userId = getCurrentUserId();
+    if (OneSignalInstance.User.id !== userId) {
+      await OneSignalInstance.login(userId);
+    }
+  });
+}
+
+function isAdminPage() {
+  return window.location.pathname.includes('admin') || document.title.toLowerCase().includes('admin');
+}
+
+async function getSubscriptionStatus() {
+  if (!OneSignalInstance) return { ready: false };
+  try {
+    const permission = await OneSignalInstance.Notifications.permission;
+    const state = await OneSignalInstance.User.PushSubscription.state;
+    const subscribed = state === 'Subscribed' || state === 'OptedIn';
+    return {
+      ready: true,
+      permission,
+      subscribed,
+      state,
+      userId: OneSignalInstance.User.id || localStorage.getItem('onesignal_user_id') || 'none'
+    };
+  } catch (e) {
+    return { ready: false, error: e.message };
+  }
+}
+
+async function updateNotificationUI() {
+  if (!isAdminPage()) return;
+  const btn = document.getElementById('btn-onesignal-status') || document.getElementById('toggle-notificaciones');
+  if (!btn || !OneSignalInstance) return;
+  
+  try {
+    const status = await getSubscriptionStatus();
+    const subscribed = status.subscribed;
+    
+    if (status.permission === 'granted' && subscribed) {
+      btn.innerHTML = '<i class="bi bi-bell-fill"></i> ON';
+      btn.className = 'btn btn-success rounded-pill px-3';
+      btn.onclick = unsubscribeNotifications;
+    } else {
+      btn.innerHTML = '<i class="bi bi-bell"></i> Activar';
+      btn.className = 'btn btn-warning rounded-pill px-3';
+      btn.onclick = requestNotificationPermission;
+    }
+  } catch (e) {}
+}
+
+async function requestNotificationPermission() {
+  try {
+    const permission = await OneSignalInstance.Notifications.requestPermission();
+    if (permission === 'granted') {
+      await OneSignalInstance.User.PushSubscription.optIn();
+      updateNotificationUI();
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function unsubscribeNotifications() {
+  try {
+    await OneSignalInstance.User.PushSubscription.optOut();
+    updateNotificationUI();
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+// Auto-start + persistence listeners
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initOneSignal);
+} else {
+  initOneSignal();
+}
+
+// Tab/activity recovery
+window.addEventListener('focus', checkAndRecoverSubscription);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) checkAndRecoverSubscription();
+});
+
+// Global API
+window.OneSignalInit = {
+  initOneSignal,
+  getSubscriptionStatus,
+  checkAndRecoverSubscription,
+  getCurrentUserId,
+  updateNotificationUI
+};
+
+console.log('🔔 OneSignal v16 Fixed loaded');

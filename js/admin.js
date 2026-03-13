@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     };
     
     // 🆕 Update debug status UI
-    async function updatePersistenceStatus() {
+    window.updatePersistenceStatus = async function() {
       const statusEl = document.getElementById('persistence-status');
       if (!statusEl) return;
       
@@ -239,7 +239,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     // Init debug UI
-    setTimeout(updatePersistenceStatus, 3000);
+    setTimeout(() => updatePersistenceStatus(), 3000);
 
     
     const formProducto = document.getElementById('form-producto');
@@ -1380,17 +1380,16 @@ window.logoutSimple = logoutSimple;
 window.verificarSesion = verificarSesion;
 window.isSessionValid = isSessionValid;
 
-// Verificar sesión al cargar la página + OneSignal sync
-await verificarSesion();
+    verificarSesion();
 
-// NEW: OneSignal sync after session verify
-try {
-  await window.OneSignalInit?.initOneSignal();
-  await window.OneSignalInit?.checkAndRecoverSubscription();
-  console.log('🔗 Admin panel: OneSignal synced');
-} catch (e) {
-  console.warn('OneSignal sync failed:', e);
-}
+    // NEW: OneSignal sync after session verify
+    try {
+      window.OneSignalInit?.initOneSignal();
+      window.OneSignalInit?.checkAndRecoverSubscription();
+      console.log('🔗 Admin panel: OneSignal synced');
+    } catch (e) {
+      console.warn('OneSignal sync failed:', e);
+    }
 
 // Cargar inventario y pedidos al iniciar
 cargarInventario();

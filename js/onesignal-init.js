@@ -153,7 +153,7 @@ async function getCurrentUserId() {
   
   if (!userId) {
     // Generate unique session ID
-    userId = `user_${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
+    userId = `admin_${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
     localStorage.setItem('current_user_id', userId);
     console.log('🆕 Generated new userId:', userId);
   }
