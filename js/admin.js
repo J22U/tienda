@@ -547,8 +547,31 @@ async function mostrarDetallesPedido(pedidoId) {
         document.getElementById('modalBtnFactura').dataset.pedidoId = pedidoId;
         document.getElementById('modalDescuentoInput').dataset.productoId = '';
         
-        renderModalItems();
-        recalcularModalTotal();
+        // ✅ NUEVA LÓGICA: Priorizar TotalManual persistido si existe
+        const descuentoInput = document.getElementById('modalDescuentoInput');
+        const modalTotalEl = document.getElementById('modalTotal');
+        
+        if (p.TotalManual && p.TotalManual > 0 && p.DescuentoPorcentaje !== null) {
+            // Precargar descuento persistido
+            descuentoInput.value = parseFloat(p.DescuentoPorcentaje) || '';
+            
+            // Mostrar TotalManual con indicador
+            const formattedTotal = Number(p.TotalManual).toLocaleString('es-CO', {
+                style: 'currency',
+                currency: 'COP',
+                minimumFractionDigits: 0
+            }).replace('COP', '$');
+            modalTotalEl.innerHTML = `
+                <strong>${formattedTotal}</strong> 
+                <span class="badge bg-success ms-1">Persisted</span>
+                <br><small class="text-muted">Descuento: ${p.DescuentoPorcentaje}% (guardado en BD)</small>
+            `;
+        } else {
+            // Fallback: calcular desde productos como antes
+            descuentoInput.value = '';
+            renderModalItems();
+            recalcularModalTotal();
+        }
         
         // Show modal
         new bootstrap.Modal(document.getElementById('modalPedidoDetails')).show();
@@ -580,7 +603,12 @@ function recalcularModalTotal() {
     productosArr.forEach(item => {
         total += item.cantidad * Number(item.Precio) * (1 - (item.DescuentoPorcentaje || 0)/100);
     });
-    document.getElementById('modalTotal').textContent = `$${total.toLocaleString()}`;
+    const formattedTotal = Number(total).toLocaleString('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0
+    }).replace('COP', '$');
+    document.getElementById('modalTotal').textContent = formattedTotal;
 }
 
 window.aplicarDescuentoModal = async function() {

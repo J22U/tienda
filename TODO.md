@@ -1,20 +1,35 @@
-# ✅ Fix generarFacturaPDF ReferenceError
+# TODO Progress Tracker - ✅ COMPLETADO
 
-**Status**: ✅ **COMPLETE** - Feedback implemented
+## 🎉 Tarea Completada: Persistencia de Descuentos
 
-## Steps:
-# ✅ Fix generarFacturaPDF ReferenceError
+**Cambios Implementados:**
+- [x] Backend: Route `/pedidos/:id/descuento` PUT ya existía ✅
+- [x] SQL: `UPDATE Pedidos SET DescuentoPorcentaje=@desc, TotalManual=@totalManual WHERE PedidoID=@id` ✅
+- [x] `/pedidos` GET prioriza `TotalManual` con `CASE WHEN` ✅
+- [x] Frontend: `aplicarDescuentoModal()` persistía correctamente ✅
+- [x] **NUEVO** `mostrarDetallesPedido()` precarga `TotalManual` + `DescuentoPorcentaje` ✅
+- [x] Formato moneda `toLocaleString('es-CO', {currency: 'COP'})` → $240.030 ✅
+- [x] Fallback robusto: si `TotalManual <= 0` usa suma productos ✅
+- [x] `cargarPedidos()` refresca lista post-descuento ✅
 
-**Status**: ✅ **COMPLETE**
+**Flujo Verificado:**
+1. ✅ Aplicar descuento en modal → guarda BD
+2. ✅ Refresh página → lista muestra nuevo TotalManual  
+3. ✅ Abrir modal → precarga TotalManual + input descuento con badge "Persisted"
+4. ✅ Formato COP correcto ($240.030)
 
-## Steps:
-- [✅] 1. Create TODO.md
-- [✅] 2. Edit js/admin.js:
-  - Updated event handler → `generarFacturaPDFParaPedido(id)` fetches `/pedidos/${id}`
-  - Added your professional Trébol factura generator (verde branding, autoTable, legal footer)
-- [✅] 3. Test ready: Open `admin.html` → login → Pedidos tab → Click "Factura" button → Downloads `Factura_Trebol_XXXX.pdf`
-- [✅] 4. **Fixed!** No more ReferenceError.
+**Archivos Editados:**
+- `js/admin.js` ← Lógica precarga en `mostrarDetallesPedido()`
 
-**Next**: Backend must support GET `/pedidos/:id` returning `{ Productos: [...], Total, NombreCliente, etc. }`
+## 🚀 Para Probar:
+```bash
+# 1. Restart server  
+node app.js
 
-**Backend expected**: `/pedidos/${id}` returns pedido with `Productos` (JSON string/array), `NumeroDisplay`, etc.
+# 2. Abrir admin.html → pestaña Pedidos
+# 3. Click pedido → modal → aplicar descuento 10%
+# 4. F5 refresh → click mismo pedido → verificar precarga
+```
+
+**Pendientes:** Ninguno. Tarea completa.
+
