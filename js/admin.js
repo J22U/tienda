@@ -232,7 +232,7 @@ function renderPedidos(peds, container) {
         const btnText = p.Estado === 'Completado' ? 'Pendiente' : 'Completar';
         const numeroVisual = peds.length - index;
         return `
-        <div class="pedido-row p-3 border-bottom">
+        <div class="pedido-row p-3 border-bottom" data-pedido-id="${p.PedidoID}">
             <div class="d-flex justify-content-between">
                 <div>
                     <strong>#${numeroVisual}</strong> - ${p.NombreCliente}
@@ -526,8 +526,13 @@ window.productosModalArr = []; // Global for discount updates
 
 async function mostrarDetallesPedido(pedidoId) {
     try {
+        console.log('Fetching pedido:', pedidoId);
         const res = await fetch(`/pedidos/${pedidoId}`);
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
         const p = await res.json();
+        console.log('Pedido data:', p);
         
         // Parse productos → global
         window.productosModalArr = [];
