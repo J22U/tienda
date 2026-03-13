@@ -128,13 +128,13 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
-      scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.socket.io', 'https://jsdelivr.net'],
-      imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com'],
-      connectSrc: ["'self'", 'wss://tienda-1vps.onrender.com', 'https://tienda-1vps.onrender.com']
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdn.jsdelivr.net'],
+      scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.socket.io', 'https://jsdelivr.net', 'https://cdn.jsdelivr.net'],
+      imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com', 'https://images.unsplash.com'],
+      connectSrc: ["'self'", 'wss://tienda-1vps.onrender.com', 'https://tienda-1vps.onrender.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com']
     }
   }
-}));
+})); // CSP ajustado para fonts, unsplash, bootstrap CDN
 app.use(morgan('combined'));
 
 const limiterLogin = rateLimit({
