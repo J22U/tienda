@@ -68,8 +68,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // 🆕 Click pedido-row → details (stopPropagation on buttons)
         const pedidoRow = e.target.closest('.pedido-row');
         if (pedidoRow && !e.target.closest('button')) {
-            const id = pedidoRow.dataset.pedidoId || e.target.closest('[data-pedido-id]').dataset.pedidoId;
-            mostrarDetallesPedido(id);
+            const pedidoIdEl = pedidoRow.querySelector('[data-pedido-id]');
+            if (pedidoIdEl) {
+                mostrarDetallesPedido(pedidoIdEl.dataset.pedidoId);
+            }
             return;
         }
         
@@ -179,8 +181,8 @@ async function cargarPedidos() {
         const res = await fetch('/pedidos');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         let allPedidos = await res.json();
-        // 🔄 Sort ASC (oldest first)
-        allPedidos.sort((a, b) => new Date(a.Fecha) - new Date(b.Fecha));
+        // 🔄 Sort DESC (newest/last first - highest numero top)
+        allPedidos.sort((a, b) => new Date(b.Fecha) - new Date(a.Fecha));
         const filtered = allPedidos.filter(p => (window.filtroEstado || 'Todos') === 'Todos' || p.Estado === (window.filtroEstado || 'Todos'));
         renderPedidos(filtered, lista);
         document.getElementById('order-count').textContent = `${filtered.length} pedidos`;
