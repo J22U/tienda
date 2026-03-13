@@ -68,11 +68,11 @@ function sendPushNotification(pedidoData) {
                 const response = JSON.parse(data);
                 console.log(`🔔 Push response: recipients=${response.recipients||0} id=${response.id||'none'}`);
                 
-                // ✅ GRACEFUL HANDLING
                 if (response.recipients > 0) {
-                    console.log(`🎉 DELIVERED!`);
+                    console.log(`✅ [Push] ¡Entregado con éxito! (Recipientes: ${response.recipients})`);
                 } else {
-                    console.log(`⏳ QUEUED (admin_trebol offline - normal)`);
+                    console.log(`📡 [Push] Enviado a OneSignal. Entrega pendiente (Background/PWA)`);
+                    console.log(`🔍 OneSignal ID: ${response.id || 'N/A'}`);
                 }
                 
             } catch (parseErr) {
