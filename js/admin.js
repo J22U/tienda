@@ -545,32 +545,28 @@ async function mostrarDetallesPedido(pedidoId) {
         document.getElementById('modalDocumento').textContent = p.Documento || 'N/A';
         document.getElementById('modalDireccion').textContent = p.Direccion || 'N/A';
         document.getElementById('modalBtnFactura').dataset.pedidoId = pedidoId;
-        document.getElementById('modalDescuentoInput').dataset.productoId = '';
         
-        // ✅ NUEVA LÓGICA: Priorizar TotalManual persistido si existe
         const descuentoInput = document.getElementById('modalDescuentoInput');
         const modalTotalEl = document.getElementById('modalTotal');
+        descuentoInput.dataset.productoId = '';
+        descuentoInput.value = '';
         
-        if (p.TotalManual && p.TotalManual > 0 && p.DescuentoPorcentaje !== null) {
-            // Precargar descuento persistido
-            descuentoInput.value = parseFloat(p.DescuentoPorcentaje) || '';
+        // ✅ LÓGICA PERSISTIDA EXACTA: Priorizar TotalManual + badge "Persistido (guardado en BD)"
+        if (p.TotalManual && p.TotalManual > 0 && p.DescuentoPorcentaje !== null && p.DescuentoPorcentaje !== 0) {
+            descuentoInput.value = p.DescuentoPorcentaje.toFixed(2);
+            descuentoInput.disabled = true; // Locked when persisted
             
-            // Mostrar TotalManual con indicador
-            const formattedTotal = Number(p.TotalManual).toLocaleString('es-CO', {
-                style: 'currency',
-                currency: 'COP',
-                minimumFractionDigits: 0
-            }).replace('COP', '$');
+            const formattedTotal = Number(p.TotalManual).toLocaleString();
             modalTotalEl.innerHTML = `
-                <strong>${formattedTotal}</strong> 
-                <span class="badge bg-success ms-1">Persisted</span>
-                <br><small class="text-muted">Descuento: ${p.DescuentoPorcentaje}% (guardado en BD)</small>
+                <strong>$${formattedTotal}</strong> 
+                <span class="badge bg-success ms-1">Persistido (guardado en BD)</span>
+                <br><small class="text-muted">Descuento: ${p.DescuentoPorcentaje}% aplicado</small>
             `;
         } else {
-            // Fallback: calcular desde productos como antes
-            descuentoInput.value = '';
+            descuentoInput.disabled = false;
             renderModalItems();
             recalcularModalTotal();
+            descuentoInput.addEventListener('input', livePreviewTotal);
         }
         
         // Show modal
@@ -603,12 +599,25 @@ function recalcularModalTotal() {
     productosArr.forEach(item => {
         total += item.cantidad * Number(item.Precio) * (1 - (item.DescuentoPorcentaje || 0)/100);
     });
-    const formattedTotal = Number(total).toLocaleString('es-CO', {
-        style: 'currency',
-        currency: 'COP',
-        minimumFractionDigits: 0
-    }).replace('COP', '$');
-    document.getElementById('modalTotal').textContent = formattedTotal;
+    document.getElementById('modalTotal').innerHTML = `<strong>$${Number(total).toLocaleString()}</strong>`;
+}
+
+// 🆕 Live preview for discount input (non-persisted)
+function livePreviewTotal() {
+    const input = document.getElementById('modalDescuentoInput');
+    const descuento = parseFloat(input.value) || 0;
+    const productosArr = window.productosModalArr;
+    
+    let totalOriginal = 0;
+    productosArr.forEach(item => {
+        totalOriginal += item.cantidad * Number(item.Precio);
+    });
+    
+    const totalPreview = totalOriginal * (1 - descuento / 100);
+    document.getElementById('modalTotal').innerHTML = `
+        <strong>Preview: $${Number(totalPreview).toLocaleString()}</strong>
+        <small class="text-muted">-${descuento.toFixed(2)}%</small>
+    `;
 }
 
 window.aplicarDescuentoModal = async function() {
@@ -619,7 +628,7 @@ window.aplicarDescuentoModal = async function() {
     
     const descuento = parseFloat(input.value) || 0;
     if (isNaN(descuento) || descuento < 0 || descuento > 100) {
-        return Swal.fire('Error', '0-100%', 'warning');
+        return Swal.fire('Error', 'Descuento 0-100%', 'warning');
     }
     
     try {
@@ -633,26 +642,27 @@ window.aplicarDescuentoModal = async function() {
         
         const data = await res.json();
         
-        // ✅ Live preview: Original → Discounted
+        // ✅ Update modal total with persisted badge
+        const formattedManual = Number(data.totalManual).toLocaleString();
         document.getElementById('modalTotal').innerHTML = `
-            <s>$${data.totalBase.toLocaleString()}</s><br>
-            <strong>$${data.totalManual.toLocaleString()}</strong> 
-            <span class="badge bg-success">-${descuento}%</span>
+            <strong>$${formattedManual}</strong>
+            <span class="badge bg-success ms-1">Persistido (guardado en BD)</span>
+            <br><small class="text-muted">Descuento: ${descuento.toFixed(2)}%</small>
         `;
         
-        // Persistence: refresh list from DB
+        input.disabled = true; // Lock after persist
+        
+        // ✅ Auto-refresh main pedidos table
         await cargarPedidos();
         
         Swal.fire({
-            title: '💰 Descuento Guardado',
-            html: `✅ <strong>Persiste en BD</strong><br>
-                   Original: $${data.totalBase.toLocaleString()}<br>
-                   Nuevo: <strong>$${data.totalManual.toLocaleString()}</strong>`,
+            title: '✅ Descuento Guardado en BD',
+            html: `TotalManual: <strong>$${formattedManual}</strong><br>
+                   DescuentoPorcentaje: <strong>${descuento.toFixed(2)}%</strong><br>
+                   Tabla actualizada`,
             icon: 'success',
             confirmButtonText: 'OK'
         });
-        
-        input.value = '';
     } catch (err) {
         console.error('Error descuento:', err);
         Swal.fire('Error', err.message, 'error');
