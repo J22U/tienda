@@ -23,15 +23,14 @@
 - ✅ Init guard prevents races
 - ✅ `safeInitOneSignal()` prevents duplicate inits
 
-### 🔄 Step 3: Test & Verify
+### ✅ Step 3: Debug UI Removed
 ```
-Test these now:
-1. admin.html → F12 Console → No SyntaxError, see "🔔 OneSignal ready"
-2. Page load → No "Cannot read properties of undefined (reading 'Ye')" 
-3. Console → OneSignal init OK, userId: admin_trebol/...
-4. Paste activate-onesignal.js → "✅ Synced: admin_trebol/..."
-5. Check OneSignal Dashboard → externalId registered
+✅ Toggle switch borrado (admin.html)
+✅ TEST PUSH/RECOVER buttons borrados  
+✅ updatePersistenceStatus() simplificado
+✅ No more "ID none"/"recovery needed" spam
+✅ updateNotificationUI() → solo logs
 ```
 
-**Status: READY FOR TESTING** 🧪
+**Status: CLEAN PRODUCTION READY** 🎉
 

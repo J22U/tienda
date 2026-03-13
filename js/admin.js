@@ -196,28 +196,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     window.addEventListener('popstate', () => window.history.pushState(null, null, window.location.href));
     
     // 5. EXPOSE GLOBAL FUNCTIONS (after deps ready)
-    window.testNotification = async () => {
-        const result = await window.OneSignalTest?.testAdminNotification();
-        Swal.fire('Test', result ? '✅ Sent!' : '❌ Failed', result ? 'success' : 'error');
-        window.updatePersistenceStatus?.();
-    };
-    window.forceRecovery = async () => {
-        await window.OneSignalTest?.forceRecovery();
-        Swal.fire('🔄', 'Recovery triggered', 'success');
-    };
-    window.updatePersistenceStatus = async function() {
-        const statusEl = document.getElementById('persistence-status');
-        if (!statusEl) return;
-        const onesignalStatus = await window.OneSignalInit?.getSubscriptionStatus?.();
-        const adminLogged = localStorage.getItem('admin_logged') === 'true';
-        let badgeClass = 'text-muted', statusText = 'Unknown', externalId = onesignalStatus?.externalId || 'none';
-        if (adminLogged && externalId === 'admin_trebol') { badgeClass = 'text-success'; statusText = '✅ PERSISTENT'; }
-        else if (adminLogged) { badgeClass = 'text-warning'; statusText = '⚠️ Recovery needed'; }
-        else { badgeClass = 'text-danger'; statusText = '❌ No session'; }
-        statusEl.innerHTML = `<span class="${badgeClass} fw-bold">${statusText}</span> | ID: <code>${externalId}</code>`;
-        document.getElementById('debug-section')?.classList.remove('d-none');
-    };
-    setTimeout(() => window.updatePersistenceStatus?.(), 3000);
+    // Debug buttons removed per request
     
     // 6. FORM HANDLER
     const formProducto = document.getElementById('form-producto');

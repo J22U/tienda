@@ -144,24 +144,8 @@ async function getSubscriptionStatus() {
 }
 
 async function updateNotificationUI() {
-  if (!isAdminPage()) return;
-  const btn = document.getElementById('btn-onesignal-status') || document.getElementById('toggle-notificaciones');
-  if (!btn || !OneSignalInstance) return;
-  
-  try {
-    const status = await getSubscriptionStatus();
-    const subscribed = status.subscribed;
-    
-    if (status.permission === 'granted' && subscribed) {
-      btn.innerHTML = '<i class="bi bi-bell-fill"></i> ON';
-      btn.className = 'btn btn-success rounded-pill px-3';
-      btn.onclick = unsubscribeNotifications;
-    } else {
-      btn.innerHTML = '<i class="bi bi-bell"></i> Activar';
-      btn.className = 'btn btn-warning rounded-pill px-3';
-      btn.onclick = requestNotificationPermission;
-    }
-  } catch (e) {}
+  // Switch removed - no UI updates needed
+  console.log('🔔 OneSignal status:', await getSubscriptionStatus());
 }
 
 async function requestNotificationPermission() {

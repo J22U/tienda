@@ -53,30 +53,7 @@
                     <i class="bi bi-shop me-2"></i> VER TIENDA
                 </a>
                 
-                <!-- 🔔 TOGGLE SWITCH para notificaciones admin -->
-<div class="notification-toggle me-2">
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="toggle-notificaciones">
-                    <label class="form-check-label fw-bold small text-danger" for="toggle-notificaciones">
-                      <i class="bi bi-bell me-1"></i>Notificaciones <span id="toggle-status">DESACTIVADAS</span>
-                    </label>
-                  </div>
-                </div>
 
-                <!-- 🆕 DEBUG + TEST BUTTONS (Persistence validation) -->
-                <div class="notification-debug d-none" id="debug-section">
-                  <div class="btn-group btn-group-sm" role="group">
-                    <button class="btn btn-outline-info fw-bold" onclick="testNotification()" title="Send test push to admin_trebol">
-                      <i class="bi bi-play-circle me-1"></i>TEST PUSH
-                    </button>
-                    <button class="btn btn-outline-warning fw-bold" onclick="forceRecovery()" title="Force subscription recovery">
-                      <i class="bi bi-arrow-clockwise me-1"></i>RECOVER
-                    </button>
-                  </div>
-                  <div class="mt-1">
-                    <small class="text-muted fw-bold" id="persistence-status">Loading...</small>
-                  </div>
-                </div>
 
                 <button type="button" id="btn-logout" class="btn btn-danger rounded-pill px-4 fw-bold btn-sm" onclick="logoutSimple()">
                     <i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión
