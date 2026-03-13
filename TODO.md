@@ -1,26 +1,21 @@
-# TODO: Modificar notificaciones para todos los admins logueados
+# FIX Server Crash - adminSessions undefined
 
-✅ **Plan aprobado por usuario**
+**Estado:** ✅ **Paso 1 COMPLETADO**
 
-## Pasos del plan (breakdown):
+## Pasos del Plan (2/4):
 
 ### 1. ✅ **COMPLETADO** Editar app.js
-- `include_external_user_ids: adminSessions.getActiveUserIds().length > 0 ? adminSessions.getActiveUserIds() : ["admin_trebol"]`
-- Logs mejorados: recipients count + active admins
-
-### 2. ✅ **COMPLETADO** Reiniciar servidor
 ```
-node app.js ✅ (ejecutándose)
+✅ const adminSessions = require('./sessions'); agregado
 ```
 
-### 3. [PENDIENTE] Testing Notificaciones
-- Login múltiples admins (pestañas separadas)
-- Hacer pedido desde tienda.html  
-- Verificar push a **TODOS** (abiertas/cerradas)
+### 2. **PENDIENTE** Test Local
+```
+npm start
+```
+**Esperado:** Sin ReferenceError, Socket.io listo.
 
-### 4. [PENDIENTE] Verificar OneSignal dashboard
-- Confirmar recipients >1
+### 3. **Test Endpoints** `/api/login`, socket
+### 4. **Deploy Render** (git push)
 
-**Progress: 2/4 completado** (✅ Notificaciones + ✅ Logout confirm)
-
-**NUEVA TAREA completada: Doble verificación logout con SweetAlert2**
+**Progress: 1/4**

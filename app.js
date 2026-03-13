@@ -16,6 +16,8 @@ const helmet = require('helmet');
 const morgan = require('morgan'); // Logging
 require('dotenv').config();
 
+const adminSessions = require('./sessions');
+
 // OneSignal Configuration
 // OneSignal Configuration (from .env - REST API Key required)
 const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID;
