@@ -607,28 +607,36 @@ function renderModalItems() {
         return;
     }
     let html = '';
-    let sumaTotalCalculada = 0;
-    const descuentoGlobal = window.pedidoModalData?.DescuentoPorcentaje || 0;
+    const descuentoPct = window.pedidoModalData?.DescuentoPorcentaje || 0;
+    const bruto = window.productosModalArr.reduce((acc, i) => acc + (i.cantidad * i.Precio), 0);
+    const dtoPesos = bruto * (descuentoPct / 100);
+    const neto = bruto - dtoPesos;
+    
     for (let item of productosArr) {
-        const pDesc = item.Precio * (1 - (descuentoGlobal / 100));
-        const subtotal = item.cantidad * pDesc;
-        sumaTotalCalculada += subtotal;
+        const subtotal = item.cantidad * item.Precio;
         html += `<tr>
             <td>${item.Nombre}</td>
             <td>${item.cantidad}</td>
             <td>$${Number(item.Precio).toLocaleString()}</td>
-            <td><strong>$${Number(subtotal).toLocaleString()}</strong></td>
+            <td style="text-align:right;"><strong>$${Number(subtotal).toLocaleString()}</strong></td>
         </tr>`;
     }
+    
     html += `
-        <tr style="background-color: #f1f1f1; font-weight: bold; border-top: 2px solid #ddd;">
-            <td colspan="3" style="text-align: right; padding: 10px;">TOTAL PEDIDO:</td>
-            <td style="color: #27ae60; font-size: 1.1em; padding: 10px;">
-                $${Math.round(sumaTotalCalculada).toLocaleString()}
-            </td>
+        <tr style="border-top: 1px solid #ddd;">
+            <td colspan="3" style="text-align:right; padding: 5px; color: #666;">Suma Bruta:</td>
+            <td style="text-align:right; padding: 5px; color: #666;">$${bruto.toLocaleString()}</td>
+        </tr>
+        <tr style="color:#d32f2f;">
+            <td colspan="3" style="text-align:right; padding: 5px;">Descuento (${descuentoPct}%):</td>
+            <td style="text-align:right; padding: 5px;">-$${dtoPesos.toLocaleString()}</td>
+        </tr>
+        <tr style="background:#f0f0f0; font-weight:bold;">
+            <td colspan="3" style="text-align:right; padding: 10px;">TOTAL FINAL:</td>
+            <td style="text-align:right; color:#27ae60; padding: 10px;">$${Math.round(neto).toLocaleString()}</td>
         </tr>`;
     tbody.innerHTML = html || '<tr><td colspan="4" class="text-center text-muted py-4">Sin productos</td></tr>';
-    console.log('Tabla renderizada:', productosArr.length, 'filas, Total:', sumaTotalCalculada);
+    console.log('Tabla brutos + resumen:', productosArr.length, 'items | Bruto:', bruto, 'Dto:', dtoPesos, 'Neto:', neto);
 }
 
 function recalcularModalTotal() {
