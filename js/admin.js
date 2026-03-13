@@ -188,12 +188,8 @@ async function cargarPedidos() {
         const res = await fetch('/pedidos');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         let allPedidos = await res.json();
-        // 🔄 Sort DESC - highest NumeroDisplay (latest=4) first
-        allPedidos.sort((a, b) => {
-            const numA = parseInt(a.NumeroDisplay || '0');
-            const numB = parseInt(b.NumeroDisplay || '0');
-            return numB - numA;
-        });
+        // 🔄 Sort by Fecha DESC - newest first (latest arriba)
+        allPedidos.sort((a, b) => new Date(b.Fecha) - new Date(a.Fecha));
         const filtered = allPedidos.filter(p => (window.filtroEstado || 'Todos') === 'Todos' || p.Estado === (window.filtroEstado || 'Todos'));
         renderPedidos(filtered, lista);
         document.getElementById('order-count').textContent = `${filtered.length} pedidos`;
