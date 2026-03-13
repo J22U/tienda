@@ -561,7 +561,7 @@ async function mostrarDetallesPedido(pedidoId) {
         const elDireccion = document.getElementById('modalDireccion');
         const elBtnFactura = document.getElementById('modalBtnFactura');
         
-        if (elNum) elNum.textContent = `#${numeroVisualPedido}`;
+        if (elNum) elNum.textContent = `#${p.PedidoID}`;
         if (elCliente) elCliente.textContent = p.NombreCliente || 'N/A';
         if (elFecha) elFecha.textContent = new Date(p.Fecha || Date.now()).toLocaleString('es-ES');
         if (elEstado) elEstado.textContent = p.Estado || 'N/A';
@@ -575,19 +575,13 @@ async function mostrarDetallesPedido(pedidoId) {
         descuentoInput.dataset.productoId = '';
         descuentoInput.value = '';
         
-        // ✅ LÓGICA PERSISTIDA EXACTA: Priorizar TotalManual + badge "Persistido (guardado en BD)"
-        if (p.TotalManual && p.TotalManual > 0 && p.DescuentoPorcentaje !== null && p.DescuentoPorcentaje !== 0) {
-            descuentoInput.value = p.DescuentoPorcentaje.toFixed(2);
-            descuentoInput.disabled = true; // Locked when persisted
-            
-            const formattedTotal = Number(p.TotalManual || p.Total).toLocaleString();
-            modalTotalEl.innerHTML = `<strong>$${formattedTotal}</strong>`;
-        } else {
-            descuentoInput.disabled = false;
-            renderModalItems();
-            recalcularModalTotal();
-            descuentoInput.addEventListener('input', livePreviewTotal);
-        }
+        // Total limpio siempre
+        const formattedTotal = Number(p.TotalManual || p.Total).toLocaleString();
+        modalTotalEl.innerHTML = `<strong>$${formattedTotal}</strong>`;
+        
+        descuentoInput.disabled = false;
+        renderModalItems();
+        descuentoInput.addEventListener('input', livePreviewTotal);
         
         // Show modal
         new bootstrap.Modal(document.getElementById('modalPedidoDetails')).show();
@@ -598,17 +592,23 @@ async function mostrarDetallesPedido(pedidoId) {
 
 function renderModalItems() {
     const productosArr = window.productosModalArr;
-    const tbody = document.querySelector('#modalItemsTable tbody');
-    tbody.innerHTML = productosArr.map((item, idx) => {
-        const subtotal = item.cantidad * Number(item.Precio);
-        return `
-            <tr data-producto-index="${idx}">
-                <td>${item.Nombre}</td>
-                <td>${item.cantidad}</td>
-                <td>$${Number(item.Precio).toLocaleString()}</td>
-                <td><strong>$${subtotal.toLocaleString()}</strong></td>
-            </tr>`;
-    }).join('');
+    const tbody = document.getElementById('modalProductosBody');
+    if (!tbody) {
+        console.error('modalProductosBody not found');
+        return;
+    }
+    let html = '';
+    for (let item of productosArr) {
+        const subtotal = item.cantidad * item.Precio;
+        html += `<tr>
+            <td>${item.Nombre}</td>
+            <td>${item.cantidad}</td>
+            <td>$${Number(item.Precio).toLocaleString()}</td>
+            <td><strong>$${(subtotal).toLocaleString()}</strong></td>
+        </tr>`;
+    }
+    tbody.innerHTML = html || '<tr><td colspan="4" class="text-center text-muted py-4">Sin productos</td></tr>';
+    console.log('Tabla renderizada:', productosArr.length, 'filas');
 }
 
 function recalcularModalTotal() {
