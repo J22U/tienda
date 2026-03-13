@@ -218,11 +218,23 @@ document.addEventListener('DOMContentLoaded', async function() {
                 if (fotoInput.files.length > 6) return Swal.fire('Límite', 'Máx 6 imgs', 'warning');
                 for(let i = 0; i < fotoInput.files.length; i++) formData.append('imagenes', fotoInput.files[i]);
             }
+            // 🔍 DEBUG FormData before submit
+            console.log('📤 FORM SUBMIT:', { editando, url, method, id, formDataEntries: Array.from(formData.entries()) });
+            const token = localStorage.getItem('jwt_token') || localStorage.getItem('server_session_token');
+            console.log('🔑 TOKEN:', token ? token.slice(0,20)+'...' : 'NO TOKEN');
+            
             try {
                 Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                const res = await fetch(url, { method, body: formData });
+                const res = await fetch(url, { 
+                    method, 
+                    body: formData,
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                });
+                console.log('📡 RESPONSE:', res.status, res.statusText);
+                
                 if (!res.ok) {
                     const errorText = await res.text();
+                    console.error('❌ API ERROR:', res.status, errorText);
                     throw new Error(`Error ${res.status}: ${errorText.substring(0, 200)}`);
                 }
                 await Swal.fire('¡Éxito!', 'Guardado', 'success');

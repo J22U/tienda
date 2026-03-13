@@ -1,17 +1,19 @@
-## TODO - Fix JS Syntax Errors in Admin Panel
+# ✅ PLAN APPROVED - Fix Admin Product Edit/Delete/Discount
 
-**Status**: 🚀 In Progress  
-**Target**: c:/Users/johnr/Ferreteria/js/admin.js  
-**Errors Fixed**: Declaration expected, '}' expected, brace mismatch
+## 📋 Task Steps (Completed as marked)
 
-### ✅ Steps Completed
-- [x] Plan approved by user
-- [x] TODO.md created
-- [ ] Clean js/admin.js (remove duplicates)
-- [ ] Verify syntax in VSCode
-- [ ] Test admin functionality
-- [ ] Update TODO.md ✅
-- [ ] attempt_completion
+- [x] **1. Create TODO.md** - Tracking file created ✅
+- [x] **2. app.js** - Add authJWT middleware to /productos routes ✅
+- [x] **3. app.js** - Add detailed debug logging to CRUD routes ✅
+- [x] **4. js/admin.js** - Add FormData logging + network error handling ✅
 
-**Next**: Edit js/admin.js → remove duplicate socket code + fix braces
+**✅ CRITICAL FIXES APPLIED** - Restart server & test in browser (F12 Network tab)
+
+**Next**: 
+- [ ] **5. Test edit/discount/delete** (login → edit product → check 200 OK + DB)
+- [ ] **6. Verify DB + complete**
+- [ ] **5. Test edit/discount/delete operations**  
+- [ ] **6. Verify DB changes + clear TODO**
+
+**Next**: Edit app.js middleware → test endpoints → proceed to step 3
 

@@ -279,8 +279,9 @@ app.post('/productos', upload.array('imagenes', 6), async (req, res) => {
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
-// Ruta para aplicar descuento a producto
-app.put('/productos/:id/descuento', async (req, res) => {
+// Ruta para aplicar descuento a producto 🔍 DEBUG
+app.put('/productos/:id/descuento', authJWT, async (req, res) => {
+    console.log('🛡️ DESCUENTO:', { id: req.params.id, descuento: req.body.descuento, user: req.user?.userId });
     const { id } = req.params;
     const { descuento } = req.body;
     try {
@@ -419,7 +420,9 @@ app.put('/productos/:id', upload.array('imagenes', 6), async (req, res) => {
     }
 });
 
-app.delete('/productos/:id', async (req, res) => {
+// DELETE producto 🔍 DEBUG
+app.delete('/productos/:id', authJWT, async (req, res) => {
+    console.log('🗑️ DELETE:', { id: req.params.id, user: req.user?.userId });
     try {
         const pool = await poolPromise;
         await pool.request().input('id', sql.Int, req.params.id).query('DELETE FROM ProductoImagenes WHERE ProductoID=@id');
@@ -683,10 +686,13 @@ const authJWT = (req, res, next) => {
   });
 };
 
-// Proteger rutas admin
-app.use('/api/admin/', authJWT);
+// 🛡️ PROTECT PRODUCT ROUTES with JWT auth
+app.use('/productos', authJWT);
 app.use('/backup', authJWT);
 app.use('/restore', authJWT);
+
+// 🔍 DEBUG LOGGING for product operations
+console.log('🔒 Product routes now PROTECTED with authJWT middleware');
 
 // OLD sessions - deprecated (mantener para compatibilidad temporal)
 app.get('/api/admin-session', (req, res) => {
