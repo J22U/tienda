@@ -346,22 +346,20 @@ function mostrarNotificacion(msg) {
 
 // 🔘 Description toggle function - FIXED full text
 window.toggleDesc = function(btn) {
-    const descSection = btn.closest('.description-section');
-    const textEl = descSection.querySelector('.description-text');
+    const textEl = btn.previousElementSibling;
     const fullDesc = textEl.dataset.fullDesc;
+    const card = btn.closest('.product-card');
     
     if (textEl.classList.contains('expanded')) {
-        // Collapse
         textEl.textContent = fullDesc.substring(0, 100) + (fullDesc.length > 100 ? '...' : '');
         textEl.classList.remove('expanded');
         btn.textContent = 'Ver más';
-        descSection.parentElement.parentElement.style.maxHeight = '380px';
+        card.style.maxHeight = '380px';
     } else {
-        // Expand
         textEl.textContent = fullDesc;
         textEl.classList.add('expanded');
         btn.textContent = 'Ver menos';
-        descSection.parentElement.parentElement.style.maxHeight = 'none';
+        card.style.maxHeight = 'none';
     }
 };
 

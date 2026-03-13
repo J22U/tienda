@@ -224,12 +224,7 @@ body {
     font-size: 0.88rem;
     color: #555;
     line-height: 1.5;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
     transition: all 0.3s ease;
-    min-height: 2.8em;
 }
 
 .description-text.expanded {
