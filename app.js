@@ -31,32 +31,26 @@ function sendPushNotification(pedidoData) {
     
     const notification = {
         app_id: ONESIGNAL_APP_ID,
-// ✅ Prioridad 1: Admin específico (setExternalUserId("admin_trebol") requerido)
         include_external_user_ids: ["admin_trebol"], 
-        // Fallback si 0 recipients: uncomment para All Users
-        // included_segments: ["All"],
-        headings: { 
-            en: '🛒 Nuevo Pedido - Trébol',
-            es: '🛒 Nuevo Pedido - Trébol' 
-        },
+        channel_for_external_user_ids: "push",
+        headings: { es: '🛒 Nuevo Pedido - Trébol' },
         contents: { 
-            en: `Pedido #${numeroPedido} de ${nombreCliente}`,
             es: `Pedido #${numeroPedido} de ${nombreCliente}\nTotal: $${Number(total).toLocaleString()}\n${productos} producto(s)` 
         },
         url: 'https://tienda-1vps.onrender.com/admin.html',
-        priority: 10 
+        priority: 10,
+        ttl: 259200 // 3 días de persistencia si el móvil está apagado
     };
 
     const postData = JSON.stringify(notification);
     
     const options = {
-        hostname: 'api.onesignal.com', // NUEVO DOMINIO para llaves os_v2
+        hostname: 'api.onesignal.com',
         path: '/api/v1/notifications',
         method: 'POST',
         headers: {
             'Content-Type': 'application/json; charset=utf-8',
-            // SEGÚN EL MANUAL: Las llaves os_v2 usan el esquema "key"
-            'Authorization': `key ${ONESIGNAL_REST_API_KEY}` 
+            'Authorization': `Basic ${ONESIGNAL_REST_API_KEY}` // <-- FIX CLAVE
         }
     };
 
@@ -66,24 +60,16 @@ function sendPushNotification(pedidoData) {
         res.on('end', () => {
             try {
                 const response = JSON.parse(data);
-                console.log(`🔔 Push response: recipients=${response.recipients||0} id=${response.id||'none'}`);
-                
                 if (response.recipients > 0) {
-                    console.log(`✅ [Push] ¡Entregado con éxito! (Recipientes: ${response.recipients})`);
+                    console.log(`✅ [Push] ¡Entregado! ID: ${response.id}`);
                 } else {
-                    console.log(`📡 [Push] Enviado a OneSignal. Entrega pendiente (Background/PWA)`);
-                    console.log(`🔍 OneSignal ID: ${response.id || 'N/A'}`);
+                    console.warn(`📡 [Push] OneSignal aceptó pero no encontró al admin_trebol. Errores:`, response.errors || 'Ninguno');
                 }
-                
-            } catch (parseErr) {
-                console.error('❌ Invalid OneSignal JSON:', data);
-            }
+            } catch (e) { console.error('❌ Error en respuesta OneSignal:', data); }
         });
     });
 
-    req.on('error', (error) => { 
-        console.log('⚠️ Network error - Socket.io still works:', error.message); 
-    });
+    req.on('error', (e) => { console.error('⚠️ Error de red OneSignal:', e.message); });
     req.write(postData);
     req.end();
 }
