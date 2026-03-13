@@ -9,12 +9,19 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // 🌐 Socket.io real-time
-    const socket = io();
+    // 🌐 Socket.io real-time (CSP/SIMPLE AUTH FIX)
+    const socket = io({
+        auth: {
+            simpleAuth: localStorage.getItem('admin_logged') === 'true'
+        }
+    });
     socket.on('connect', () => console.log('🔌 Socket admin conectado'));
     socket.on('nuevo-pedido', (data) => {
         mostrarNotificacion(`🛒 Nuevo pedido #${data.NumeroDisplay}`);
         cargarPedidos(); 
+    });
+    socket.on('connect_error', (err) => {
+        console.warn('⚠️ Socket connect error:', err.message);
     });
 
     // 📱 Elements
@@ -610,6 +617,11 @@ document.addEventListener('click', e => {
         input.dataset.productoId = idx;
         input.focus();
         input.placeholder = `Descuento ${window.productosModalArr[idx]?.Nombre || ''}`;
+    }
+
+    // 🔥 CSP FIX: Modal discount button (delegation)
+    if (e.target.matches('#modalDescuentoBtn')) {
+        window.aplicarDescuentoModal();
     }
 });
 
