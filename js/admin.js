@@ -239,8 +239,11 @@ function renderPedidos(peds, container) {
                     <strong>#${numeroVisual}</strong> - ${p.NombreCliente}
                     <br><small class="text-muted">${new Date(p.Fecha).toLocaleString('es-ES')}</small>
                 </div>
-                <div class="text-end">
-                    <div class="h5 fw-bold text-primary">$${Number(p.Total).toLocaleString()}</div>
+                <div class="text-end" style="min-width: 120px;">
+                    ${p.DescuentoPorcentaje > 0 ? `
+                        <small style="text-decoration: line-through; color: #888; font-size: 0.75em; display: block;">$${Number(p.Total).toLocaleString()}</small>
+                    ` : ''}
+                    <div class="h5 fw-bold text-success" style="color: #27ae60 !important;">$${Number(p.TotalManual || p.Total).toLocaleString()}</div>
                     <span class="badge bg-${p.Estado === 'Completado' ? 'success' : p.Estado === 'Pendiente' ? 'warning' : 'secondary'}">${p.Estado}</span>
                 </div>
             </div>
