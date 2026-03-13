@@ -162,22 +162,85 @@ function limpiarForm() {
    ============================================================================ */
 
 document.addEventListener('DOMContentLoaded', async function() {
-    // 🚀 ONESIGNAL: Enhanced persistence recovery
+    // 🚀 ONESIGNAL: Enhanced persistence recovery + tab listeners
     try {
         await window.OneSignalInit?.initOneSignal();
         await window.OneSignalInit?.showAdminPrompt();
-        await window.OneSignalInit?.checkAndRecoverSubscription();  // 🆕 FORCE recovery after init
+        await window.OneSignalInit?.checkAndRecoverSubscription();
         await window.OneSignalInit?.updateNotificationUI();
         console.log('🔔 OneSignal admin integration + persistence ready');
     } catch (e) {
         console.warn('OneSignal init failed:', e);
     }
     
+    // 🆕 TAB REOPEN LISTENERS - Force recovery on focus/visibility
+    window.addEventListener('focus', () => {
+        console.log('👁️ Tab focused - OneSignal recovery check');
+        window.OneSignalInit?.checkAndRecoverSubscription();
+    });
+    
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            console.log('👁️ Tab visible - OneSignal recovery check');
+            window.OneSignalInit?.checkAndRecoverSubscription();
+        }
+    });
+    
     // PROTECCIÓN DE HISTORIAL - Prevenir back button
     window.history.pushState(null, null, window.location.href);
     window.addEventListener('popstate', function() {
         window.history.pushState(null, null, window.location.href);
     });
+    
+    // 🆕 EXPOSE TEST FUNCTIONS (for debug button) + UI
+    window.testNotification = async function() {
+      const result = await window.OneSignalTest?.testAdminNotification();
+      if (result) {
+        Swal.fire('✅', 'Test notification sent to admin_trebol!', 'success');
+      } else {
+        Swal.fire('❌', 'Test failed - check console', 'error');
+      }
+      updatePersistenceStatus();
+    };
+    
+    window.forceRecovery = async function() {
+      await window.OneSignalTest?.forceRecovery();
+      Swal.fire('🔄', 'Recovery triggered - check console', 'success');
+      setTimeout(updatePersistenceStatus, 2000);
+    };
+    
+    // 🆕 Update debug status UI
+    async function updatePersistenceStatus() {
+      const statusEl = document.getElementById('persistence-status');
+      if (!statusEl) return;
+      
+      const onesignalStatus = await window.OneSignalInit?.getSubscriptionStatus();
+      const adminLogged = localStorage.getItem('admin_logged') === 'true';
+      
+      let badgeClass = 'text-muted', statusText = 'Unknown';
+      let externalId = onesignalStatus?.externalId || 'none';
+      
+      if (adminLogged && externalId === 'admin_trebol') {
+        badgeClass = 'text-success';
+        statusText = '✅ PERSISTENT (ID: admin_trebol)';
+      } else if (adminLogged) {
+        badgeClass = 'text-warning';
+        statusText = '⚠️ Recovery needed';
+      } else {
+        badgeClass = 'text-danger';
+        statusText = '❌ No admin session';
+      }
+      
+      statusEl.innerHTML = `<span class="${badgeClass} fw-bold">${statusText}</span> | ID: <code>${externalId}</code>`;
+      
+      // Show debug section after init
+      const debugSection = document.getElementById('debug-section');
+      if (debugSection) debugSection.classList.remove('d-none');
+    }
+    
+    // Init debug UI
+    setTimeout(updatePersistenceStatus, 3000);
+
     
     const formProducto = document.getElementById('form-producto');
     if (formProducto) {

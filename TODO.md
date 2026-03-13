@@ -1,31 +1,38 @@
-# ✅ PERSISTENT ADMIN SESSION - NO AUTO-LOGOUT
-**Goal**: Admin stays logged **forever** until explicit logout (closes tabs/apps OK)
+# Persistent Admin Notifications - Implementation Plan
+✅ **Plan Approved** by user
 
-## Plan Status: ✅ APPROVED - Permanent sessions (manual logout only)
+## Steps to Complete (Persistent OneSignal for Admin)
 
-### Step 1: [PENDING] Edit js/admin.js
-- Remove ALL expiry checks in `isSessionValid()`  
-- Force server token refresh on EVERY page load
-- Auto-reconnect socket with fresh token
-- Add `permanent: true` flag
+### 1. ✅ Create TODO.md 
 
-### Step 2: [PENDING] Edit js/tienda.js  
-- Login: Set `permanent: true` in session data
+### 2. ✅ Enhance js/onesignal-init.js
+- ✅ Add `beforeunload` recovery hook
+- ✅ Implement IndexedDB for externalId persistence  
+- ✅ Export `testAdminNotification()` function
 
-### Step 3: [PENDING] Edit sessions.js
-- **Remove server expiry completely**
-- Persist sessions to file (survive restarts)
-- Always accept/refresh valid tokens
+### 3. ✅ Update js/admin.js  
+- ✅ Add `focus` + `visibilitychange` listeners
+- ✅ Add test notification button  
+- ✅ Force recovery on tab reopen
 
-### Step 4: [PENDING] Test
-```
-1. Login → Close tab → Reopen → Auto-login + socket OK  
-2. Server restart → Reconnect works
-3. Multiple tabs/devices → All persistent
-4. Only logoutSimple() clears everything
-```
+### 4. ✅ Update admin.html
+- ✅ Add debug status div
+- ✅ Add test button UI
 
-### Step 5: [PENDING] attempt_completion
+### 5. [PENDING] Test & Validate
+- Login → Close tabs/PWA → Trigger notification
+- Verify browser notification delivery
+- Test logout clears subscription
 
-**Next**: Edit js/admin.js (most critical - socket fix)
+### 6. [PENDING] attempt_completion
 
+**Progress**: 4/6 ✅  
+**Status**: ✅ IMPLEMENTATION COMPLETE - Ready for testing!
+
+## Test Instructions:
+1. Login as admin.html 
+2. Toggle notifications ON → Verify "✅ PERSISTENT" status
+3. Close all tabs → Use `window.OneSignalTest.testAdminNotification()` or server trigger
+4. Verify **browser notification** arrives (SW handles)
+5. Reopen tab → Auto-recovery (status green)
+6. Logout → Status red, no notifications

@@ -334,9 +334,7 @@ async function checkAndRecoverSubscription() {
       console.log('Current externalId:', currentId);
       
       if (currentId !== 'admin_trebol') {
-        console.log('🔧 FORCE: Setting admin_trebol externalId');
-        await OneSignalInstance.login('admin_trebol');  // login() sets externalId
-        await OneSignalInstance.User.PushSubscription.optIn();
+        console.log('🔧 FORCE: Setting admin_trebol externalId');\n        await OneSignalInstance.login('admin_trebol');  // login() sets externalId\n        // 🔒 TASK STEP 2: Anchor permission (survives app close/tab change)\n        await OneSignalInstance.User.PushSubscription.optIn();
         localStorage.setItem('onesignal_user_id', 'admin_trebol');
         localStorage.setItem('onesignal_admin_id', 'admin_trebol');
         
@@ -412,20 +410,120 @@ function startPersistenceHeartbeat() {
   }, 30000); // 30s
 }
 
-// Auto-init + enhanced toggle
+// 🆕 PERSISTENCE ENHANCEMENTS: beforeunload + IndexedDB
+window.addEventListener('beforeunload', saveExternalIdToIDB);
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', async () => {
     await initOneSignal();
+    await loadExternalIdFromIDB();  // 🆕 Load persisted ID
     initAdminNotificationToggle();
     await checkAndRecoverSubscription();
-    startPersistenceHeartbeat(); // 🔄 Start 30s heartbeat
+    startPersistenceHeartbeat();
   });
 } else {
   initOneSignal();
+  loadExternalIdFromIDB();
   initAdminNotificationToggle();
   checkAndRecoverSubscription();
   startPersistenceHeartbeat();
 }
+
+// 🆕 IndexedDB for ExternalId (survives app close)
+const IDB_NAME = 'OneSignalTrebol';
+const IDB_STORE = 'externalId';
+const IDB_VERSION = 2;
+
+async function initIDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+    req.onerror = () => reject(req.error);
+    req.onsuccess = () => resolve(req.result);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) {
+        db.createObjectStore(IDB_STORE);
+      }
+    };
+  });
+}
+
+async function saveExternalIdToIDB() {
+  if (!OneSignalInstance || !isAdminPage()) return;
+  try {
+    const db = await initIDB();
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    const store = tx.objectStore(IDB_STORE);
+    const currentId = await OneSignalInstance.User.getExternalId();
+    if (currentId === 'admin_trebol') {
+      await store.put({ id: 'admin_trebol', timestamp: Date.now() }, 'admin');
+      console.log('💾 ExternalId saved to IndexedDB');
+    }
+  } catch (e) {
+    console.warn('IDB save failed:', e);
+  }
+}
+
+async function loadExternalIdFromIDB() {
+  try {
+    const db = await initIDB();
+    const tx = db.transaction(IDB_STORE, 'readonly');
+    const store = tx.objectStore(IDB_STORE);
+    const persisted = await store.get('admin');
+    if (persisted && persisted.id === 'admin_trebol') {
+      console.log('💾 Restored externalId from IndexedDB');
+      if (OneSignalInstance) {
+        await OneSignalInstance.login('admin_trebol');
+        await OneSignalInstance.User.PushSubscription.optIn();
+      }
+    }
+  } catch (e) {
+    console.warn('IDB load failed:', e);
+  }
+}
+
+// 🆕 Test notification (admin only)
+async function testAdminNotification() {
+  if (!OneSignalInstance || !isAdminPage()) {
+    console.error('❌ Test failed: OneSignal not ready or not admin page');
+    return false;
+  }
+  
+  try {
+    const status = await getSubscriptionStatus();
+    if (status.externalId !== 'admin_trebol') {
+      console.error('❌ Test failed: Not subscribed as admin_trebol');
+      return false;
+    }
+    
+    // Send test via REST API (same as server)
+    const response = await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${ONESIGNAL_REST_API_KEY || 'YOUR_KEY'}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        app_id: ONESIGNAL_APP_ID,
+        include_external_user_ids: ['admin_trebol'],
+        headings: { 'es': '🧪 TEST - Admin Notification' },
+        contents: { 'es': 'Persistence test successful! 🎉' }
+      })
+    });
+    
+    if (response.ok) {
+      console.log('✅ Test notification sent!');
+      return true;
+    } else {
+      console.error('❌ Test API failed:', await response.text());
+      return false;
+    }
+  } catch (e) {
+    console.error('❌ Test error:', e);
+    return false;
+  }
+}
+
 
 // Export enhanced API
 window.OneSignalInit = { 
@@ -435,8 +533,15 @@ window.OneSignalInit = {
   unsubscribeNotifications, 
   getSubscriptionStatus,
   isAdminPage,
-  checkAndRecoverSubscription,  // 🆕 Recovery
-  setupExternalIdListener       // 🆕 Listener
+  checkAndRecoverSubscription,
+  setupExternalIdListener,
+  testAdminNotification  // 🆕 Manual test
+};
+
+window.OneSignalTest = {
+  testAdminNotification,
+  forceRecovery: checkAndRecoverSubscription
 };
 
 window.initOneSignal = initOneSignal;
+
