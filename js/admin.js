@@ -350,7 +350,7 @@ async function generarFacturaPDFParaPedido(pedidoId) {
         const res = await fetch(`/pedidos/${pedidoId}`);
         if (!res.ok) throw new Error('Pedido no encontrado');
         const p = await res.json();
-        const numeroPedido = p.NumeroDisplay || p.PedidoID;
+        const numeroPedido = obtenerNumeroVisualActual(pedidoId);
         generarFacturaPDF(p, numeroPedido);
     } catch(err) {
         Swal.fire('Error', `No se pudo cargar factura: ${err.message}`, 'error');
@@ -515,43 +515,33 @@ async function generarFacturaPDF(p, numeroPedido) {
 }
 
 // 🆕 Pedido Details Modal
+window.productosModalArr = []; // Global for discount updates
+
 async function mostrarDetallesPedido(pedidoId) {
     try {
         const res = await fetch(`/pedidos/${pedidoId}`);
         const p = await res.json();
         
-        // Parse productos
-        let productosArr = [];
+        // Parse productos → global
+        window.productosModalArr = [];
         try { 
-            productosArr = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
-        } catch(e) { productosArr = []; }
+            window.productosModalArr = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
+        } catch(e) { window.productosModalArr = []; }
         
         // All details
-        document.getElementById('modalPedidoNum').textContent = `#${p.NumeroDisplay || p.PedidoID}`;
+        const numeroVisualPedido = obtenerNumeroVisualActual(pedidoId);
+        document.getElementById('modalPedidoNum').textContent = `#${numeroVisualPedido}`;
         document.getElementById('modalCliente').textContent = p.NombreCliente;
         document.getElementById('modalFecha').textContent = new Date(p.Fecha).toLocaleString('es-ES');
         document.getElementById('modalEstado').textContent = p.Estado;
-        document.getElementById('modalTotal').textContent = `$${Number(p.Total).toLocaleString()}`;
         document.getElementById('modalTelefono').textContent = p.Telefono || 'N/A';
         document.getElementById('modalDocumento').textContent = p.Documento || 'N/A';
         document.getElementById('modalDireccion').textContent = p.Direccion || 'N/A';
         document.getElementById('modalBtnFactura').dataset.pedidoId = pedidoId;
-        document.getElementById('modalDescuentoInput').dataset.productoId = ''; // Reset
+        document.getElementById('modalDescuentoInput').dataset.productoId = '';
         
-        // Items table with descuentos
-        const tbody = document.querySelector('#modalItemsTable tbody');
-        tbody.innerHTML = productosArr.map(item => {
-            const precioFinal = Number(item.Precio) * (1 - (item.DescuentoPorcentaje || 0)/100);
-            const subtotal = item.cantidad * precioFinal;
-            return `
-                <tr>
-                    <td>${item.Nombre}</td>
-                    <td>${item.cantidad}</td>
-                    <td>$${Number(item.Precio).toLocaleString()}</td>
-                    <td>${item.DescuentoPorcentaje || 0}%</td>
-                    <td><strong>$${subtotal.toLocaleString()}</strong></td>
-                </tr>`;
-        }).join('');
+        renderModalItems();
+        recalcularModalTotal();
         
         // Show modal
         new bootstrap.Modal(document.getElementById('modalPedidoDetails')).show();
@@ -559,6 +549,69 @@ async function mostrarDetallesPedido(pedidoId) {
         Swal.fire('Error', 'No se pudieron cargar detalles', 'error');
     }
 }
+
+function renderModalItems() {
+    const productosArr = window.productosModalArr;
+    const tbody = document.querySelector('#modalItemsTable tbody');
+    tbody.innerHTML = productosArr.map((item, idx) => {
+        const precioFinal = Number(item.Precio) * (1 - (item.DescuentoPorcentaje || 0)/100);
+        const subtotal = item.cantidad * precioFinal;
+        return `
+            <tr data-producto-index="${idx}">
+                <td>${item.Nombre}</td>
+                <td>${item.cantidad}</td>
+                <td>$${Number(item.Precio).toLocaleString()}</td>
+                <td>${(item.DescuentoPorcentaje || 0)}%</td>
+                <td><strong>$${subtotal.toLocaleString()}</strong></td>
+            </tr>`;
+    }).join('');
+}
+
+function recalcularModalTotal() {
+    const productosArr = window.productosModalArr;
+    let total = 0;
+    productosArr.forEach(item => {
+        total += item.cantidad * Number(item.Precio) * (1 - (item.DescuentoPorcentaje || 0)/100);
+    });
+    document.getElementById('modalTotal').textContent = `$${total.toLocaleString()}`;
+}
+
+window.aplicarDescuentoModal = function() {
+    const input = document.getElementById('modalDescuentoInput');
+    const prodIndex = input.dataset.productoId;
+    if (!prodIndex || prodIndex === '') return Swal.fire('Error', 'Click producto primero', 'warning');
+    
+    const descuento = parseFloat(input.value) || 0;
+    if (isNaN(descuento) || descuento < 0 || descuento > 100) return Swal.fire('Error', '0-100%', 'warning');
+    
+    // Update
+    window.productosModalArr[prodIndex].DescuentoPorcentaje = descuento;
+    
+    // Backend save
+    const productoId = window.productosModalArr[prodIndex].ProductoID;
+    fetch(`/productos/${productoId}/descuento`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({descuento})
+    }).then(() => {
+        renderModalItems();
+        recalcularModalTotal();
+        Swal.fire('✅', 'Descuento guardado + total actualizado', 'success');
+        input.value = ''; input.dataset.productoId = '';
+    }).catch(err => Swal.fire('Error', err, 'error'));
+};
+
+// Click row discount
+document.addEventListener('click', e => {
+    const row = e.target.closest('#modalItemsTable tr');
+    if (row) {
+        const idx = row.dataset.productoIndex;
+        const input = document.getElementById('modalDescuentoInput');
+        input.dataset.productoId = idx;
+        input.focus();
+        input.placeholder = `Descuento ${window.productosModalArr[idx]?.Nombre || ''}`;
+    }
+});
 
 // Modal factura button
 document.addEventListener('click', e => {
@@ -587,6 +640,57 @@ function mostrarNotificacion(msg) {
         showConfirmButton: false,
         timer: 3000
     });
+}
+
+// 🔢 Get screen # for pedido (same as list display)
+window.pedidosActuales = []; // Cache current filtered list
+
+function renderPedidos(peds, container) {
+    window.pedidosActuales = peds; // Cache for numeroVisual lookup
+    if (!peds.length) {
+        container.innerHTML = '<div class="text-center py-5 text-muted"><i class="bi bi-cart-x fs-1 mb-3"></i>No hay pedidos</div>';
+        return;
+    }
+    
+    container.innerHTML = peds.map((p, index) => {
+        const newEstado = p.Estado === 'Completado' ? 'Pendiente' : 'Completado';
+        const btnClass = p.Estado === 'Completado' ? 'success' : 'warning';
+        const btnText = p.Estado === 'Completado' ? 'Pendiente' : 'Completar';
+        const numeroVisual = peds.length - index;
+        return `
+        <div class="pedido-row p-3 border-bottom" data-pedido-id="${p.PedidoID}" data-numero-visual="${numeroVisual}">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <strong>#${numeroVisual}</strong> - ${p.NombreCliente}
+                    <br><small class="text-muted">${new Date(p.Fecha).toLocaleString('es-ES')}</small>
+                </div>
+                <div class="text-end">
+                    <div class="h5 fw-bold text-primary">$${Number(p.Total).toLocaleString()}</div>
+                    <span class="badge bg-${p.Estado === 'Completado' ? 'success' : p.Estado === 'Pendiente' ? 'warning' : 'secondary'}">${p.Estado}</span>
+                </div>
+            </div>
+            <div class="mt-2">
+                <button class="btn btn-sm btn-outline-${btnClass} me-1 pedido-btn-status" 
+                        data-pedido-id="${p.PedidoID}" 
+                        data-new-estado="${newEstado}">
+                    ${btnText}
+                </button>
+                <button class="btn btn-sm btn-primary me-1 pedido-btn-factura" 
+                        data-pedido-id="${p.PedidoID}">
+                    <i class="bi bi-file-earmark-pdf me-1"></i>Factura
+                </button>
+                <button class="btn btn-sm btn-outline-danger pedido-btn-delete" 
+                        data-pedido-id="${p.PedidoID}">
+                    Eliminar
+                </button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function obtenerNumeroVisualActual(pedidoId) {
+    const pedidoRow = document.querySelector(`.pedido-row[data-pedido-id="${pedidoId}"]`);
+    return pedidoRow ? pedidoRow.dataset.numeroVisual : 'N/A';
 }
 
 // Low Stock
