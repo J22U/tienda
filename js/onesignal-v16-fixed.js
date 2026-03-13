@@ -39,10 +39,15 @@ async function initOneSignal() {
         });
         
         // ✅ v16 CORRECT: Use login(userId) - replaces deprecated setExternalUserId
-        await OneSignalInstance.login(userId);
+        // FIXED v16 → v15 stable API
+        if (OneSignalInstance.setExternalUserId) {
+          await OneSignalInstance.setExternalUserId(userId);
+        } else if (OneSignalInstance.login) {
+          await OneSignalInstance.login(userId).catch(e => console.warn('v16 login fallback:', e));
+        }
         
         OneSignalInitialized = true;
-        console.log('✅ OneSignal v16 ready - user:', userId);
+        console.log('✅ OneSignal ready - user:', userId);
         
         // Status check
         getSubscriptionStatus().then(status => {
@@ -94,8 +99,12 @@ async function checkAndRecoverSubscription() {
     
     if (currentId !== userId) {
       console.log(`🔄 Recover: ${currentId} → ${userId}`);
-      // ✅ v16 CORRECT: login(userId) for recovery too
-      await OneSignalInstance.login(userId);
+      // FIXED API compatibility
+      if (OneSignalInstance.setExternalUserId) {
+        await OneSignalInstance.setExternalUserId(userId);
+      } else if (OneSignalInstance.login) {
+        await OneSignalInstance.login(userId).catch(e => console.warn('Recovery login:', e));
+      }
       
       // Ensure subscribed + notify server
       const state = await OneSignalInstance.User.PushSubscription.state;

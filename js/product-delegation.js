@@ -19,4 +19,3 @@ document.addEventListener('click', function(e) {
       window.aplicarDescuentoProducto(prodData.ProductoID, prodData.DescuentoPorcentaje || 0);
       break;
   }
-});
