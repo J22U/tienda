@@ -1,36 +1,26 @@
-# OneSignal Fix - Progress Tracker
+# TODO: Modificar notificaciones para todos los admins logueados
 
-## ✅ Plan Confirmed: Fix Duplicate Declaration + v16 Login Crash
+✅ **Plan aprobado por usuario**
 
-**Files fixed (2/2):**
-1. `js/admin.js` ✓ - Duplicate removed, calls consolidated
-2. `js/onesignal-v16-fixed.js` ✓ - v16 login/setExternalUserId fixed + guards
+## Pasos del plan (breakdown):
 
-**Current Step: 2/3** - Files updated  
-**Next:** Step 3 → Test verification
+### 1. ✅ **COMPLETADO** Editar app.js
+- `include_external_user_ids: adminSessions.getActiveUserIds().length > 0 ? adminSessions.getActiveUserIds() : ["admin_trebol"]`
+- Logs mejorados: recipients count + active admins
 
----
-
-## Step-by-Step Progress
-
-### ✅ Step 1: Fix js/admin.js
-- Removed `let OneSignalInitialized = false;`
-- Single safe OneSignal init call
-- Removed redundant listeners/calls
-
-### ✅ Step 2: Fix js/onesignal-v16-fixed.js  
-- ✅ `setExternalUserId(userId)` (v16 safe recovery)
-- ✅ Init guard prevents races
-- ✅ `safeInitOneSignal()` prevents duplicate inits
-
-### ✅ Step 4: v16 API FIXED - `login()` method
+### 2. ✅ **COMPLETADO** Reiniciar servidor
 ```
-✅ getCurrentUserId() → FIXED 'admin_trebol' 
-✅ initOneSignal() → login(userId) ✓ (no more setExternalUserId)
-✅ checkAndRecoverSubscription() → login(userId) ✓ 
-✅ "All included players are not subscribed" → FIXED
-✅ Push notifications → Delivered to admin_trebol ✅
+node app.js ✅ (ejecutándose)
 ```
 
-**Status: PRODUCTION PERFECT** 🚀
+### 3. [PENDIENTE] Testing Notificaciones
+- Login múltiples admins (pestañas separadas)
+- Hacer pedido desde tienda.html  
+- Verificar push a **TODOS** (abiertas/cerradas)
 
+### 4. [PENDIENTE] Verificar OneSignal dashboard
+- Confirmar recipients >1
+
+**Progress: 2/4 completado** (✅ Notificaciones + ✅ Logout confirm)
+
+**NUEVA TAREA completada: Doble verificación logout con SweetAlert2**

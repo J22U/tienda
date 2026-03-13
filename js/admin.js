@@ -238,7 +238,33 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 // 🔧 SIMPLIFIED LOGOUT - NOW GLOBAL (Fix ReferenceError)
 window.logoutSimple = async function() {
-    console.log('🚀 COMPLETE LOGOUT - Local + Server + OneSignal');
+    // 🚨 DOBLE VERIFICACIÓN ANTES DE LOGOUT
+    const result = await Swal.fire({
+        title: '¿Cerrar Sesión?',
+        html: `
+            <div class="text-start">
+                <p class="mb-2"><i class="bi bi-shield-check text-warning me-2"></i>Se eliminarán:</p>
+                <ul class="mb-0 ps-3">
+                    <li>Servidor sesión</li>
+                    <li>OneSignal suscripción</li>
+                    <li>Datos locales (localStorage)</li>
+                </ul>
+            </div>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ff6b6b',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-box-arrow-right me-1"></i>Cerrar',
+        cancelButtonText: '<i class="bi bi-x me-1"></i>Cancelar',
+        reverseButtons: true
+    });
+
+    if (!result.isConfirmed) {
+        console.log('🚫 Logout cancelado por usuario');
+        return;
+    }
+
+    console.log('🚀 COMPLETE LOGOUT - Usuario confirmó');
     
     const serverToken = localStorage.getItem('server_session_token');
     

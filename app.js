@@ -31,7 +31,7 @@ function sendPushNotification(pedidoData) {
     
    const notification = {
         app_id: ONESIGNAL_APP_ID,
-        include_external_user_ids: ["admin_trebol"], 
+        include_external_user_ids: adminSessions.getActiveUserIds().length > 0 ? adminSessions.getActiveUserIds() : ["admin_trebol"],
         channel_for_external_user_ids: "push",
         // AGREGAMOS 'en' a headings
         headings: { 
@@ -67,9 +67,9 @@ function sendPushNotification(pedidoData) {
             try {
                 const response = JSON.parse(data);
                 if (response.recipients > 0) {
-                    console.log(`✅ [Push] ¡Entregado! ID: ${response.id}`);
+                    console.log(`✅ [Push] ¡Entregado a ${response.recipients} admins! ID: ${response.id}`);
                 } else {
-                    console.warn(`📡 [Push] OneSignal aceptó pero no encontró al admin_trebol. Errores:`, response.errors || 'Ninguno');
+                    console.warn(`📡 [Push] No admins encontrados (${adminSessions.getActiveUserIds().length}). Errores:`, response.errors || 'Ninguno');
                 }
             } catch (e) { console.error('❌ Error en respuesta OneSignal:', data); }
         });
