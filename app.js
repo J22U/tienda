@@ -688,6 +688,47 @@ app.put('/pedidos/:id/descuento-pedido', async (req, res) => {
     }
 });
 
+// 🔥 PEDIDO DISCOUNT ENDPOINT (feedback)
+app.put('/pedidos/:id/descuento', async (req, res) => {
+    const { id } = req.params;
+    const { descuentoPorcentaje, totalManual } = req.body;
+    
+    try {
+        const pool = await poolPromise;
+        
+        // Get original total for validation
+        const pedido = await pool.request()
+            .input('id', sql.Int, id)
+            .query('SELECT Total as originalTotal FROM Pedidos WHERE PedidoID = @id');
+            
+        if (pedido.recordset.length === 0) {
+            return res.status(404).json({ error: 'Pedido no encontrado' });
+        }
+        
+        const originalTotal = parseFloat(pedido.recordset[0].originalTotal);
+        const descuento = parseFloat(descuentoPorcentaje) || 0;
+        const nuevoTotal = parseFloat(totalManual) || originalTotal * (1 - descuento / 100);
+        
+        await pool.request()
+            .input('id', sql.Int, id)
+            .input('desc', sql.Decimal(5,2), descuento)
+            .input('total', sql.Decimal(18,2), nuevoTotal)
+            .query('UPDATE Pedidos SET DescuentoPorcentaje = @desc, TotalManual = @total WHERE PedidoID = @id');
+            
+        console.log(`💰 Pedido ${id}: ${descuento}% descuento → Total $${nuevoTotal.toLocaleString()}`);
+        
+        res.json({
+            success: true,
+            descuentoPorcentaje: descuento,
+            totalManual: nuevoTotal,
+            originalTotal
+        });
+    } catch (err) {
+        console.error('Pedido descuento error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ===== BADGE SUPPORT - Unread Count Endpoint =====
 app.get('/unread-count', async (req, res) => {
     try {

@@ -583,29 +583,53 @@ function recalcularModalTotal() {
     document.getElementById('modalTotal').textContent = `$${total.toLocaleString()}`;
 }
 
-window.aplicarDescuentoModal = function() {
+window.aplicarDescuentoModal = async function() {
     const input = document.getElementById('modalDescuentoInput');
-    const prodIndex = input.dataset.productoId;
-    if (!prodIndex || prodIndex === '') return Swal.fire('Error', 'Click producto primero', 'warning');
+    const pedidoId = document.querySelector('#modalBtnFactura')?.dataset.pedidoId;
     
-    const descuento = parseFloat(input.value) || 0;
-    if (isNaN(descuento) || descuento < 0 || descuento > 100) return Swal.fire('Error', '0-100%', 'warning');
+    if (!pedidoId) {
+        return Swal.fire('Error', 'Pedido ID no encontrado', 'warning');
+    }
     
-    // Update
-    window.productosModalArr[prodIndex].DescuentoPorcentaje = descuento;
+    const descuentoPorcentaje = parseFloat(input.value) || 0;
+    if (isNaN(descuentoPorcentaje) || descuentoPorcentaje < 0 || descuentoPorcentaje > 100) {
+        return Swal.fire('Error', 'Descuento válido: 0-100%', 'warning');
+    }
     
-    // Backend save
-    const productoId = window.productosModalArr[prodIndex].ProductoID;
-    fetch(`/productos/${productoId}/descuento`, {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({descuento})
-    }).then(() => {
-        renderModalItems();
-        recalcularModalTotal();
-        Swal.fire('✅', 'Descuento guardado + total actualizado', 'success');
-        input.value = ''; input.dataset.productoId = '';
-    }).catch(err => Swal.fire('Error', err, 'error'));
+    try {
+        const res = await fetch(`/pedidos/${pedidoId}/descuento`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                descuentoPorcentaje,
+                // Backend calculará totalManual
+            })
+        });
+        
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        
+        const data = await res.json();
+        
+        // Update UI immediately
+        document.getElementById('modalTotal').textContent = `$${data.totalManual?.toLocaleString() || 'Error'} (${descuentoPorcentaje}%)`;
+        
+        // Refresh full pedidos list (persistence!)
+        cargarPedidos();
+        
+        Swal.fire({
+            title: '✅ Descuento aplicado',
+            html: `Guardado en BD<br>
+                   Total: $${data.totalManual?.toLocaleString()}<br>
+                   Descuento: ${descuentoPorcentaje}%`,
+            icon: 'success',
+            timer: 2500
+        });
+        
+        input.value = '';
+    } catch (err) {
+        console.error('Descuento error:', err);
+        Swal.fire('Error', `Fallo: ${err.message}`, 'error');
+    }
 };
 
 // Click row discount
