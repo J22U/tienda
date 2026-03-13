@@ -73,7 +73,7 @@ function isSessionValid() {
 function saveAdminSession() {
     const sessionData = {
         logged: true,
-        permanent: true,  // ✅ FOREVER until manual logout
+        permanent: true,
         isPWA: isPWA()
     };
     localStorage.setItem('admin_session', JSON.stringify(sessionData));
@@ -81,8 +81,13 @@ function saveAdminSession() {
     
     console.log('✅ Permanent admin session saved');
     
-    // 🔗 ONESIGNAL: Sync external ID after saving session
+    // 🔗 ONESIGNAL: Sync dynamic user ID
     setTimeout(async () => {
+      const USER_ID = await window.OneSignalInit?.getCurrentUserId();
+      if (USER_ID) {
+        localStorage.setItem('current_user_id', USER_ID);
+        console.log('🔗 Session linked to OneSignal userId:', USER_ID);
+      }
       if (window.OneSignalInit?.checkAndRecoverSubscription) {
         await window.OneSignalInit.checkAndRecoverSubscription();
       }
@@ -558,13 +563,17 @@ if (email === "admin@agro.com" && pass === "123456") {
                 };
                 localStorage.setItem('admin_session', JSON.stringify(sessionData));
                 
-                // 2. Background sync (no bloquea redirect)
+                // 2. Background sync (no bloquea redirect) - DYNAMIC USER ID
                 (async () => {
-                    const USER_ID = "admin_trebol";
+                    // Generate/set unique user ID for this session
+                    const USER_ID = await window.OneSignalInit?.getCurrentUserId() || `admin_${Date.now()}`;
+                    localStorage.setItem('current_user_id', USER_ID);
                     localStorage.setItem('onesignal_user_id', USER_ID);
                     
+                    console.log('🆔 Login userId:', USER_ID);
+                    
                     try {
-                        // Server session
+                        // Server session with dynamic userId
                         const serverRes = await fetch(`${BASE_URL}/api/admin-session`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -573,15 +582,16 @@ if (email === "admin@agro.com" && pass === "123456") {
                         const serverData = await serverRes.json();
                         if (serverData.success) {
                             localStorage.setItem('server_session_token', serverData.token);
-                            console.log('✅ Server session OK');
+                            console.log('✅ Server session OK:', USER_ID);
                         }
                     } catch (e) {
                         console.warn('Server sync failed:', e);
                     }
                     
-                    // OneSignal background
+                    // OneSignal: init + force sync externalId
                     if (window.OneSignalInit) {
                         await window.OneSignalInit.initOneSignal();
+                        await window.OneSignalInit.checkAndRecoverSubscription();
                     }
                 })();
                 

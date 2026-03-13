@@ -22,6 +22,9 @@ async function initOneSignal() {
         await checkAndRecoverSubscription();
         setupExternalIdListener();
         
+        // Get user ID BEFORE init
+        const userId = await getCurrentUserId();
+        
         await OneSignal.init({
           appId: ONESIGNAL_APP_ID,
           allowLocalhostAsSecureOrigin: true,
@@ -31,14 +34,21 @@ async function initOneSignal() {
           welcomeNotification: { disable: true },
           promptOptions: { slidedown: { enabled: false } }
         });
+        
+        // IMMEDIATE set external ID after init
+        await OneSignalInstance.setExternalUserId(userId);
 
         OneSignalInitialized = true;
         console.log('✅ OneSignal v16 initialized');
         
-        getSubscriptionStatus().then(status => {
+        getSubscriptionStatus().then(async (status) => {
           console.log('📊 OneSignal Status:', status);
-          if (status.externalId === 'admin_trebol') {
-            console.log('🎉 Admin subscription ready');
+          const expectedId = await getCurrentUserId();
+          if (status.externalId === expectedId) {
+            console.log('🎉 User subscription ready:', expectedId);
+          } else {
+            console.log('⚠️ ID mismatch - auto-recovery:', status.externalId, '≠', expectedId);
+            await checkAndRecoverSubscription();
           }
         });
 
@@ -132,34 +142,58 @@ async function getSubscriptionStatus() {
   }
 }
 
+async function getCurrentUserId() {
+  // Prioridad: localStorage → server session → generate unique
+  let userId = localStorage.getItem('current_user_id');
+  
+  if (!userId) {
+    // Try server session token as fallback
+    userId = localStorage.getItem('server_session_token')?.slice(0,32) || null;
+  }
+  
+  if (!userId) {
+    // Generate unique session ID
+    userId = `user_${Date.now()}_${Math.random().toString(36).slice(2,6)}`;
+    localStorage.setItem('current_user_id', userId);
+    console.log('🆕 Generated new userId:', userId);
+  }
+  
+  return userId;
+}
+
 async function checkAndRecoverSubscription() {
-  if (!isAdminPage() || !OneSignalInstance) return;
+  if (!OneSignalInstance) return;
   
-  const adminLogged = localStorage.getItem('admin_logged') === 'true';
-  const toggleEnabled = localStorage.getItem('admin_notifications_enabled') === 'true';
-  
-  if ((adminLogged || toggleEnabled) && OneSignalInstance) {
-    try {
-      const currentId = await OneSignalInstance.User.getExternalId();
-      if (currentId !== 'admin_trebol') {
-        console.log('🔧 FORCE: Setting admin_trebol externalId');
-        await OneSignalInstance.setExternalUserId('admin_trebol');
+  try {
+    const userId = await getCurrentUserId();
+    const currentId = await OneSignalInstance.User.getExternalId();
+    
+    if (currentId !== userId) {
+      console.log(`🔄 Syncing OneSignal externalId: ${currentId || 'none'} → ${userId}`);
+      await OneSignalInstance.setExternalUserId(userId);
+      
+      // Ensure subscription active
+      const subState = await OneSignalInstance.User.PushSubscription.state;
+      if (subState !== 'Subscribed' && subState !== 'OptedIn') {
         await OneSignalInstance.User.PushSubscription.optIn();
-        localStorage.setItem('onesignal_user_id', 'admin_trebol');
-        console.log('✅ Forced admin_trebol identity');
       }
-    } catch (e) {
-      console.error('Recovery failed:', e);
+      
+      localStorage.setItem('onesignal_user_id', userId);
+      console.log('✅ User identity synced:', userId);
     }
+  } catch (e) {
+    console.error('Recovery failed:', e);
   }
 }
 
 function setupExternalIdListener() {
-  if (!OneSignalInstance || !isAdminPage()) return;
+  if (!OneSignalInstance) return;
+  
   OneSignalInstance.User.PushSubscription.addEventListener('stateChange', async (event) => {
-    const toggleEnabled = localStorage.getItem('admin_notifications_enabled') !== 'false';
-    if (event.isSubscribed && toggleEnabled) {
-      await OneSignalInstance.setExternalUserId("admin_trebol");
+    if (event.isSubscribed) {
+      const userId = await getCurrentUserId();
+      await OneSignalInstance.setExternalUserId(userId);
+      console.log('🔄 Auto-sync externalId on subscription change:', userId);
     }
   });
 }
@@ -176,5 +210,6 @@ window.OneSignalInit = {
   updateNotificationUI,
   checkAndRecoverSubscription,
   getSubscriptionStatus,
-  isAdminPage
+  isAdminPage,
+  getCurrentUserId  // ← NEW: expose for other files
 };

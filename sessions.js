@@ -11,7 +11,7 @@ class AdminSessions {
   }
 
   // Create new session
-  create(userId = "admin_trebol") {
+  create(userId) {  // ← Dynamic userId from frontend
     const token = this.generateToken();
     this.sessions.set(token, {
       userId,
@@ -43,13 +43,15 @@ class AdminSessions {
   }
 
   // Get current active admin userId (first valid session)
-  getActiveUserId() {
+  getActiveUserIds() {  // ← Return ARRAY of active admins
+    const activeIds = [];
     for (const [token, session] of this.sessions.entries()) {
       if (session.logged) {
-        return session.userId;
+        activeIds.push(session.userId);
       }
     }
-    return null; // No active admins
+    console.log('👥 Active admins:', activeIds);
+    return activeIds; // Array of userIds for OneSignal targeting
   }
 
   // Cleanup expired sessions (run periodically)

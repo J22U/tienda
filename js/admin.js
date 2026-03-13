@@ -1273,15 +1273,19 @@ async function verificarSesion() {
     
     console.log('✅ Server session fresh & ready');
     
+    // NEW: OneSignal sync after server session
+    const userId = await window.OneSignalInit?.getCurrentUserId();
+    console.log('🔗 Session verified - userId:', userId);
+    
     // 3. FORCE socket reconnect with FRESH token
     const freshToken = localStorage.getItem('server_session_token');
     if (socket) {
-        socket.auth = { token: freshToken };
+        socket.auth = { token: freshToken, userId };  // ← Pass userId to socket
         if (socket.connected) {
             socket.disconnect();
         }
         socket.connect();
-        console.log('🔌 Socket reconnected with fresh token:', freshToken.slice(0,8)+'...');
+        console.log('🔌 Socket reconnected:', freshToken.slice(0,8)+'...', userId);
     }
 }
 
@@ -1376,8 +1380,17 @@ window.logoutSimple = logoutSimple;
 window.verificarSesion = verificarSesion;
 window.isSessionValid = isSessionValid;
 
-// Verificar sesión al cargar la página
-verificarSesion();
+// Verificar sesión al cargar la página + OneSignal sync
+await verificarSesion();
+
+// NEW: OneSignal sync after session verify
+try {
+  await window.OneSignalInit?.initOneSignal();
+  await window.OneSignalInit?.checkAndRecoverSubscription();
+  console.log('🔗 Admin panel: OneSignal synced');
+} catch (e) {
+  console.warn('OneSignal sync failed:', e);
+}
 
 // Cargar inventario y pedidos al iniciar
 cargarInventario();
