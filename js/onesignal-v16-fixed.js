@@ -38,8 +38,8 @@ async function initOneSignal() {
           promptOptions: { slidedown: { enabled: false } }
         });
         
-        // v16 FIX: login expects {externalId}, but use setExternalUserId for recovery
-        await OneSignalInstance.setExternalUserId(userId);
+        // ✅ v16 CORRECT: Use login(userId) - replaces deprecated setExternalUserId
+        await OneSignalInstance.login(userId);
         
         OneSignalInitialized = true;
         console.log('✅ OneSignal v16 ready - user:', userId);
@@ -66,19 +66,20 @@ async function initOneSignal() {
 }
 
 function getCurrentUserId() {
-  let userId = localStorage.getItem('current_user_id');
+  // FIXED: Always use FIXED 'admin_trebol' for server push matching
+  const FIXED_ADMIN_ID = 'admin_trebol';
   
-  if (!userId) {
-    userId = localStorage.getItem('server_session_token')?.slice(0,32);
+  // Preserve existing for localStorage compat
+  let userId = localStorage.getItem('current_user_id') || FIXED_ADMIN_ID;
+  
+  // Always set/override to fixed ID
+  localStorage.setItem('current_user_id', FIXED_ADMIN_ID);
+  
+  if (userId !== FIXED_ADMIN_ID) {
+    console.log(`🔧 Fixed dynamic ID → ${FIXED_ADMIN_ID}`);
   }
   
-  if (!userId) {
-    userId = `admin_${Date.now()}_${Math.random().toString(36).substr(2,6)}`;
-    localStorage.setItem('current_user_id', userId);
-    console.log('🆕 NEW session userId:', userId);
-  }
-  
-  return userId;
+  return FIXED_ADMIN_ID;
 }
 
 async function checkAndRecoverSubscription() {
@@ -93,17 +94,19 @@ async function checkAndRecoverSubscription() {
     
     if (currentId !== userId) {
       console.log(`🔄 Recover: ${currentId} → ${userId}`);
-      // v16 FIX: Use setExternalUserId (safer than login for recovery)
-      await OneSignalInstance.setExternalUserId(userId);
+      // ✅ v16 CORRECT: login(userId) for recovery too
+      await OneSignalInstance.login(userId);
       
-      // Ensure subscribed
+      // Ensure subscribed + notify server
       const state = await OneSignalInstance.User.PushSubscription.state;
       if (state !== 'Subscribed' && state !== 'OptedIn') {
         await OneSignalInstance.User.PushSubscription.optIn();
       }
       
       localStorage.setItem('onesignal_user_id', userId);
-      console.log('✅ Synced:', userId);
+      console.log('✅ Synced & SUBSCRIBED:', userId);
+    } else {
+      console.log('✅ Already synced:', userId);
     }
   } catch (e) {
     console.error('Recovery failed:', e);

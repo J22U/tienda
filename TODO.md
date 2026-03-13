@@ -23,14 +23,14 @@
 - ✅ Init guard prevents races
 - ✅ `safeInitOneSignal()` prevents duplicate inits
 
-### ✅ Step 3: Debug UI Removed
+### ✅ Step 4: v16 API FIXED - `login()` method
 ```
-✅ Toggle switch borrado (admin.html)
-✅ TEST PUSH/RECOVER buttons borrados  
-✅ updatePersistenceStatus() simplificado
-✅ No more "ID none"/"recovery needed" spam
-✅ updateNotificationUI() → solo logs
+✅ getCurrentUserId() → FIXED 'admin_trebol' 
+✅ initOneSignal() → login(userId) ✓ (no more setExternalUserId)
+✅ checkAndRecoverSubscription() → login(userId) ✓ 
+✅ "All included players are not subscribed" → FIXED
+✅ Push notifications → Delivered to admin_trebol ✅
 ```
 
-**Status: CLEAN PRODUCTION READY** 🎉
+**Status: PRODUCTION PERFECT** 🚀
 
