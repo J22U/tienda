@@ -298,11 +298,13 @@ async function guardarProducto(e) {
     e.preventDefault();
     
     const id = document.getElementById('prod-id').value;
+    console.log('DEBUG - ID para editar:', id);
+    console.log('DEBUG - Token disponible:', !!localStorage.getItem('token'));
     const token = localStorage.getItem('token');
     
     if (!token) {
         Swal.fire('Error', 'Tu sesión expiró. Por favor inicia sesión de nuevo.', 'error');
-        window.location.href = 'tienda.html'; // No existe login.html
+        // window.location.href = 'tienda.html'; // COMENTADO PARA DEBUG
         return;
     }
 
@@ -316,9 +318,15 @@ async function guardarProducto(e) {
         Caracteristicas: document.getElementById('caracteristicas').value
     };
 
-    const url = id ? `/productos/${id}` : '/productos';
+    const url = id ? `https://tienda-1vps.onrender.com/productos/${id}` : 'https://tienda-1vps.onrender.com/productos';
+    console.log('DEBUG - URL final:', url);
+    console.log('Enviando Token:', token);
     
     try {
+        console.log('DEBUG - Headers enviados:', {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        });
         const response = await fetch(url, {
             method: id ? 'PUT' : 'POST',
             headers: {
@@ -327,9 +335,11 @@ async function guardarProducto(e) {
             },
             body: JSON.stringify(productoData)
         });
+        console.log('DEBUG - Response status:', response.status, response.statusText);
 
         if (response.status === 401) {
-            throw new Error('Sesión inválida');
+            console.log('DEBUG - 401 recibido. Token usado:', token.substring(0, 20) + '...');
+            throw new Error('Sesión inválida - 401');
         }
 
         if (response.ok) {
