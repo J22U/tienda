@@ -11,7 +11,7 @@
 - [x] 4. Usar item.PrecioOriginal e item.Precio (confirmado por usuario, fallback a Precio)
 - [x] 5. Ajustar posiciones Y para notas/pie (usando totalY)
 - [x] 6. Probar: Generar PDF de pedido con descuento → verificar desglose (listo para test)
-- [ ] 7. Marcar ✅ y attempt_completion
+- [x] 7. Marcar ✅ y attempt_completion
 
 **Notas:** 
 - PrecioOriginal → bruto

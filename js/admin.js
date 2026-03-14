@@ -576,19 +576,19 @@ async function generarFacturaPDF(p, numeroPedido) {
 
     // 5. TABLA DE PRODUCTOS (Estilo moderno y limpio)
     const rows = productosArr.map(item => {
-        const precioOriginal = Number(item.PrecioOriginal || item.Precio);
-        const precioDesc = Number(item.Precio);
-        const descuento = ((precioOriginal - precioDesc) / precioOriginal * 100) || (item.DescuentoPorcentaje || 0);
+        const precioOriginal = Number(item.PrecioOriginal) || Number(item.Precio);
+        const precioVenta = Number(item.Precio);
         const subtotalBrutoItem = item.cantidad * precioOriginal;
-        const ahorroItem = item.cantidad * (precioOriginal - precioDesc);
+        const subtotalNetoItem = item.cantidad * precioVenta;
+        const ahorroItem = subtotalBrutoItem - subtotalNetoItem;
         subtotalBruto += subtotalBrutoItem;
         ahorroTotal += ahorroItem;
-        const subtotalDesc = item.cantidad * precioDesc;
+        const descuentoPct = precioOriginal > 0 ? Math.round(((precioOriginal - precioVenta) / precioOriginal) * 100) : 0;
         return [
             item.cantidad,
-            { content: `${item.Nombre}${descuento > 0 ? ` (-${Math.round(descuento)}%)` : ''}`, styles: { fontStyle: 'bold' } },
+            { content: `${item.Nombre}${descuentoPct > 0 ? ` (-${descuentoPct}%)` : ''}`, styles: { fontStyle: 'bold' } },
             `$ ${precioOriginal.toLocaleString()}`,
-            `$ ${subtotalDesc.toLocaleString()}`
+            `$ ${subtotalNetoItem.toLocaleString()}`
         ];
     });
 
