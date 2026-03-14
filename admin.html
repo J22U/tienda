@@ -264,13 +264,13 @@ id="btn-importar" data-action="importar"
     </div>
 </div>
 
-<!-- 🏷️ MODAL DESCUENTO PRODUCTO (Bootstrap 5) -->
-<div class="modal fade" id="modalDescuento" tabindex="-1" aria-hidden="true">
+<!-- 🏷️ MODAL DESCUENTO PRODUCTO - FIX cierre nativo -->
+<div class="modal" id="modalDescuento" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 shadow rounded-4">
       <div class="modal-header border-0 pb-0">
         <h5 class="fw-bold m-0">Aplicar Descuento</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body text-center py-4">
         <p id="modal-product-name" class="text-muted small mb-3"></p>
