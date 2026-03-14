@@ -827,22 +827,20 @@ async function cargarAgotados() {
     document.getElementById('agotados-count').textContent = `${bajos.length} en riesgo`;
 }
 
-// Función para forzar la limpieza del sistema
-const limpiarInterfaz = () => {
+function forzarCierreModal() {
+    // 1. Ocultar el modal
     const modalEl = document.getElementById('modalDescuento');
-    const instance = bootstrap.Modal.getInstance(modalEl);
-    if (instance) instance.hide();
+    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+    if (modalInstance) modalInstance.hide();
 
-    // Eliminar residuos que traban la pantalla
-    setTimeout(() => {
-        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = 'auto';
-        document.body.style.paddingRight = '0';
-    }, 100);
-};
+    // 2. ELIMINAR EL GRIS A LA FUERZA
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = 'auto';
+    document.body.style.paddingRight = '0';
+}
 
-// 🏷️ EVENT LISTENER GLOBAL PARA MODAL DESCUENTO - Cierre totalmente limpio
+// 🏷️ EVENT LISTENER GLOBAL PARA MODAL DESCUENTO - Forzar limpieza total
 document.addEventListener('click', function(e) {
     if (e.target.matches('#btnConfirmarDescuento')) {
         const btn = e.target;
@@ -866,7 +864,7 @@ document.addEventListener('click', function(e) {
             return res.json();
         })
         .then(() => {
-            limpiarInterfaz(); // Limpieza total
+            forzarCierreModal();
             
             descuentoEl.value = '';
             descuentoEl.dataset.productId = '';
@@ -875,9 +873,18 @@ document.addEventListener('click', function(e) {
             cargarProductos();
         })
         .catch(err => {
-            limpiarInterfaz(); // Limpieza en error
+            forzarCierreModal();
             Swal.fire('Error', err.message, 'error');
         });
     }
+});
+
+// Asignar forzarCierreModal a Cancelar y X
+document.addEventListener('DOMContentLoaded', function() {
+    const btnCancelar = document.getElementById('btnCancelarDescuento');
+    const btnClose = document.querySelector('#modalDescuento .btn-close');
+    
+    if (btnCancelar) btnCancelar.onclick = forzarCierreModal;
+    if (btnClose) btnClose.onclick = forzarCierreModal;
 });
 
