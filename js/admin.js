@@ -827,23 +827,28 @@ async function cargarAgotados() {
     document.getElementById('agotados-count').textContent = `${bajos.length} en riesgo`;
 }
 
-// Función global limpieza modals
-function desbloquearPantalla() {
-    document.body.classList.remove('modal-open');
-    document.body.style.overflow = 'auto';
-    document.body.style.paddingRight = '0';
-    document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
-}
+// Función para forzar la limpieza del sistema
+const limpiarInterfaz = () => {
+    const modalEl = document.getElementById('modalDescuento');
+    const instance = bootstrap.Modal.getInstance(modalEl);
+    if (instance) instance.hide();
 
-// 🏷️ EVENT LISTENER GLOBAL PARA MODAL DESCUENTO - FIX scroll definitivo
+    // Eliminar residuos que traban la pantalla
+    setTimeout(() => {
+        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = 'auto';
+        document.body.style.paddingRight = '0';
+    }, 100);
+};
+
+// 🏷️ EVENT LISTENER GLOBAL PARA MODAL DESCUENTO - Cierre totalmente limpio
 document.addEventListener('click', function(e) {
     if (e.target.matches('#btnConfirmarDescuento')) {
         const btn = e.target;
         const id = btn.dataset.productId;
         const descuentoEl = document.getElementById('inputDescuento');
         const descuento = parseFloat(descuentoEl.value);
-        const modalEl = document.getElementById('modalDescuento');
-        const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
         
         if (isNaN(descuento) || descuento < 0 || descuento > 100) {
             Swal.fire('Error', 'Descuento debe estar entre 0-100%', 'warning');
@@ -861,8 +866,7 @@ document.addEventListener('click', function(e) {
             return res.json();
         })
         .then(() => {
-            modalInstance.hide();
-            setTimeout(desbloquearPantalla, 300); // Limpieza total después animación
+            limpiarInterfaz(); // Limpieza total
             
             descuentoEl.value = '';
             descuentoEl.dataset.productId = '';
@@ -871,8 +875,7 @@ document.addEventListener('click', function(e) {
             cargarProductos();
         })
         .catch(err => {
-            modalInstance.hide();
-            setTimeout(desbloquearPantalla, 300);
+            limpiarInterfaz(); // Limpieza en error
             Swal.fire('Error', err.message, 'error');
         });
     }
