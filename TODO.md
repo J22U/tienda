@@ -13,5 +13,10 @@
 - ✅ Event listener global #btnConfirmarDescuento (una sola vez al final)
 - ✅ Lógica PUT original preservada + cerrar modal + refrescar lista
 
-**Próximo**: Abre admin.html y prueba botón descuento en cualquier producto.
+**FIX backdrop implementado** (cierre robusto + setTimeout limpieza):
+- `getInstance() || new Modal()` 
+- `setTimeout(300ms)` elimina backdrops + clases body
+- Limpieza tanto éxito como error
+
+**Estado**: Listo para test definitivo. Ejecuta `start admin.html`.
 

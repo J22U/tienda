@@ -827,7 +827,7 @@ async function cargarAgotados() {
     document.getElementById('agotados-count').textContent = `${bajos.length} en riesgo`;
 }
 
-// 🏷️ EVENT LISTENER GLOBAL PARA MODAL DESCUENTO (una sola vez) - FIX backdrop
+// 🏷️ EVENT LISTENER GLOBAL PARA MODAL DESCUENTO (cierre robusto) - FIX backdrop definitivo
 document.addEventListener('click', function(e) {
     if (e.target.matches('#btnConfirmarDescuento')) {
         const btn = e.target;
@@ -835,13 +835,14 @@ document.addEventListener('click', function(e) {
         const descuentoEl = document.getElementById('inputDescuento');
         const descuento = parseFloat(descuentoEl.value);
         const modalEl = document.getElementById('modalDescuento');
-        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
         
         if (isNaN(descuento) || descuento < 0 || descuento > 100) {
-            return Swal.fire('Error', 'Descuento debe estar entre 0-100%', 'warning');
+            Swal.fire('Error', 'Descuento debe estar entre 0-100%', 'warning');
+            return;
         }
         
-        // Ejecutar lógica original del PUT
+        // Ejecutar PUT
         fetch(`/productos/${id}/descuento`, {
             method: 'PUT',
             headers: {'Content-Type': 'application/json'},
@@ -852,32 +853,31 @@ document.addEventListener('click', function(e) {
             return res.json();
         })
         .then(() => {
-            // Cierre correcto + limpieza forzada backdrop
-            if (modalInstance) {
-                modalInstance.hide();
-            }
-            // Limpieza forzada para evitar backdrop bloqueado
-            document.body.classList.remove('modal-open');
-            const backdrop = document.querySelector('.modal-backdrop');
-            if (backdrop) backdrop.remove();
-            document.body.style.paddingRight = '';
+            // Cierre seguro + timeout para animación
+            modalInstance.hide();
+            setTimeout(() => {
+                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = 'auto';
+                document.body.style.paddingRight = '0';
+            }, 300);
             
-            // Limpiar campos
+            // Limpiar
             descuentoEl.value = '';
             descuentoEl.dataset.productId = '';
             btn.dataset.productId = '';
             Swal.fire('Descuento aplicado', '', 'success');
-            cargarProductos(); // Refrescar lista inmediatamente
+            cargarProductos();
         })
         .catch(err => {
-            // También limpiar en caso de error
-            if (modalInstance) {
-                modalInstance.hide();
-            }
-            document.body.classList.remove('modal-open');
-            const backdrop = document.querySelector('.modal-backdrop');
-            if (backdrop) backdrop.remove();
-            document.body.style.paddingRight = '';
+            // Cierre seguro en error
+            modalInstance.hide();
+            setTimeout(() => {
+                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = 'auto';
+                document.body.style.paddingRight = '0';
+            }, 300);
             Swal.fire('Error', err.message, 'error');
         });
     }
