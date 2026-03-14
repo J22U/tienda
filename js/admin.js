@@ -435,10 +435,25 @@ async function aplicarDescuentoProducto(id, descuentoActual, nombreProducto) {
 // Pedidos actions
 async function cambiarEstado(id, estado) {
     try {
-        await fetch(`/pedidos/${id}/${estado.toLowerCase()}`, { method: 'PUT' });
+        const url = `/pedidos/${id}/${estado.toLowerCase()}`;
+        console.log('PUT request to:', url);
+        const response = await fetch(url, { method: 'PUT' });
+        console.log('Response status:', response.status, response.statusText);
+        if (!response.ok) {
+            console.error('Error del servidor:', response.status);
+            let errorData;
+            try {
+                errorData = await response.json();
+                console.table(errorData);
+            } catch {
+                console.log('No JSON error data');
+            }
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
         cargarPedidos();
     } catch (err) {
-        Swal.fire('Error', err.message, 'error');
+        console.error('Error changing estado:', err);
+        Swal.fire('Error', `No se pudo actualizar: ${err.message}`, 'error');
     }
 }
 
