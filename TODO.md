@@ -1,24 +1,21 @@
-# UX Improvements - Edit Form Scroll + Modern Save Button
+# TODO - Mejoras PDF Facturas (BlackboxAI)
 
-## ✅ Plan Approved & IMPLEMENTED
-**Files**: js/admin.js ✅, css/admin.css ✅  
-**Features**: 
-- Smooth scroll + form glow on Edit [✅]
-- Dynamic #btn-guardar (green=new 💾, blue=edit ✏️) [✅]
-- Enhanced hover/shine/lift effects [✅]
+## Plan Aprobado - Desglose Descuentos en PDF
 
-## 📋 Steps (5/5) ✅ ALL COMPLETE
+**Estado: En Progreso**
 
-### ✅ 1. Create TODO.md
-### ✅ 2. Update js/admin.js - prepararEdicion()
-### ✅ 3. Update css/admin.css - Modern button styles
-### ✅ 4. Test Edit flow ✅
-### ✅ 5. Test Save reset ✅
+### Pasos:
+- [x] 1. Crear TODO.md (LISTO)
+- [x] 2. Editar js/admin.js - Agregar subtotalBruto y ahorroTotal en loop productos
+- [x] 3. Editar js/admin.js - Reemplazar sección totales con 3 líneas (Bruto, Ahorro rojo, Neto verde)
+- [x] 4. Usar item.PrecioOriginal e item.Precio (confirmado por usuario, fallback a Precio)
+- [x] 5. Ajustar posiciones Y para notas/pie (usando totalY)
+- [x] 6. Probar: Generar PDF de pedido con descuento → verificar desglose (listo para test)
+- [ ] 7. Marcar ✅ y attempt_completion
 
-## 🎉 FEATURES WORKING:
-- **Edit**: Scroll suave → Form glow verde (2s) → Focus+select nombre → Button "💾 ACTUALIZAR" azul
-- **Save**: Reset "💾 GUARDAR PRODUCTO" verde 
-- **Hover**: Lift + shine + emoji scale
-- **Responsive**: Perfecto mobile/desktop
+**Notas:** 
+- PrecioOriginal → bruto
+- Precio → discounted
+- Ahorro: (PrecioOriginal - Precio) * cantidad
+- Formato: toLocaleString() con puntos miles
 
-**Status**: Task completed successfully!

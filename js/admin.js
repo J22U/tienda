@@ -509,6 +509,9 @@ async function generarFacturaPDF(p, numeroPedido) {
         productosArr = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
     } catch (e) { productosArr = []; }
 
+    let subtotalBruto = 0;
+    let ahorroTotal = 0;
+
     // --- CONFIGURACIÓN DE COLORES ---
     const primaryColor = [34, 74, 43]; // Verde Trébol Profundo
     const accentColor = [108, 92, 231]; // Morado suave (opcional para detalles)
@@ -573,13 +576,18 @@ async function generarFacturaPDF(p, numeroPedido) {
 
     // 5. TABLA DE PRODUCTOS (Estilo moderno y limpio)
     const rows = productosArr.map(item => {
-        const descuento = item.DescuentoPorcentaje || 0;
-        const precioDesc = Number(item.Precio) * (1 - descuento / 100);
+        const precioOriginal = Number(item.PrecioOriginal || item.Precio);
+        const precioDesc = Number(item.Precio);
+        const descuento = ((precioOriginal - precioDesc) / precioOriginal * 100) || (item.DescuentoPorcentaje || 0);
+        const subtotalBrutoItem = item.cantidad * precioOriginal;
+        const ahorroItem = item.cantidad * (precioOriginal - precioDesc);
+        subtotalBruto += subtotalBrutoItem;
+        ahorroTotal += ahorroItem;
         const subtotalDesc = item.cantidad * precioDesc;
         return [
             item.cantidad,
-            { content: `${item.Nombre}${descuento > 0 ? ` (-${descuento}%)` : ''}`, styles: { fontStyle: 'bold' } },
-            `$ ${Number(item.Precio).toLocaleString()}`,
+            { content: `${item.Nombre}${descuento > 0 ? ` (-${Math.round(descuento)}%)` : ''}`, styles: { fontStyle: 'bold' } },
+            `$ ${precioOriginal.toLocaleString()}`,
             `$ ${subtotalDesc.toLocaleString()}`
         ];
     });
@@ -607,20 +615,41 @@ async function generarFacturaPDF(p, numeroPedido) {
         margin: { left: 20, right: 15 }
     });
 
-    // 6. RESUMEN DE TOTALES
+    // 6. RESUMEN DE TOTALES - CON DESGLOSADO ✅
     const finalY = doc.lastAutoTable.finalY + 10;
     
-    doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.rect(130, finalY, 65, 12, 'F');
-    
-    doc.setFontSize(11);
+    // Subtotal Bruto (gris claro)
+    doc.setFillColor(248, 249, 250);
+    doc.rect(130, finalY, 65, 8, 'F');
+    doc.setDrawColor(200);
+    doc.rect(130, finalY, 65, 8, 'S');
+    doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
+    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+    doc.text("SUBTOTAL BRUTO:", 135, finalY + 6);
+    doc.text(`$${subtotalBruto.toLocaleString()}`, 190, finalY + 6, { align: 'right' });
+    
+    // Ahorro (rojo claro)
+    const ahorroY = finalY + 10;
+    doc.setFillColor(255, 240, 240);
+    doc.rect(130, ahorroY, 65, 8, 'F');
+    doc.setDrawColor(220, 50, 50);
+    doc.rect(130, ahorroY, 65, 8, 'S');
+    doc.setTextColor(200, 50, 50);
+    doc.text("AHORRO:", 135, ahorroY + 6);
+    doc.text(`-$${ahorroTotal.toLocaleString()}`, 190, ahorroY + 6, { align: 'right' });
+    
+    // Total Neto (verde)
+    const totalY = ahorroY + 10;
+    doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.rect(130, totalY, 65, 12, 'F');
+    doc.setFontSize(11);
     doc.setTextColor(255, 255, 255);
-    doc.text("TOTAL NETO:", 135, finalY + 8);
-    doc.text(`$ ${Number(p.Total).toLocaleString()}`, 190, finalY + 8, { align: 'right' });
+    doc.text("TOTAL NETO:", 135, totalY + 8);
+    doc.text(`$${(subtotalBruto - ahorroTotal).toLocaleString()}`, 190, totalY + 8, { align: 'right' });
 
     // 7. MÉTODOS DE PAGO Y NOTAS
-    const notasY = finalY + 25;
+    const notasY = totalY + 25;
     doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
     doc.setFontSize(10);
     doc.text("MÉTODOS DE PAGO:", 20, notasY);
