@@ -435,14 +435,13 @@ async function aplicarDescuentoProducto(id, descuentoActual, nombreProducto) {
 // Pedidos actions
 async function cambiarEstado(id, estado) {
     try {
-        // ✅ Route-alternative: POST /pedidos/${id} with body {estado: 'completado'}
         const url = `/pedidos/${id}`;
         const estadoLower = estado.toLowerCase();
-        console.log('✅ POST /pedidos', id, 'estado:', estadoLower);
+        console.log('✅ PUT /pedidos', id, 'estado:', estadoLower);
         const response = await fetch(url, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({estado: estadoLower})
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ estado: estadoLower })
         });
         console.log('📊 Status:', response.status, response.statusText);
         if (!response.ok) {
