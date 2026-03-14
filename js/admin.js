@@ -299,8 +299,8 @@ async function guardarProducto(e) {
     
     const id = document.getElementById('prod-id').value;
     console.log('DEBUG - ID para editar:', id);
-    console.log('DEBUG - Token disponible:', !!localStorage.getItem('token'));
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('admin_token') || localStorage.getItem('token') || localStorage.getItem('admin_session');
+    console.log('DEBUG - Token recuperado:', token ? 'SÍ (' + token.substring(0,20) + '...)' : 'NO');
     
     if (!token) {
         Swal.fire('Error', 'Tu sesión expiró. Por favor inicia sesión de nuevo.', 'error');
