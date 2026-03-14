@@ -297,28 +297,39 @@ function prepararEdicion(prod) {
 async function guardarProducto(e) {
     e.preventDefault();
     
-    const token = localStorage.getItem('token');
-    if (!token) {
-        Swal.fire('Sesión expirada', 'Por favor inicia sesión nuevamente', 'warning');
-        localStorage.removeItem('admin_logged');
-        window.location.replace('tienda.html');
-        return;
+    // Solo validar token para UPDATE (PUT). Crear usa FormData sin auth
+    const id = document.getElementById('prod-id').value;
+    if (id) { // Solo si UPDATE
+        const token = localStorage.getItem('token');
+        if (!token) {
+            Swal.fire('Sesión expirada', 'Por favor inicia sesión admin nuevamente', 'warning');
+            localStorage.removeItem('admin_logged');
+            window.location.replace('tienda.html');
+            return;
+        }
     }
     
     const formData = new FormData(e.target.form);
-    const id = document.getElementById('prod-id').value;
     
     try {
         const method = id ? 'PUT' : 'POST';
         const url = id ? `/productos/${id}` : '/productos';
-        const res = await fetch(url, { 
+        
+        const fetchOptions = { 
             method: method, 
-            headers: { 
-                'Authorization': 'Bearer ' + token,
-                ...(method === 'POST' ? {} : {'Content-Type': 'application/json'})
-            },
-            body: method === 'POST' ? formData : JSON.stringify(Object.fromEntries(formData))
-        });
+            body: formData 
+        };
+        
+        // Solo agregar headers para UPDATE
+        if (id) {
+            fetchOptions.headers = { 
+                'Authorization': 'Bearer ' + localStorage.getItem('token'),
+                'Content-Type': 'application/json'
+            };
+            fetchOptions.body = JSON.stringify(Object.fromEntries(formData));
+        }
+        
+        const res = await fetch(url, fetchOptions);
         
         if (res.ok) {
             Swal.fire('Guardado!', '', 'success');
