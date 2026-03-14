@@ -510,7 +510,6 @@ async function generarFacturaPDF(p, numeroPedido) {
     } catch (e) { productosArr = []; }
 
     let subtotalBruto = 0;
-    let ahorroTotal = 0;
 
     // --- CONFIGURACIÓN DE COLORES ---
     const primaryColor = [34, 74, 43]; // Verde Trébol Profundo
@@ -579,11 +578,9 @@ async function generarFacturaPDF(p, numeroPedido) {
         const precioOriginal = Number(item.PrecioOriginal) || Number(item.Precio);
         const precioVenta = Number(item.Precio);
         const subtotalBrutoItem = item.cantidad * precioOriginal;
-        const subtotalNetoItem = item.cantidad * precioVenta;
-        const ahorroItem = subtotalBrutoItem - subtotalNetoItem;
         subtotalBruto += subtotalBrutoItem;
-        ahorroTotal += ahorroItem;
         const descuentoPct = precioOriginal > 0 ? Math.round(((precioOriginal - precioVenta) / precioOriginal) * 100) : 0;
+        const subtotalNetoItem = item.cantidad * precioVenta;
         return [
             item.cantidad,
             { content: `${item.Nombre}${descuentoPct > 0 ? ` (-${descuentoPct}%)` : ''}`, styles: { fontStyle: 'bold' } },
@@ -591,6 +588,9 @@ async function generarFacturaPDF(p, numeroPedido) {
             `$ ${subtotalNetoItem.toLocaleString()}`
         ];
     });
+
+    const totalPedido = Number(p.Total);
+    const ahorroTotal = subtotalBruto - totalPedido;
 
     doc.autoTable({
         startY: 95,
@@ -637,7 +637,8 @@ async function generarFacturaPDF(p, numeroPedido) {
     doc.rect(130, ahorroY, 65, 8, 'S');
     doc.setTextColor(200, 50, 50);
     doc.text("AHORRO:", 135, ahorroY + 6);
-    doc.text(`-$${ahorroTotal.toLocaleString()}`, 190, ahorroY + 6, { align: 'right' });
+    doc.setTextColor(200, 0, 0);
+    doc.text(`-$${(subtotalBruto - Number(p.Total)).toLocaleString()}`, 190, ahorroY + 6, { align: 'right' });
     
     // Total Neto (verde)
     const totalY = ahorroY + 10;
@@ -646,10 +647,12 @@ async function generarFacturaPDF(p, numeroPedido) {
     doc.setFontSize(11);
     doc.setTextColor(255, 255, 255);
     doc.text("TOTAL NETO:", 135, totalY + 8);
-    doc.text(`$${(subtotalBruto - ahorroTotal).toLocaleString()}`, 190, totalY + 8, { align: 'right' });
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(0, 180, 0);
+    doc.text(`$${Number(p.Total).toLocaleString() }`, 190, totalY + 8, { align: 'right' });
 
     // 7. MÉTODOS DE PAGO Y NOTAS
-    const notasY = totalY + 25;
+    const notasY = totalY + 20;
     doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
     doc.setFontSize(10);
     doc.text("MÉTODOS DE PAGO:", 20, notasY);
