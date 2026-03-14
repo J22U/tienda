@@ -378,3 +378,8 @@ body {
         font-size: 1.3rem !important;
     }
 }
+
+/* FIX Modal scroll - Forzar scroll cuando no hay modal activo */
+body:not(.modal-open) {
+    overflow: auto !important;
+}

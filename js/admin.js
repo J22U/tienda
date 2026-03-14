@@ -827,7 +827,15 @@ async function cargarAgotados() {
     document.getElementById('agotados-count').textContent = `${bajos.length} en riesgo`;
 }
 
-// 🏷️ EVENT LISTENER GLOBAL PARA MODAL DESCUENTO (cierre robusto) - FIX backdrop definitivo
+// Función global limpieza modals
+function desbloquearPantalla() {
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = 'auto';
+    document.body.style.paddingRight = '0';
+    document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+}
+
+// 🏷️ EVENT LISTENER GLOBAL PARA MODAL DESCUENTO - FIX scroll definitivo
 document.addEventListener('click', function(e) {
     if (e.target.matches('#btnConfirmarDescuento')) {
         const btn = e.target;
@@ -853,16 +861,9 @@ document.addEventListener('click', function(e) {
             return res.json();
         })
         .then(() => {
-            // Cierre seguro + timeout para animación
             modalInstance.hide();
-            setTimeout(() => {
-                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-                document.body.classList.remove('modal-open');
-                document.body.style.overflow = 'auto';
-                document.body.style.paddingRight = '0';
-            }, 300);
+            setTimeout(desbloquearPantalla, 300); // Limpieza total después animación
             
-            // Limpiar
             descuentoEl.value = '';
             descuentoEl.dataset.productId = '';
             btn.dataset.productId = '';
@@ -870,14 +871,8 @@ document.addEventListener('click', function(e) {
             cargarProductos();
         })
         .catch(err => {
-            // Cierre seguro en error
             modalInstance.hide();
-            setTimeout(() => {
-                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-                document.body.classList.remove('modal-open');
-                document.body.style.overflow = 'auto';
-                document.body.style.paddingRight = '0';
-            }, 300);
+            setTimeout(desbloquearPantalla, 300);
             Swal.fire('Error', err.message, 'error');
         });
     }
