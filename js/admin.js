@@ -48,9 +48,21 @@ document.addEventListener('DOMContentLoaded', function() {
     formProducto.addEventListener('submit', guardarProducto);
 
     // 🚪 Logout
-    document.getElementById('btn-logout').addEventListener('click', () => {
-        localStorage.removeItem('admin_logged');
-        window.location.replace('tienda.html');
+document.getElementById('btn-logout').addEventListener('click', async () => {
+        const result = await Swal.fire({
+            title: '¿Cerrar sesión?',
+            text: '¿Estás seguro de que quieres cerrar sesión?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, cerrar sesión',
+            cancelButtonText: 'Cancelar'
+        });
+        if (result.isConfirmed) {
+            localStorage.removeItem('admin_logged');
+            window.location.replace('tienda.html');
+        }
     });
 
 // 🔥 EVENT DELEGATION - PRODUCTOS
@@ -453,12 +465,24 @@ async function cambiarEstado(id, nuevoEstado) {
 }
 
 async function eliminarPedido(id) {
-    if (!confirm('Eliminar pedido?')) return;
-    try {
-        await fetch(`/pedidos/${id}`, { method: 'DELETE' });
-        cargarPedidos();
-    } catch (err) {
-        Swal.fire('Error', err.message, 'error');
+    const result = await Swal.fire({
+        title: '¿Eliminar pedido?',
+        text: 'Esta acción no se puede deshacer',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    });
+    if (result.isConfirmed) {
+        try {
+            await fetch(`/pedidos/${id}`, { method: 'DELETE' });
+            Swal.fire('Eliminado', 'Pedido eliminado correctamente', 'success');
+            cargarPedidos();
+        } catch (err) {
+            Swal.fire('Error', err.message, 'error');
+        }
     }
 }
 
