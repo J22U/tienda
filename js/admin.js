@@ -827,13 +827,15 @@ async function cargarAgotados() {
     document.getElementById('agotados-count').textContent = `${bajos.length} en riesgo`;
 }
 
-// 🏷️ EVENT LISTENER GLOBAL PARA MODAL DESCUENTO (una sola vez)
+// 🏷️ EVENT LISTENER GLOBAL PARA MODAL DESCUENTO (una sola vez) - FIX backdrop
 document.addEventListener('click', function(e) {
     if (e.target.matches('#btnConfirmarDescuento')) {
         const btn = e.target;
         const id = btn.dataset.productId;
         const descuentoEl = document.getElementById('inputDescuento');
         const descuento = parseFloat(descuentoEl.value);
+        const modalEl = document.getElementById('modalDescuento');
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
         
         if (isNaN(descuento) || descuento < 0 || descuento > 100) {
             return Swal.fire('Error', 'Descuento debe estar entre 0-100%', 'warning');
@@ -850,7 +852,16 @@ document.addEventListener('click', function(e) {
             return res.json();
         })
         .then(() => {
-            bootstrap.Modal.getInstance(document.getElementById('modalDescuento')).hide();
+            // Cierre correcto + limpieza forzada backdrop
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+            // Limpieza forzada para evitar backdrop bloqueado
+            document.body.classList.remove('modal-open');
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) backdrop.remove();
+            document.body.style.paddingRight = '';
+            
             // Limpiar campos
             descuentoEl.value = '';
             descuentoEl.dataset.productId = '';
@@ -859,6 +870,14 @@ document.addEventListener('click', function(e) {
             cargarProductos(); // Refrescar lista inmediatamente
         })
         .catch(err => {
+            // También limpiar en caso de error
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+            document.body.classList.remove('modal-open');
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) backdrop.remove();
+            document.body.style.paddingRight = '';
             Swal.fire('Error', err.message, 'error');
         });
     }
