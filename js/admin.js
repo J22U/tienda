@@ -644,7 +644,7 @@ async function generarFacturaPDF(p, numeroPedido) {
     doc.text(`-$${(subtotalBruto - Number(p.Total)).toLocaleString()}`, 170, descuentoY + 6, { align: 'right' });
     
     // Total Neto (verde)
-    const totalY = ahorroY + 10;
+    const totalY = descuentoY + 10;
     doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
     doc.rect(130, totalY, 65, 12, 'F');
     doc.setFontSize(11);
@@ -652,19 +652,19 @@ async function generarFacturaPDF(p, numeroPedido) {
     doc.text("TOTAL NETO:", 135, totalY + 8);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(0, 180, 0);
-    doc.text(`$${Number(p.Total).toLocaleString() }`, 190, totalY + 8, { align: 'right' });
+    doc.text(`$${Number(p.Total).toLocaleString()}`, 190, totalY + 8, { align: 'right' });
 
     // 7. MÉTODOS DE PAGO Y NOTAS
-    const notasY = totalY + 20;
-    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.setFontSize(10);
-    doc.text("MÉTODOS DE PAGO:", 20, notasY);
+    // const notasY = totalY + 25;
+    //doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    //doc.setFontSize(10);
+    //doc.text("MÉTODOS DE PAGO:", 20, notasY);
     
-    doc.setFontSize(9);
-    doc.setTextColor(100);
-    doc.setFont("helvetica", "normal");
-    doc.text("• Nequi / Bancolombia: 310 123 4567", 20, notasY + 6);
-    doc.text("• Efectivo en local", 20, notasY + 11);
+    //doc.setFontSize(9);
+    //doc.setTextColor(100);
+    //doc.setFont("helvetica", "normal");
+    //doc.text("• Nequi / Bancolombia: 310 123 4567", 20, notasY + 6);
+    //doc.text("• Efectivo en local", 20, notasY + 11);
 
     // 8. PIE DE PÁGINA LEGAL (Muy importante para la validez)
     doc.setFontSize(7);
