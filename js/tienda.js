@@ -320,7 +320,16 @@ function agregarAlPedido(producto) {
     }
 
     actualizarCarritoUI();
-    bootstrap.Modal.getInstance(document.getElementById('modalDetalleProducto')).hide();
+    
+    // Safe modal close - prevent TypeError if modal not initialized
+    const detalleModalEl = document.getElementById('modalDetalleProducto');
+    if (detalleModalEl) {
+        const modalInstance = bootstrap.Modal.getInstance(detalleModalEl);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+    }
+    
     Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Agregado al pedido', showConfirmButton: false, timer: 1500 });
 }
 
