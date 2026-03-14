@@ -504,36 +504,86 @@ async function generarFacturaPDF(p, numeroPedido) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
+    // 1. PROCESAR PRODUCTOS
     let productosArr = [];
     try { 
         productosArr = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos; 
-    } catch (e) { productosArr = []; }
+    } catch (e) { 
+        productosArr = []; 
+    }
 
-    // --- CÁLCULOS INICIALES ---
-    // Usamos PrecioOriginal para el bruto y Precio para el neto
+    // 2. CÁLCULOS DE TOTALES (Lógica infalible)
     let subtotalBruto = productosArr.reduce((acc, item) => {
         const pOriginal = Number(item.PrecioOriginal || item.Precio);
         return acc + (pOriginal * Number(item.cantidad));
     }, 0);
     
-    let totalNetoReal = Number(p.Total);
-    let ahorroTotal = subtotalBruto - totalNetoReal;
+    const totalNetoReal = Number(p.Total);
+    const ahorroTotal = subtotalBruto - totalNetoReal;
+    const porcentajeDescGlobal = subtotalBruto > 0 ? Math.round((ahorroTotal / subtotalBruto) * 100) : 0;
 
-    const primaryColor = [34, 74, 43]; 
+    // 3. CONFIGURACIÓN ESTÉTICA
+    const primaryColor = [34, 74, 43]; // Verde Trébol
     const textColor = [45, 52, 54];
 
-    // ... (Encabezado y Datos del Cliente se mantienen igual) ...
-    // [Sección 1 a 4 del código original se mantienen]
+    // Diseño: Barra lateral decorativa
+    doc.setFillColor(34, 74, 43);
+    doc.rect(0, 0, 5, 297, 'F');
 
-    // 5. TABLA DE PRODUCTOS
+    // ENCABEZADO: Marca
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(28);
+    doc.setTextColor(34, 74, 43);
+    doc.text("TRÉBOL", 20, 25);
+    
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.setFont("helvetica", "normal");
+    doc.text("Repuestos profesionales", 20, 31);
+    doc.text("NIT: 900.555.123-1", 20, 36);
+    doc.text("El Peñol, Antioquia | Cel: 310 123 4567", 20, 41);
+    doc.text("trebol@gmail.com", 20, 46);
+
+    // CUADRO DE ORDEN
+    doc.setFillColor(248, 249, 250);
+    doc.roundedRect(130, 15, 65, 35, 3, 3, 'F');
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(34, 74, 43);
+    doc.setFontSize(10);
+    doc.text("ORDEN DE SERVICIO", 135, 25);
+    doc.setFontSize(20);
+    doc.text(`# ${numeroPedido.toString().padStart(4, '0')}`, 135, 35);
+    doc.setFontSize(9);
+    doc.setTextColor(120);
+    doc.text(`Fecha: ${new Date(p.Fecha).toLocaleDateString()}`, 135, 43);
+
+    // DATOS DEL CLIENTE
+    doc.setDrawColor(34, 74, 43);
+    doc.setLineWidth(0.5);
+    doc.line(20, 55, 195, 55);
+
+    doc.setFontSize(10);
+    doc.setTextColor(34, 74, 43);
+    doc.text("FACTURADO A:", 20, 65);
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.setFont("helvetica", "bold");
+    doc.text((p.NombreCliente || 'Cliente').toUpperCase(), 20, 72);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(80);
+    doc.text(`C.C./NIT: ${p.Documento || '---'}`, 20, 78);
+    doc.text(`Teléfono: ${p.Telefono || '---'}`, 20, 83);
+    doc.text(`Dirección: ${p.Direccion || 'Entrega en local'}`, 20, 88);
+
+    // 4. TABLA DE PRODUCTOS
     const rows = productosArr.map(item => {
         const pOriginal = Number(item.PrecioOriginal || item.Precio);
         const pVenta = Number(item.Precio);
-        const descPct = pOriginal > 0 ? Math.round(((pOriginal - pVenta) / pOriginal) * 100) : 0;
-        
+        const descItem = pOriginal > 0 ? Math.round(((pOriginal - pVenta) / pOriginal) * 100) : 0;
         return [
             item.cantidad,
-            { content: `${item.Nombre}${descPct > 0 ? ` (-${descPct}%)` : ''}`, styles: { fontStyle: 'bold' } },
+            { content: `${item.Nombre}${descItem > 0 ? ` (-${descItem}%)` : ''}`, styles: { fontStyle: 'bold' } },
             `$ ${pOriginal.toLocaleString()}`,
             `$ ${(item.cantidad * pVenta).toLocaleString()}`
         ];
@@ -543,78 +593,59 @@ async function generarFacturaPDF(p, numeroPedido) {
         startY: 95,
         head: [['CANT.', 'DESCRIPCIÓN', 'VALOR UNIT.', 'SUBTOTAL']],
         body: rows,
-        headStyles: { fillColor: primaryColor, halign: 'center' },
+        headStyles: { fillColor: primaryColor, textColor: [255, 255, 255], halign: 'center' },
         columnStyles: { 0: { halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right' } },
         theme: 'striped',
         margin: { left: 20, right: 15 }
     });
 
-// 6. RESUMEN DE TOTALES (CORREGIDO)
+    // 5. RESUMEN DE TOTALES (DISEÑO DE BLOQUES CORREGIDO)
     let currentY = doc.lastAutoTable.finalY + 10;
     
-    // Bloque Bruto
-    doc.setFillColor(248, 249, 250);
+    // Fila Bruto
+    doc.setFillColor(240, 240, 240);
     doc.rect(130, currentY, 65, 9, 'F');
     doc.setTextColor(textColor[0], textColor[1], textColor[2]);
     doc.setFontSize(9);
-    doc.setFont("helvetica", "bold");
     doc.text("SUMA TOTAL (BRUTO):", 132, currentY + 6);
     doc.text(`$ ${subtotalBruto.toLocaleString()}`, 192, currentY + 6, { align: 'right' });
     
-    // Bloque Ahorro (Solo si existe ahorro)
+    // Fila Ahorro (Solo si el ahorro es real)
     if (ahorroTotal > 0) {
         currentY += 10;
-        doc.setFillColor(255, 240, 240);
+        doc.setFillColor(255, 230, 230); // Fondo rojizo suave
         doc.rect(130, currentY, 65, 9, 'F');
-        doc.setTextColor(200, 50, 50);
+        doc.setTextColor(200, 0, 0); // Texto Rojo
         doc.setFont("helvetica", "bold");
-        const pctGlobal = Math.round((ahorroTotal / subtotalBruto) * 100);
-        doc.text(`AHORRO (${pctGlobal}%):`, 132, currentY + 6);
+        doc.text(`DESCUENTO (${porcentajeDescGlobal}%):`, 132, currentY + 6);
         doc.text(`-$ ${ahorroTotal.toLocaleString()}`, 192, currentY + 6, { align: 'right' });
     }
     
-    // Bloque Neto
+    // Fila Neto Final
     currentY += 10;
-    doc.setFillColor(33, 70, 40);
+    doc.setFillColor(34, 74, 43); // Verde oscuro
     doc.rect(130, currentY, 65, 12, 'F');
-    doc.setTextColor(255, 255, 255);
+    doc.setTextColor(255, 255, 255); // TEXTO BLANCO (Indispensable para lectura)
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.text("TOTAL NETO:", 132, currentY + 8);
     doc.text(`$ ${totalNetoReal.toLocaleString()}`, 192, currentY + 8, { align: 'right' });
-    
-    // 7. MÉTODOS DE PAGO Y NOTAS
-    // const notasY = totalY + 25;
-    //doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    //doc.setFontSize(10);
-    //doc.text("MÉTODOS DE PAGO:", 20, notasY);
-    
-    //doc.setFontSize(9);
-    //doc.setTextColor(100);
-    //doc.setFont("helvetica", "normal");
-    //doc.text("• Nequi / Bancolombia: 310 123 4567", 20, notasY + 6);
-    //doc.text("• Efectivo en local", 20, notasY + 11);
 
-    // 8. PIE DE PÁGINA LEGAL (Muy importante para la validez)
+    // PIE DE PÁGINA
+    doc.setFontSize(10);
+    doc.setTextColor(34, 74, 43);
+    doc.text("¡GRACIAS POR SU COMPRA!", 105, 270, { align: 'center' });
     doc.setFontSize(7);
     doc.setTextColor(150);
-    const legal1 = "Esta es una representación gráfica de una cuenta de cobro / orden de venta interna.";
-    const legal2 = "No somos responsables de IVA. Régimen Simplificado. Art. 774 del Código de Comercio.";
-    doc.text(legal1, 105, 280, { align: 'center' });
-    doc.text(legal2, 105, 284, { align: 'center' });
-    
-    // Frase final
-    doc.setFontSize(10);
-    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.setFont("helvetica", "bold");
-    doc.text("¡GRACIAS POR SU COMPRA!", 105, 270, { align: 'center' });
+    doc.text("Esta es una representación gráfica de una cuenta de cobro interna.", 105, 280, { align: 'center' });
+    doc.text("No somos responsables de IVA. Régimen Simplificado.", 105, 284, { align: 'center' });
 
-    // Descargar
+    // GUARDAR Y AVISAR
     doc.save(`Factura_Trebol_${numeroPedido}.pdf`);
     
     Swal.fire({
         title: 'Factura Generada',
-        text: 'Se ha descargado la factura exitosamente.',
+        text: 'El descuento ha sido aplicado correctamente en el PDF.',
         icon: 'success',
         confirmButtonColor: '#224a2b'
     });
@@ -984,4 +1015,3 @@ document.addEventListener('DOMContentLoaded', function() {
     if (btnCancelar) btnCancelar.onclick = forzarCierreModal;
     if (btnClose) btnClose.onclick = forzarCierreModal;
 });
-
