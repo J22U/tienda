@@ -196,94 +196,80 @@ async function cargarProductos() {
    ============================================================================ */
 
 function verDetalle(id) {
-    const p = productosData.find(item => item.ProductoID === id);
-    if (!p) return;
+    console.log('verDetalle called with ID:', id);
+    const p = productosData.find(item => item.ProductoID == id);
+    if (!p) {
+        console.error('Producto no encontrado:', id);
+        return;
+    }
+    console.log('Producto encontrado:', p.Nombre);
 
-    const contenedorImagen = document.getElementById('contenedor-foto-modal');
-    contenedorImagen.innerHTML = '';
-
+    // Gallery images
     let fotos = [];
     if (p.ImagenURL) fotos.push(p.ImagenURL);
     if (p.Galeria) {
-        // Normalize string array to object format for backward compatibility
-        const galeriaNorm = Array.isArray(p.Galeria) 
-            ? p.Galeria.map(url => ({ ImagenURL: String(url || '').trim() })) 
-            : [];
-        galeriaNorm.forEach(g => { 
+        const galeriaNorm = Array.isArray(p.Galeria) ? p.Galeria : (typeof p.Galeria === 'string' ? JSON.parse(p.Galeria) : []);
+        galeriaNorm.forEach(g => {
             const imgUrl = g.ImagenURL || g;
-            if (imgUrl && !fotos.includes(imgUrl)) fotos.push(imgUrl); 
+            if (imgUrl && !fotos.includes(imgUrl)) fotos.push(imgUrl);
         });
     }
 
-    if (fotos.length > 1) {
-        contenedorImagen.innerHTML = `
-            <div id="carouselDetalle" class="carousel slide carousel-dark w-100" data-bs-ride="false">
-                <div class="carousel-inner">
-                    ${fotos.map((f, i) => {
-                        const fClean = f ? String(f).trim() : '';
-                        const srcFull = fClean.startsWith('http') ? fClean : `${BASE_URL}${fClean}`;
-                        return `
-                        <div class="carousel-item ${i === 0 ? 'active' : ''}">
-                            <img src="${srcFull}" class="d-block w-100" style="height: 350px; object-fit: contain;" 
-                                 onerror="this.src='https://placehold.co/400x400/e74c3c/white?text=Error+al+cargar'">
-                        </div>`;
-                    }).join('')}
-                </div>
-                <button class="carousel-control-prev" type="button" data-bs-target="#carouselDetalle" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon"></span>
-                </button>
-                <button class="carousel-control-next" type="button" data-bs-target="#carouselDetalle" data-bs-slide="next">
-                    <span class="carousel-control-next-icon"></span>
-                </button>
-            </div>`;
-    } else {
-        const fotoURL = fotos.length > 0 ? fotos[0].trim() : '';
-        const singleSrc = fotoURL.startsWith('http') 
-            ? fotoURL 
-            : (fotoURL ? `${BASE_URL}${fotoURL}` : 'https://placehold.co/400x400?text=Sin+Imagen');
-            
-        contenedorImagen.innerHTML = `<img src="${singleSrc}" class="img-fluid" style="max-height: 350px; object-fit: contain;" onerror="this.src='https://placehold.co/400x400/e74c3c/white?text=Error+al+cargar'">`;
+    // Images carousel
+    const contenedorImagen = document.getElementById('carouselDetalle-inner') || document.querySelector('#carouselDetalle .carousel-inner');
+    if (contenedorImagen) {
+        contenedorImagen.innerHTML = fotos.map((f, i) => {
+            const fClean = f.trim();
+            const srcFull = fClean.startsWith('http') ? fClean : `${BASE_URL}${fClean}`;
+            return `
+                <div class="carousel-item ${i === 0 ? 'active' : ''}">
+                    <img src="${srcFull}" class="d-block w-100" style="height: 400px; object-fit: contain;" 
+                         alt="${p.Nombre}" onerror="this.src='https://placehold.co/500x400?text=Sin+imagen'">
+                </div>`;
+        }).join('');
     }
 
-    // Calcular precio con descuento para el modal
+    // Update info
+    document.getElementById('detalle-nombre').textContent = p.Nombre;
+    
     const descuento = parseFloat(p.DescuentoPorcentaje) || 0;
-    const precioBase = Number(p.Precio) || 0;
-    const precioConDescuento = precioBase - (precioBase * descuento / 100);
-    const tieneOferta = descuento > 0;
-
-    document.getElementById('detalle-nombre').innerText = p.Nombre;
-    
-    if (tieneOferta) {
+    const precioBase = parseFloat(p.Precio) || 0;
+    const precioDesc = precioBase * (1 - descuento / 100);
+    if (descuento > 0) {
         document.getElementById('detalle-precio').innerHTML = `
-            <span class="text-decoration-line-through text-muted">$${precioBase.toLocaleString()}</span>
-            <span class="text-danger fw-bold ms-2">$${precioConDescuento.toLocaleString()}</span>
-            <span class="badge bg-danger ms-1">-${descuento}%</span>`;
+            <span class="text-decoration-line-through text-muted h5">$${precioBase.toLocaleString()}</span>
+            <span class="text-danger h3 fw-bold ms-3">$${precioDesc.toLocaleString()}</span>
+            <span class="badge bg-danger ms-2 fs-6">${descuento}% OFF</span>`;
     } else {
-        document.getElementById('detalle-precio').innerText = `$${precioBase.toLocaleString()}`;
+        document.getElementById('detalle-precio').innerHTML = `<span class="h3 text-success fw-bold">$${precioBase.toLocaleString()}</span>`;
     }
     
-    document.getElementById('detalle-caracteristicas').innerText = p.Caracteristicas || 'Sin descripción';
+    document.getElementById('detalle-caracteristicas').innerHTML = p.Caracteristicas 
+        ? p.Caracteristicas.replace(/\n/g, '<br>') 
+        : '<em class="text-muted">Sin descripción disponible</em>';
     
-    const stockLabel = document.getElementById('detalle-stock-numero');
-    stockLabel.innerText = p.Stock;
-    stockLabel.className = p.Stock > 0 ? "fw-bold text-success" : "fw-bold text-danger";
-
+    document.getElementById('detalle-stock-numero').textContent = p.Stock;
+    
     const inputCant = document.getElementById('detalle-cantidad');
     inputCant.value = 1;
-    inputCant.max = p.Stock;
+    inputCant.max = Math.max(1, p.Stock);
     inputCant.disabled = p.Stock <= 0;
-
-    const btn = document.getElementById('detalle-btn-agregar');
-    btn.disabled = p.Stock <= 0;
-    btn.innerText = p.Stock <= 0 ? "SIN STOCK" : "AÑADIR AL PEDIDO";
     
-    // Guardar el precio con descuento en el producto para el carrito
-    p.PrecioConDescuento = precioConDescuento;
-    p.TieneOferta = tieneOferta;
-    // CSP-safe - delegation handles detail modal add
-
-
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDetalleProducto')).show();
+    const btnAgregar = document.getElementById('detalle-btn-agregar');
+    btnAgregar.disabled = p.Stock <= 0;
+    btnAgregar.dataset.productoId = p.ProductoID;
+    btnAgregar.textContent = p.Stock <= 0 ? 'SIN STOCK' : 'AÑADIR AL CARRITO';
+    
+    // Store product data on button for delegation
+    btnAgregar.dataset.productoNombre = p.Nombre;
+    btnAgregar.dataset.productoPrecio = precioDesc.toFixed(2);
+    
+    // Show modal
+    const modalEl = document.getElementById('modalDetalleProducto');
+    if (modalEl) {
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+    }
 }
 
 /* ============================================================================
@@ -527,49 +513,50 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target.matches('.btn-añadir')) {
             const id = e.target.dataset.id;
             if (id) {
-                console.log('Añadir clicked ID:', id);
                 const producto = productosData.find(p => p.ProductoID == id);
-                if (producto) {
-                    console.log('Producto encontrado:', producto.Nombre, 'Precio:', typeof producto.Precio);
+                if (producto && producto.Stock > 0) {
                     const precioFinal = parseFloat(producto.Precio || 0);
-                    if (isNaN(precioFinal)) {
-                        console.error('Precio inválido:', producto.Precio);
-                        return;
-                    }
-                    // Default cantidad 1 for quick add
-                    const cantidad = 1;
-                    if (cantidad > producto.Stock) {
-                        Swal.fire('Sin stock', '', 'warning');
-                        return;
-                    }
-                    // Add to cart
-                    const itemExistente = carrito.find(item => item.ProductoID === producto.ProductoID);
-                    if (itemExistente) {
-                        if ((itemExistente.cantidad + cantidad) > producto.Stock) {
-                            Swal.fire('Stock máximo', '', 'warning');
-                            return;
-                        }
-                        itemExistente.cantidad += cantidad;
-                    } else {
-                        carrito.push({
-                            ProductoID: producto.ProductoID,
-                            cantidad,
-                            Nombre: producto.Nombre,
-                            Precio: precioFinal,
-                            stock: producto.Stock
-                        });
-                    }
+                    carrito.push({
+                        ProductoID: producto.ProductoID,
+                        cantidad: 1,
+                        Nombre: producto.Nombre,
+                        Precio: precioFinal,
+                        stock: producto.Stock
+                    });
                     actualizarCarritoUI();
                     Swal.fire({
-                        toast: true,
-                        position: 'top-end',
-                        icon: 'success',
-                        title: `${producto.Nombre} agregado`,
-                        timer: 1500
+                        toast: true, position: 'top-end', icon: 'success', 
+                        title: `${producto.Nombre} agregado`, timer: 1500
                     });
-                } else {
-                    console.error('Producto no encontrado ID:', id);
                 }
+            }
+        }
+        if (e.target.matches('#detalle-btn-agregar')) {
+            const id = e.target.dataset.productoId;
+            const cantidad = parseInt(document.getElementById('detalle-cantidad').value) || 1;
+            const producto = productosData.find(p => p.ProductoID == id);
+            if (producto && cantidad <= producto.Stock) {
+                const precioFinal = parseFloat(e.target.dataset.productoPrecio || producto.Precio || 0);
+                const itemExistente = carrito.find(item => item.ProductoID === id);
+                if (itemExistente) {
+                    itemExistente.cantidad += cantidad;
+                } else {
+                    carrito.push({
+                        ProductoID: id,
+                        cantidad,
+                        Nombre: e.target.dataset.productoNombre || producto.Nombre,
+                        Precio: precioFinal,
+                        stock: producto.Stock
+                    });
+                }
+                actualizarCarritoUI();
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalDetalleProducto'));
+                if (modal) modal.hide();
+                Swal.fire({
+                    toast: true, position: 'top-end', icon: 'success', 
+                    title: `${cantidad} x ${e.target.dataset.productoNombre || 'Producto'} agregado`, 
+                    timer: 2000
+                });
             }
         }
     });
