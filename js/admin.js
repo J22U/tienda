@@ -629,16 +629,19 @@ async function generarFacturaPDF(p, numeroPedido) {
     doc.text("SUBTOTAL BRUTO:", 135, finalY + 6);
     doc.text(`$${subtotalBruto.toLocaleString()}`, 190, finalY + 6, { align: 'right' });
     
-    // Ahorro (rojo claro)
-    const ahorroY = finalY + 10;
+    // Línea de Descuento (rojo claro)
+    const descuentoY = finalY + 10;
     doc.setFillColor(255, 240, 240);
-    doc.rect(130, ahorroY, 65, 8, 'F');
+    doc.rect(130, descuentoY, 65, 8, 'F');
     doc.setDrawColor(220, 50, 50);
-    doc.rect(130, ahorroY, 65, 8, 'S');
+    doc.rect(130, descuentoY, 65, 8, 'S');
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
     doc.setTextColor(200, 50, 50);
-    doc.text("AHORRO:", 135, ahorroY + 6);
+    const descuentoPctGlobal = p.DescuentoPorcentaje || Math.round(((subtotalBruto - Number(p.Total)) / subtotalBruto) * 100);
+    doc.text(`Descuento (${descuentoPctGlobal}%):`, 135, descuentoY + 6);
     doc.setTextColor(200, 0, 0);
-    doc.text(`-$${(subtotalBruto - Number(p.Total)).toLocaleString()}`, 190, ahorroY + 6, { align: 'right' });
+    doc.text(`-$${(subtotalBruto - Number(p.Total)).toLocaleString()}`, 170, descuentoY + 6, { align: 'right' });
     
     // Total Neto (verde)
     const totalY = ahorroY + 10;
