@@ -435,7 +435,8 @@ async function aplicarDescuentoProducto(id, descuentoActual, nombreProducto) {
 // Pedidos actions
 async function cambiarEstado(id, estado) {
     try {
-        const url = `/pedidos/${id}/${estado}`;
+        const estadoLower = estado.toLowerCase();
+        const url = `/pedidos/${id}/${estadoLower}`;
         console.log('✅ PUT pedido estado to:', url);
         const response = await fetch(url, { method: 'PUT' });
         console.log('📊 Status:', response.status, response.statusText);
