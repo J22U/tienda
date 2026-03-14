@@ -157,10 +157,10 @@ async function cargarProductos() {
             return `
                 <div class="col-md-4 col-lg-3">
                     <div class="card product-card ${claseAgotado} h-100">
-                        <div class="img-container position-relative" onclick="${estaAgotado ? '' : `verDetalle(${p.ProductoID})`}">  
+                        <div class="img-container position-relative">
                             ${tieneOferta ? `<div class="position-absolute top-0 end-0 bg-danger text-white px-2 py-1 rounded-start fw-bold" style="font-size: 0.8rem; z-index: 10;">-${descuento}%</div>` : ''}
-                            <img src="${srcFinal}" onerror="this.src='https://placehold.co/250x250/e74c3c/white?text=Error+al+cargar'"
-                                 style="${estaAgotado ? 'filter: grayscale(1); opacity: 0.6;' : ''}">
+                            <img src="${srcFinal}" class="img-producto" data-id="${p.ProductoID}" onerror="this.src='https://placehold.co/250x250/e74c3c/white?text=Error+al+cargar'"
+                                 style="${estaAgotado ? 'filter: grayscale(1); opacity: 0.6; cursor: not-allowed; pointer-events: none;' : ''}">
                         </div>
                         <div class="p-4 text-center">
                             <small class="text-uppercase fw-bold text-muted">${p.Marca || 'Genérico'}</small>
@@ -174,8 +174,8 @@ async function cargarProductos() {
                                 <i class="bi ${estaAgotado ? 'bi-x-circle' : 'bi-box-seam'} me-1"></i>${stockTexto}
                             </div>
 
-                            <button class="btn ${estaAgotado ? 'btn-secondary' : 'btn-success'} w-100 fw-bold rounded-pill" 
-                                    onclick="verDetalle(${p.ProductoID})" 
+                            <button class="btn ${estaAgotado ? 'btn-secondary' : 'btn-añadir btn-success'} w-100 fw-bold rounded-pill" 
+                                    data-id="${p.ProductoID}"
                                     ${estaAgotado ? 'disabled' : ''}>
                                 ${estaAgotado ? 'AGOTADO' : '<i class="bi bi-cart-plus me-2"></i>AÑADIR'}
                             </button>
@@ -280,7 +280,8 @@ function verDetalle(id) {
     // Guardar el precio con descuento en el producto para el carrito
     p.PrecioConDescuento = precioConDescuento;
     p.TieneOferta = tieneOferta;
-    btn.onclick = () => agregarAlPedido(p);
+    // CSP-safe - delegation handles detail modal add
+
 
     bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDetalleProducto')).show();
 }
@@ -507,6 +508,18 @@ async function procesarPago() {
 
 document.addEventListener('DOMContentLoaded', function() {
     cargarProductos();
+
+    // CSP-safe event delegation for products
+    document.addEventListener('click', function(e) {
+        if (e.target.matches('.img-producto')) {
+            const id = e.target.dataset.id;
+            if (id) verDetalle(id);
+        }
+        if (e.target.matches('.btn-añadir')) {
+            const id = e.target.dataset.id;
+            if (id) agregarAlCarrito(id);
+        }
+    });
 
     // Check if user explicitly wants to view the store (via ?view=store parameter)
     const urlParams = new URLSearchParams(window.location.search);
