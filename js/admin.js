@@ -435,16 +435,10 @@ async function aplicarDescuentoProducto(id, descuentoActual, nombreProducto) {
 // Pedidos actions
 async function cambiarEstado(id, nuevoEstado) {
     try {
-        const url = `/pedidos`;
-        console.log('✅ PUT /pedidos body:', {id, estado: nuevoEstado.toLowerCase()});
-        const response = await fetch(url, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                id: id, 
-                estado: nuevoEstado.toLowerCase()
-            })
-        });
+        const accion = nuevoEstado.toLowerCase() === 'completado' ? 'completar' : 'pendiente';
+        const url = `/pedidos/${id}/${accion}`;
+        console.log('✅ PUT /pedidos/' + id + '/' + accion);
+        const response = await fetch(url, { method: 'PUT' });
         console.log('📊 Status:', response.status, response.statusText);
         if (!response.ok) {
             const errorText = await response.text();
