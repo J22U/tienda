@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (action === 'edit') prepararEdicion(p);
             if (action === 'delete') eliminarProducto(p.ProductoID);
-            if (action === 'discount') aplicarDescuentoProducto(p.ProductoID, p.DescuentoPorcentaje || 0);
+            if (action === 'discount') aplicarDescuentoProducto(p.ProductoID, p.DescuentoPorcentaje || 0, p.Nombre);
         } catch (err) {
             console.error('Error parsing producto JSON:', err);
             Swal.fire('Error', 'Datos del producto corruptos. Recarga la página.', 'error');
@@ -324,20 +324,13 @@ async function eliminarProducto(id) {
     }
 }
 
-async function aplicarDescuentoProducto(id, descuentoActual) {
-    const descuento = prompt('Descuento % (0-100):', descuentoActual || 0);
-    if (!descuento || isNaN(descuento)) return;
-    try {
-        await fetch(`/productos/${id}/descuento`, {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({descuento: parseFloat(descuento)})
-        });
-        Swal.fire('Descuento aplicado', '', 'success');
-        cargarProductos();
-    } catch (err) {
-        Swal.fire('Error', err.message, 'error');
-    }
+async function aplicarDescuentoProducto(id, descuentoActual, nombreProducto) {
+    // Llenar modal y mostrar
+    document.getElementById('modal-product-name').textContent = nombreProducto || 'Producto';
+    document.getElementById('inputDescuento').value = descuentoActual || 0;
+    document.getElementById('inputDescuento').dataset.productId = id;
+    document.getElementById('btnConfirmarDescuento').dataset.productId = id;
+    new bootstrap.Modal(document.getElementById('modalDescuento')).show();
 }
 
 // Pedidos actions
@@ -833,4 +826,41 @@ async function cargarAgotados() {
     }
     document.getElementById('agotados-count').textContent = `${bajos.length} en riesgo`;
 }
+
+// 🏷️ EVENT LISTENER GLOBAL PARA MODAL DESCUENTO (una sola vez)
+document.addEventListener('click', function(e) {
+    if (e.target.matches('#btnConfirmarDescuento')) {
+        const btn = e.target;
+        const id = btn.dataset.productId;
+        const descuentoEl = document.getElementById('inputDescuento');
+        const descuento = parseFloat(descuentoEl.value);
+        
+        if (isNaN(descuento) || descuento < 0 || descuento > 100) {
+            return Swal.fire('Error', 'Descuento debe estar entre 0-100%', 'warning');
+        }
+        
+        // Ejecutar lógica original del PUT
+        fetch(`/productos/${id}/descuento`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({descuento: descuento})
+        })
+        .then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+        })
+        .then(() => {
+            bootstrap.Modal.getInstance(document.getElementById('modalDescuento')).hide();
+            // Limpiar campos
+            descuentoEl.value = '';
+            descuentoEl.dataset.productId = '';
+            btn.dataset.productId = '';
+            Swal.fire('Descuento aplicado', '', 'success');
+            cargarProductos(); // Refrescar lista inmediatamente
+        })
+        .catch(err => {
+            Swal.fire('Error', err.message, 'error');
+        });
+    }
+});
 
