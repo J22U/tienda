@@ -223,14 +223,19 @@ body {
 .description-text {
     font-size: 0.88rem;
     color: #555;
-    line-height: 1.5;
-    transition: all 0.3s ease;
+    line-line: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height: 4.2em; /* 3 líneas aprox */
 }
 
-.description-text.expanded {
-    display: block;
+.product-card:hover .description-text {
     -webkit-line-clamp: unset;
-    min-height: auto;
+    max-height: none;
+    overflow: visible;
 }
 
 .desc-toggle {
