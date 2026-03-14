@@ -292,6 +292,46 @@ function prepararEdicion(prod) {
     document.getElementById('stock').value = prod.Stock;
     document.getElementById('caracteristicas').value = prod.Caracteristicas;
     document.getElementById('titulo-form').textContent = 'Editar Producto';
+    
+    // 🔄 Update button for edit mode (blue)
+    const saveBtn = document.getElementById('btn-guardar');
+    if (saveBtn) {
+        saveBtn.textContent = '💾 ACTUALIZAR PRODUCTO';
+        saveBtn.classList.add('edit-mode');
+    }
+    
+// ✨ UX Improvements: Enhanced Edit Experience
+    // 1. Precise scroll to form (handles fixed headers)
+    const formContainer = document.querySelector('.col-lg-5 .bento-card');
+    if (formContainer) {
+        formContainer.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start',
+            inline: 'nearest'
+        });
+    }
+    
+    // 2. Green glow highlight
+    if (formContainer) {
+        formContainer.style.transition = 'all 0.3s ease';
+        formContainer.style.boxShadow = '0 0 30px rgba(39, 174, 96, 0.4), 0 0 60px rgba(39, 174, 96, 0.2)';
+        formContainer.style.border = '2px solid rgba(39, 174, 96, 0.5)';
+        
+        // Fade out after 2s
+        setTimeout(() => {
+            formContainer.style.boxShadow = '';
+            formContainer.style.border = '';
+        }, 2000);
+    }
+    
+    // 3. Focus on nombre field
+    setTimeout(() => {
+        const nombreField = document.getElementById('nombre');
+        if (nombreField) {
+            nombreField.focus();
+            nombreField.select(); // Select text for easy edit
+        }
+    }, 600);
 }
 
 async function guardarProducto(e) {
@@ -344,9 +384,16 @@ async function guardarProducto(e) {
 
         if (response.ok) {
             Swal.fire('¡Éxito!', id ? 'Producto actualizado' : 'Producto creado', 'success');
-            e.target.reset();
-            document.getElementById('titulo-form').textContent = 'Crear Producto';
-            document.getElementById('prod-id').value = '';
+    e.target.reset();
+    document.getElementById('titulo-form').textContent = 'Crear Producto';
+    document.getElementById('prod-id').value = '';
+    
+    // 🔄 Reset button to new mode (green)
+    const saveBtn = document.getElementById('btn-guardar');
+    if (saveBtn) {
+        saveBtn.textContent = '💾 GUARDAR PRODUCTO';
+        saveBtn.classList.remove('edit-mode');
+    }
             cargarProductos();
         } else {
             const errorData = await response.json();

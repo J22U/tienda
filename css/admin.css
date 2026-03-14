@@ -72,6 +72,93 @@ body {
     max-width: 100%;
 }
 
+/* Botón Guardar Moderno - Dynamic States */
+#btn-guardar {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+    color: white;
+    border: none;
+    padding: 18px 32px;
+    font-size: 16px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    border-radius: 16px;
+    width: 100%;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 
+        0 8px 25px rgba(46, 204, 113, 0.4),
+        0 0 0 0 rgba(39, 174, 96, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Outfit', sans-serif;
+}
+
+#btn-guardar::before {
+    content: '💾';
+    font-size: 20px;
+    transition: transform 0.3s ease;
+}
+
+#btn-guardar:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 
+        0 15px 35px rgba(46, 204, 113, 0.5),
+        0 0 0 12px rgba(39, 174, 96, 0.25);
+}
+
+#btn-guardar:hover::before {
+    transform: scale(1.1);
+}
+
+#btn-guardar:active {
+    transform: translateY(-1px) scale(0.98);
+}
+
+/* Edit Mode - Blue Vibrant */
+#btn-guardar.edit-mode {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    box-shadow: 
+        0 8px 25px rgba(52, 152, 219, 0.4),
+        0 0 0 0 rgba(52, 152, 219, 0.3);
+}
+
+#btn-guardar.edit-mode::before {
+    content: '✏️';
+}
+
+#btn-guardar.edit-mode:hover {
+    box-shadow: 
+        0 15px 35px rgba(52, 152, 219, 0.5),
+        0 0 0 12px rgba(52, 152, 219, 0.25);
+}
+
+/* Shine pulse animation for extra flair */
+#btn-guardar::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, 
+        transparent, 
+        rgba(255,255,255,0.4), 
+        transparent
+    );
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    transition: transform 0.6s;
+    z-index: 0;
+}
+
+#btn-guardar:hover::after {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+}
+
 /* ============================================================================
    FORMULARIOS - unchanged
    ============================================================================ */

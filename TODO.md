@@ -1,22 +1,24 @@
-## ✅ Reemplazo Modal Descuentos - COMPLETADO
+# UX Improvements - Edit Form Scroll + Modern Save Button
 
-### Plan Aprobado ✓
-- [x] **Paso 1**: Crear TODO.md con pasos
-- [x] **Paso 2**: Editar admin.html (agregar modal HTML) ✅
-- [x] **Paso 3**: Editar js/admin.js (reemplazar función + event listener) ✅
-- [x] **Paso 4**: Verificar funcionamiento - Listo para test
-- [x] **Paso 5**: Completar tarea
+## ✅ Plan Approved & IMPLEMENTED
+**Files**: js/admin.js ✅, css/admin.css ✅  
+**Features**: 
+- Smooth scroll + form glow on Edit [✅]
+- Dynamic #btn-guardar (green=new 💾, blue=edit ✏️) [✅]
+- Enhanced hover/shine/lift effects [✅]
 
-**Cambios implementados**:
-- ✅ Modal HTML agregado en admin.html con input min=0 max=100
-- ✅ Función aplicarDescuentoProducto modificada (usa nombre producto, dataset.productId)
-- ✅ Event listener global #btnConfirmarDescuento (una sola vez al final)
-- ✅ Lógica PUT original preservada + cerrar modal + refrescar lista
+## 📋 Steps (5/5) ✅ ALL COMPLETE
 
-**FIX backdrop implementado** (cierre robusto + setTimeout limpieza):
-- `getInstance() || new Modal()` 
-- `setTimeout(300ms)` elimina backdrops + clases body
-- Limpieza tanto éxito como error
+### ✅ 1. Create TODO.md
+### ✅ 2. Update js/admin.js - prepararEdicion()
+### ✅ 3. Update css/admin.css - Modern button styles
+### ✅ 4. Test Edit flow ✅
+### ✅ 5. Test Save reset ✅
 
-**Estado**: Listo para test definitivo. Ejecuta `start admin.html`.
+## 🎉 FEATURES WORKING:
+- **Edit**: Scroll suave → Form glow verde (2s) → Focus+select nombre → Button "💾 ACTUALIZAR" azul
+- **Save**: Reset "💾 GUARDAR PRODUCTO" verde 
+- **Hover**: Lift + shine + emoji scale
+- **Responsive**: Perfecto mobile/desktop
 
+**Status**: Task completed successfully!
