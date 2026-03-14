@@ -296,17 +296,38 @@ function prepararEdicion(prod) {
 
 async function guardarProducto(e) {
     e.preventDefault();
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+        Swal.fire('Sesión expirada', 'Por favor inicia sesión nuevamente', 'warning');
+        localStorage.removeItem('admin_logged');
+        window.location.replace('tienda.html');
+        return;
+    }
+    
     const formData = new FormData(e.target.form);
     const id = document.getElementById('prod-id').value;
     
     try {
+        const method = id ? 'PUT' : 'POST';
         const url = id ? `/productos/${id}` : '/productos';
-        const res = await fetch(url, { method: 'POST', body: formData });
+        const res = await fetch(url, { 
+            method: method, 
+            headers: { 
+                'Authorization': 'Bearer ' + token,
+                ...(method === 'POST' ? {} : {'Content-Type': 'application/json'})
+            },
+            body: method === 'POST' ? formData : JSON.stringify(Object.fromEntries(formData))
+        });
+        
         if (res.ok) {
             Swal.fire('Guardado!', '', 'success');
             e.target.reset();
             document.getElementById('titulo-form').textContent = 'Nuevo Producto';
+            document.getElementById('prod-id').value = '';
             cargarProductos();
+        } else {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
         }
     } catch (err) {
         Swal.fire('Error', err.message, 'error');
