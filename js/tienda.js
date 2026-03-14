@@ -527,8 +527,49 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target.matches('.btn-añadir')) {
             const id = e.target.dataset.id;
             if (id) {
-                console.log('Intentando llamar a agregarAlPedido con ID:', id, 'typeof:', typeof agregarAlPedido);
-                agregarAlPedido(id);
+                console.log('Añadir clicked ID:', id);
+                const producto = productosData.find(p => p.ProductoID == id);
+                if (producto) {
+                    console.log('Producto encontrado:', producto.Nombre, 'Precio:', typeof producto.Precio);
+                    const precioFinal = parseFloat(producto.Precio || 0);
+                    if (isNaN(precioFinal)) {
+                        console.error('Precio inválido:', producto.Precio);
+                        return;
+                    }
+                    // Default cantidad 1 for quick add
+                    const cantidad = 1;
+                    if (cantidad > producto.Stock) {
+                        Swal.fire('Sin stock', '', 'warning');
+                        return;
+                    }
+                    // Add to cart
+                    const itemExistente = carrito.find(item => item.ProductoID === producto.ProductoID);
+                    if (itemExistente) {
+                        if ((itemExistente.cantidad + cantidad) > producto.Stock) {
+                            Swal.fire('Stock máximo', '', 'warning');
+                            return;
+                        }
+                        itemExistente.cantidad += cantidad;
+                    } else {
+                        carrito.push({
+                            ProductoID: producto.ProductoID,
+                            cantidad,
+                            Nombre: producto.Nombre,
+                            Precio: precioFinal,
+                            stock: producto.Stock
+                        });
+                    }
+                    actualizarCarritoUI();
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: `${producto.Nombre} agregado`,
+                        timer: 1500
+                    });
+                } else {
+                    console.error('Producto no encontrado ID:', id);
+                }
             }
         }
     });
