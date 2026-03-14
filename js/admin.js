@@ -297,51 +297,61 @@ function prepararEdicion(prod) {
 async function guardarProducto(e) {
     e.preventDefault();
     
-    // Solo validar token para UPDATE (PUT). Crear usa FormData sin auth
     const id = document.getElementById('prod-id').value;
-    if (id) { // Solo si UPDATE
-        const token = localStorage.getItem('token');
-        if (!token) {
-            Swal.fire('Sesión expirada', 'Por favor inicia sesión admin nuevamente', 'warning');
-            localStorage.removeItem('admin_logged');
-            window.location.replace('tienda.html');
-            return;
-        }
-    }
+    const token = localStorage.getItem('token');
     
+    if (!token) {
+        Swal.fire('Error', 'Tu sesión expiró. Por favor inicia sesión de nuevo.', 'error');
+        window.location.href = 'tienda.html'; // No existe login.html
+        return;
+    }
+
     const formData = new FormData(e.target.form);
+    const productoData = {
+        Nombre: document.getElementById('nombre').value,
+        Marca: document.getElementById('marca').value,
+        CodigoSKU: document.getElementById('sku').value,
+        Precio: parseFloat(document.getElementById('precio').value),
+        Stock: parseInt(document.getElementById('stock').value),
+        Caracteristicas: document.getElementById('caracteristicas').value
+    };
+
+    const url = id ? `/productos/${id}` : '/productos';
     
     try {
-        const method = id ? 'PUT' : 'POST';
-        const url = id ? `/productos/${id}` : '/productos';
-        
-        const fetchOptions = { 
-            method: method, 
-            body: formData 
-        };
-        
-        // Solo agregar headers para UPDATE
-        if (id) {
-            fetchOptions.headers = { 
-                'Authorization': 'Bearer ' + localStorage.getItem('token'),
-                'Content-Type': 'application/json'
-            };
-            fetchOptions.body = JSON.stringify(Object.fromEntries(formData));
+        const response = await fetch(url, {
+            method: id ? 'PUT' : 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(productoData)
+        });
+
+        if (response.status === 401) {
+            throw new Error('Sesión inválida');
         }
-        
-        const res = await fetch(url, fetchOptions);
-        
-        if (res.ok) {
-            Swal.fire('Guardado!', '', 'success');
+
+        if (response.ok) {
+            Swal.fire('¡Éxito!', id ? 'Producto actualizado' : 'Producto creado', 'success');
             e.target.reset();
-            document.getElementById('titulo-form').textContent = 'Nuevo Producto';
+            document.getElementById('titulo-form').textContent = 'Crear Producto';
             document.getElementById('prod-id').value = '';
             cargarProductos();
         } else {
-            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+            const errorData = await response.json();
+            Swal.fire('Error', errorData.message || 'No se pudo guardar', 'error');
         }
-    } catch (err) {
-        Swal.fire('Error', err.message, 'error');
+
+    } catch (error) {
+        console.error('Error:', error);
+        if (error.message === 'Sesión inválida') {
+            localStorage.removeItem('token');
+            localStorage.removeItem('admin_logged');
+            window.location.href = 'tienda.html';
+        } else {
+            Swal.fire('Error', error.message, 'error');
+        }
     }
 }
 
