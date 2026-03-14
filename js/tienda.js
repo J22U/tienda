@@ -517,7 +517,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (e.target.matches('.btn-añadir')) {
             const id = e.target.dataset.id;
-            if (id) agregarAlCarrito(id);
+            if (id) {
+                console.log('Intentando llamar a agregarAlPedido con ID:', id, 'typeof:', typeof agregarAlPedido);
+                agregarAlPedido(id);
+            }
         }
     });
 
