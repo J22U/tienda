@@ -559,6 +559,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
         }
+        if (e.target.id === 'btn-procesar-pago') {
+            procesarPago();
+        }
     });
 
     // Check if user explicitly wants to view the store (via ?view=store parameter)
