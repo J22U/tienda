@@ -216,27 +216,17 @@ body {
 }
 
 .description-section {
-    margin-bottom: 12px;
+    margin-bottom: 24px;
     flex-grow: 1;
 }
 
 .description-text {
     font-size: 0.88rem;
-    color: #555;
-    line-line: 1.5;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    max-height: 4.2em; /* 3 líneas aprox */
+    color: #444;
+    line-height: 1.5;
 }
 
-.product-card:hover .description-text {
-    -webkit-line-clamp: unset;
-    max-height: none;
-    overflow: visible;
-}
+
 
 .desc-toggle {
     background: none;
