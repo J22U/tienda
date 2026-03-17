@@ -539,27 +539,28 @@ async function generarFacturaPDF(p, numeroPedido) {
 const primaryColor = [34, 74, 43]; // Verde Trébol
     const textColor = [45, 52, 54];
 
+    let logoDataUrl, qrDataUrl;
     try {
-// Load CSP-safe logo via canvas
-        const logoDataUrl = await canvasToDataURL('/uploads/logo-trebol.png', 50, 25);
-
+        console.log('Loading images via canvas...');
+        // Load CSP-safe logo via canvas
+        logoDataUrl = await canvasToDataURL('/uploads/logo-trebol.png', 50, 25);
+        console.log('✅ Logo loaded:', logoDataUrl.substring(0, 50) + '...');
         
-// Load CSP-safe QR via canvas
-        const qrDataUrl = await canvasToDataURL('/uploads/qr-contacto.png', 30, 30);
-
+        // Load CSP-safe QR via canvas
+        qrDataUrl = await canvasToDataURL('/uploads/qr-contacto.png', 30, 30);
+        console.log('✅ QR loaded:', qrDataUrl.substring(0, 50) + '...');
     } catch (imgErr) {
-        console.warn('Image load fallback:', imgErr);
-// Fallback text placeholders
-        const logoDataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='; // 1x1 transparent
-        const qrDataUrl = logoDataUrl;
+        console.warn('❌ Image load fallback:', imgErr);
+        // Fallback 1x1 transparent PNG
+        logoDataUrl = qrDataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
     }
 
     // Diseño: Barra lateral decorativa
     doc.setFillColor(34, 74, 43);
     doc.rect(0, 0, 5, 297, 'F');
     
-// Logo ✅ Base64 CSP-safe
-doc.addImage(logoDataUrl, 'PNG', 20, 12, 35, 18);
+    // Logo ✅ Base64 CSP-safe
+    doc.addImage(logoDataUrl, 'PNG', 20, 12, 35, 18);
     
 doc.setFontSize(9);
     doc.setTextColor(100);
@@ -570,7 +571,7 @@ doc.setFontSize(9);
     doc.text("trebol@gmail.com", 20, 47);
     
 // QR ✅ Base64 CSP-safe
-doc.addImage(qrDataUrl, 'PNG', 165, 12, 25, 25);
+    doc.addImage(qrDataUrl, 'PNG', 165, 12, 25, 25);
 
     // CUADRO DE ORDEN
     doc.setFillColor(248, 249, 250);
