@@ -512,15 +512,27 @@ async function generarFacturaPDF(p, numeroPedido) {
         productosArr = []; 
     }
 
-    // 2. CÁLCULOS DE TOTALES (Lógica infalible)
+    // 2. CÁLCULOS DE TOTALES (FIXED: Priorizar TotalManual + DescuentoPorcentaje)
     let subtotalBruto = productosArr.reduce((acc, item) => {
         const pOriginal = Number(item.PrecioOriginal || item.Precio);
         return acc + (pOriginal * Number(item.cantidad));
     }, 0);
     
-    const totalNetoReal = Number(p.Total);
-    const ahorroTotal = subtotalBruto - totalNetoReal;
-    const porcentajeDescGlobal = subtotalBruto > 0 ? Math.round((ahorroTotal / subtotalBruto) * 100) : 0;
+    // ✅ FIXED: Priorizar TotalManual (pedido-level discount)
+    const totalNetoReal = Number(p.TotalManual || p.Total);
+    const descuentoPctExplicit = parseFloat(p.DescuentoPorcentaje) || 0;
+    const dtoPesosExplicit = subtotalBruto * (descuentoPctExplicit / 100);
+    const ahorroCalculado = subtotalBruto - totalNetoReal;
+    const porcentajeDescGlobal = descuentoPctExplicit > 0 ? descuentoPctExplicit : (subtotalBruto > 0 ? Math.round((ahorroCalculado / subtotalBruto) * 100) : 0);
+    
+    console.log('PDF DEBUG:', { 
+        subtotalBruto: subtotalBruto.toLocaleString(), 
+        totalNetoReal: totalNetoReal.toLocaleString(), 
+        descuentoPctExplicit, 
+        dtoPesosExplicit: dtoPesosExplicit.toLocaleString(),
+        TotalManual: p.TotalManual, 
+        DescuentoPorcentaje: p.DescuentoPorcentaje 
+    });
 
     // 3. CONFIGURACIÓN ESTÉTICA
     const primaryColor = [34, 74, 43]; // Verde Trébol
@@ -610,15 +622,18 @@ async function generarFacturaPDF(p, numeroPedido) {
     doc.text("SUMA TOTAL (BRUTO):", 132, currentY + 6);
     doc.text(`$ ${subtotalBruto.toLocaleString()}`, 192, currentY + 6, { align: 'right' });
     
-    // Fila Ahorro (Solo si el ahorro es real)
-    if (ahorroTotal > 0) {
+    // ✅ FIXED: Siempre mostrar descuento si % > 0 (pedido/product) con monto correcto
+    const mostrarDto = descuentoPctExplicit > 0 || ahorroCalculado > 0;
+    if (mostrarDto) {
         currentY += 10;
         doc.setFillColor(255, 230, 230); // Fondo rojizo suave
         doc.rect(130, currentY, 65, 9, 'F');
         doc.setTextColor(200, 0, 0); // Texto Rojo
         doc.setFont("helvetica", "bold");
         doc.text(`DESCUENTO (${porcentajeDescGlobal}%):`, 132, currentY + 6);
-        doc.text(`-$ ${ahorroTotal.toLocaleString()}`, 192, currentY + 6, { align: 'right' });
+        // Usar dto explícito si pedido discount, sino calculado
+        const dtoMostrado = descuentoPctExplicit > 0 ? dtoPesosExplicit : ahorroCalculado;
+        doc.text(`-$ ${dtoMostrado.toLocaleString()}`, 192, currentY + 6, { align: 'right' });
     }
     
     // Fila Neto Final

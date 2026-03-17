@@ -1,21 +1,13 @@
-# TODO - Mejoras PDF Facturas (BlackboxAI)
+# TODO.md - Fix Factura Descuento
 
-## Plan Aprobado - Desglose Descuentos en PDF
+## ✅ Task: Fix "la factura no me está descargando con el descuento"
 
-**Estado: En Progreso**
+### Plan Breakdown (Approved)
+1. [x] Create TODO.md with steps
+2. [✅] Edit js/admin.js - Updated generarFacturaPDF(): Prioritizes TotalManual, uses DescuentoPorcentaje explicitly for discount line/%/amount (shows if >0 or calculated ahorro>0), added console.log for debug.
+3. [✅] Verified logic (diffs exact-match, no syntax errors, preserves styling)
+4. [ ] Test: Run server, apply discount via modal, generate PDF, check discount block
+5. [ ] Final verification & completion
+6. [ ] attempt_completion
 
-### Pasos:
-- [x] 1. Crear TODO.md (LISTO)
-- [x] 2. Editar js/admin.js - Agregar subtotalBruto y ahorroTotal en loop productos
-- [x] 3. Editar js/admin.js - Reemplazar sección totales con 3 líneas (Bruto, Ahorro rojo, Neto verde)
-- [x] 4. Usar item.PrecioOriginal e item.Precio (confirmado por usuario, fallback a Precio)
-- [x] 5. Ajustar posiciones Y para notas/pie (usando totalY)
-- [x] 6. Probar: Generar PDF de pedido con descuento → verificar desglose (listo para test)
-- [x] 7. Marcar ✅ y attempt_completion
-
-**Notas:** 
-- PrecioOriginal → bruto
-- Precio → discounted
-- Ahorro: (PrecioOriginal - Precio) * cantidad
-- Formato: toLocaleString() con puntos miles
-
+**Next Step**: Edit js/admin.js
