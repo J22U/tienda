@@ -499,6 +499,25 @@ async function generarFacturaPDFParaPedido(pedidoId) {
     }
 }
 
+// 🖼️ INLINE CSP-SAFE canvasToDataURL (from canvasImageHelper.js - fixes scope)
+window.canvasToDataURL = async function(src, maxWidth = 50, maxHeight = 50) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const ratio = Math.min(maxWidth / img.width, maxHeight / img.height);
+      canvas.width = img.width * ratio;
+      canvas.height = img.height * ratio;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => reject(new Error(`Failed to load ${src}`));
+    img.src = src;
+  });
+};
+
 // Your existing function (copied exactly)
 async function generarFacturaPDF(p, numeroPedido) {
     // CSP-SAFE: Fetch images as base64 data URLs
@@ -539,15 +558,23 @@ async function generarFacturaPDF(p, numeroPedido) {
 const primaryColor = [34, 74, 43]; // Verde Trébol
     const textColor = [45, 52, 54];
 
+    // 💫 PDF Loading spinner
+    Swal.fire({
+      title: 'Generando Factura...',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+      background: 'rgba(0,0,0,0.8)'
+    });
+    
     let logoDataUrl, qrDataUrl;
     try {
         console.log('Loading images via canvas...');
         // Load CSP-safe logo via canvas
-        logoDataUrl = await canvasToDataURL('/uploads/logo-trebol.png', 50, 25);
+        logoDataUrl = await window.canvasToDataURL('/uploads/logo-trebol.png', 50, 25);
         console.log('✅ Logo loaded:', logoDataUrl.substring(0, 50) + '...');
         
         // Load CSP-safe QR via canvas
-        qrDataUrl = await canvasToDataURL('/uploads/qr-contacto.png', 30, 30);
+        qrDataUrl = await window.canvasToDataURL('/uploads/qr-contacto.png', 30, 30);
         console.log('✅ QR loaded:', qrDataUrl.substring(0, 50) + '...');
     } catch (imgErr) {
         console.warn('❌ Image load fallback:', imgErr);
@@ -672,12 +699,13 @@ doc.setFontSize(9);
     doc.text("Esta es una representación gráfica de una cuenta de cobro interna.", 105, 280, { align: 'center' });
     doc.text("No somos responsables de IVA. Régimen Simplificado.", 105, 284, { align: 'center' });
 
-    // GUARDAR Y AVISAR
+    // Close spinner + save
+    Swal.close();
     doc.save(`Factura_Trebol_${numeroPedido}.pdf`);
     
     Swal.fire({
-        title: 'Factura Generada',
-        text: 'El descuento ha sido aplicado correctamente en el PDF.',
+        title: '✅ Factura Generada',
+        text: `Logo/QR ${logoDataUrl.startsWith('data:image/png;base64,iVBOR') ? 'fallback (transparent)' : '✅ LOADED'} | Descuento aplicado.`,
         icon: 'success',
         confirmButtonColor: '#224a2b'
     });

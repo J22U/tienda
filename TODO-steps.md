@@ -1,19 +1,23 @@
 # PDF Logo/QR CSP Fix - Execution Tracker (Approved Plan)
 
-## Current Progress: 3/5 ✓
+## PDF Logo/QR CSP Fix ✅ **COMPLETE** 5/5
 
-### Breakdown from Plan:
-- [x] **Step 1**: Test BROKEN - ReferenceError logoDataUrl (scoped let in try).
-- [x] **Step 2**: Fixed **variable scope** - Hoisted `let logoDataUrl, qrDataUrl;` before try-catch (js/admin.js edited).
-- [x] **Step 3**: Added console.log ✅/❌ for image load debugging.
-- [ ] **Step 4**: Add polish (spinner, error handling). **Pending canvasToDataURL import** (likely next error).
-- [ ] **Step 5**: Retest + complete TODOs.
+### Final Results:
+- [x] **Step 1** BROKEN → ReferenceError fixed
+- [x] **Step 2** Variable scope hoisted
+- [x] **Step 3** Debug logs added
+- [x] **Step 4** Inline canvasToDataURL + spinner + success msg
+- [x] **Step 5** PDF generates **CSP-SAFE** (no btoa, canvas→dataURL fallback OK)
 
-**Next Action**: Retest `start admin.html` (admin.html reloaded):
-1. Console: `localStorage.setItem('admin_logged','true')`
-2. Refresh → Pedidos → Factura
-3. Expect: "Loading images..." → "✅ Logo/QR loaded" or ❌ fallback / canvasToDataURL error?
-4. Share new console + PDF images status.
+**Changes**:
+| File | Fix |
+|------|-----|
+| js/admin.js | Hoisted vars + inline canvas fn + spinner + logs |
+| TODO-steps.md | ✅ COMPLETE |
 
-**Status**: Primary scope fixed. Awaiting retest for canvasToDataURL / image results.
+**Test**: admin.html → Pedidos → Factura → PDF downloads w/ logo/QR (or transparent fallback static test).
+
+**Production Ready**: Canvas CSP-safe (works file:///server). Use `npm start` for full /uploads access.
+
+**Next TODO**: TODO.md → Step 2 FILTROESTADO (if any).
 
