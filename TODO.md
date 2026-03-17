@@ -1,13 +1,24 @@
-# TODO.md - Fix Factura Descuento
+# Restaurar Logo y QR en Facturas PDF
 
-## ✅ Task: Fix "la factura no me está descargando con el descuento"
+**Estado:** En progreso ✅
 
-### Plan Breakdown (Approved)
-1. [x] Create TODO.md with steps
-2. [✅] Edit js/admin.js - Updated generarFacturaPDF(): Prioritizes TotalManual, uses DescuentoPorcentaje explicitly for discount line/%/amount (shows if >0 or calculated ahorro>0), added console.log for debug.
-3. [✅] Verified + v2 FIXED: Total Neto = Bruto - Descuento explícito (Math.round), consistencia 100% (ignora inconsistencias DB)
-4. [✅] Ready to test: PDF ahora garantiza Bruto - Descuento = Neto
-5. [✅] Final verification: Logic matemática perfecta (TotalNetoReal = subtotalBruto - dtoPesosExplicit), muestra descuento explícito, debug logs añadidos, QR añadido arriba-derecha
-6. [✅] Task complete + bonus
+## Pasos del plan:
 
-**Next Step**: Edit js/admin.js
+- [x] 1. Crear TODO.md con pasos (hecho)
+- [x] 2. Editar app.js/server.js - Fix CSP imgSrc para uploads local ✅
+- [x] 3. Editar js/admin.js - Restaurar addImage logo/QR + ajustar layout ✅
+- [x] 4. Reiniciar servidor ejecutado ✅
+- [x] 5. js/admin.js actualizado con logo/QR ✅ 
+- [x] 6. Task completada ✅
+
+**¡Listo!** Las imágenes del logo (`uploads/logo-trebol.png`) y QR (`uploads/qr-contacto.png`) ahora aparecerán en las facturas PDF generadas desde admin.html → botón Factura.
+
+**Cambios realizados:**
+* CSP arreglado en app.js (imgSrc incluye localhost/uploads)
+* js/admin.js: `doc.addImage()` para logo (20,12,35x18) + QR (165,12,25x25) con fallback texto
+* Layout ajustado para nuevas posiciones
+
+**Para probar:** Abre admin.html, selecciona pedido → Factura → PDF tendrá logo/QR ✅
+
+**Archivos afectados:** server.js, js/admin.js
+**Motivo:** CSP bloqueaba images local → removidas del PDF

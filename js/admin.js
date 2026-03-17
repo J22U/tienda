@@ -542,21 +542,35 @@ async function generarFacturaPDF(p, numeroPedido) {
     doc.setFillColor(34, 74, 43);
     doc.rect(0, 0, 5, 297, 'F');
     
-// Logo/QR removido por CSP local - Fallback texto (producción ready)
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(28);
-    doc.setTextColor(34, 74, 43);
-    doc.text("TRÉBOL", 20, 25);
+    // Logo restaurado ✅
+    try {
+        doc.addImage('uploads/logo-trebol.png', 'PNG', 20, 12, 35, 18);
+    } catch(e) {
+        console.warn('Logo fallback:', e);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(28);
+        doc.setTextColor(34, 74, 43);
+        doc.text("TRÉBOL", 22, 25);
+    }
     
-    doc.setFontSize(9);
+doc.setFontSize(9);
     doc.setTextColor(100);
     doc.setFont("helvetica", "normal");
-    doc.text("Repuestos profesionales", 20, 31);
-    doc.text("NIT: 900.555.123-1", 20, 36);
-    doc.text("El Peñol, Antioquia | Cel: 310 123 4567", 20, 41);
-    doc.text("trebol@gmail.com", 20, 46);
+    doc.text("Repuestos profesionales", 20, 32);
+    doc.text("NIT: 900.555.123-1", 20, 37);
+    doc.text("El Peñol, Antioquia | Cel: 310 123 4567", 20, 42);
+    doc.text("trebol@gmail.com", 20, 47);
     
-// QR removido por CSP - Contacto en texto abajo (offline safe)
+    // QR restaurado ✅
+    try {
+        doc.addImage('uploads/qr-contacto.png', 'PNG', 165, 12, 25, 25);
+    } catch(e) {
+        console.warn('QR fallback:', e);
+        doc.setFontSize(8);
+        doc.setTextColor(120);
+        doc.text("📱 Escanear QR o llamar:", 165, 45);
+        doc.text("Cel: 310 123 4567", 165, 51);
+    }
 
     // CUADRO DE ORDEN
     doc.setFillColor(248, 249, 250);
