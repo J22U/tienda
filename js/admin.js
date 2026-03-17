@@ -540,24 +540,18 @@ const primaryColor = [34, 74, 43]; // Verde Trébol
     const textColor = [45, 52, 54];
 
     try {
-        // Fetch logo
-        const logoRes = await fetch('/uploads/logo-trebol.png');
-        const logoBlob = await logoRes.blob();
-        const logoBuf = await logoBlob.arrayBuffer();
-        const logoBase64 = btoa(String.fromCharCode(...new Uint8Array(logoBuf)));
-        window.logoDataUrl = `data:image/png;base64,${logoBase64}`;
+// Load CSP-safe logo via canvas
+        const logoDataUrl = await canvasToDataURL('/uploads/logo-trebol.png', 50, 25);
+
         
-        // Fetch QR
-        const qrRes = await fetch('/uploads/qr-contacto.png');
-        const qrBlob = await qrRes.blob();
-        const qrBuf = await qrBlob.arrayBuffer();
-        const qrBase64 = btoa(String.fromCharCode(...new Uint8Array(qrBuf)));
-        window.qrDataUrl = `data:image/png;base64,${qrBase64}`;
+// Load CSP-safe QR via canvas
+        const qrDataUrl = await canvasToDataURL('/uploads/qr-contacto.png', 30, 30);
+
     } catch (imgErr) {
         console.warn('Image load fallback:', imgErr);
-        // Fallback data URLs if fetch fails (embed small placeholders)
-        window.logoDataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAABmJLR0QA/wD/AP+gvaeTAA...'; // mini logo placeholder base64
-        window.qrDataUrl = 'data:image/png;base64,iVBORw0KGgo...'; // mini QR
+// Fallback text placeholders
+        const logoDataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='; // 1x1 transparent
+        const qrDataUrl = logoDataUrl;
     }
 
     // Diseño: Barra lateral decorativa
@@ -565,7 +559,7 @@ const primaryColor = [34, 74, 43]; // Verde Trébol
     doc.rect(0, 0, 5, 297, 'F');
     
 // Logo ✅ Base64 CSP-safe
-    doc.addImage(window.logoDataUrl, 'PNG', 20, 12, 35, 18);
+doc.addImage(logoDataUrl, 'PNG', 20, 12, 35, 18);
     
 doc.setFontSize(9);
     doc.setTextColor(100);
@@ -576,7 +570,7 @@ doc.setFontSize(9);
     doc.text("trebol@gmail.com", 20, 47);
     
 // QR ✅ Base64 CSP-safe
-    doc.addImage(window.qrDataUrl, 'PNG', 165, 12, 25, 25);
+doc.addImage(qrDataUrl, 'PNG', 165, 12, 25, 25);
 
     // CUADRO DE ORDEN
     doc.setFillColor(248, 249, 250);

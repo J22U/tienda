@@ -1,28 +1,19 @@
-# TODO Steps: Fix Admin Loading Products/Orders
+# PDF Logo/QR CSP Fix - Execution Tracker (Approved Plan)
 
-✅ **1. Create TODO-steps.md** (current)
+## Current Progress: 1/5 ✓
 
-✅ **2. Create js/admin.js with complete loading logic**
-   - DOMContentLoaded + auth check
-   - cargarProductos() & cargarPedidos()
-   - Render functions
-   - Tabs + filters
-   - Form handling
-   - Globals for delegation
-   - Socket.io real-time
+### Breakdown from Plan:
+- [x] **Step 1**: Test current PDF generation → `start admin.html` executed successfully. Awaiting browser test results (localStorage.setItem('admin_logged','true') → Pedidos → Factura → console/PDF check).
+- [ ] **Step 2**: If broken, ensure canvasToDataURL scope (add dynamic import to js/admin.js if needed).
+- [ ] **Step 3**: Fix paths/CORS if 404 errors (uploads/logo-trebol.png accessible).
+- [ ] **Step 4**: Add polish (PDF loading spinner, better error handling).
+- [ ] **Step 5**: Update TODO.md/TODO-LOGO-QR-Facturas.md → ✅ FIXED. Test full flow. attempt_completion.
 
-✅ **3. Test admin.html**  (abierto con `start admin.html` - revisar en navegador F12 Console/Network)"
+**Next Action**: In browser (admin.html open):
+1. F12 → Console: `localStorage.setItem('admin_logged', 'true')`
+2. Refresh → Pedidos tab → Factura button → Download PDF
+3. Check: Logo top-left / QR top-right visible? Console errors/fallback?
+4. Reply with results/console logs.
 
-   - Open in browser
-   - Check Console/Network
-   - Verify data load
-
-⏳ **4. Add test data if empty**
-   - Insert sample products/pedidos via SQL
-
-⏳ **5. Test CRUD operations**
-   - Add/edit/delete product
-   - Mark orders complete
-
-⏳ **6. attempt_completion**
+**Status**: Test initiated. Awaiting manual verification.
 

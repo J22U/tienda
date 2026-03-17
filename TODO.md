@@ -1,15 +1,10 @@
-# TODO: Add Images to Invoice (Facturas)
+# PDF Image Fix - CSP & Corrupt PNG
 
-✅ **1. Create TODO.md** - Track progress *(Done)*
+## Plan Steps
+- [ ] Step 1: Fix js/admin.js - Replace btoa with canvas.toDataURL for logo/qr
+- [ ] Step 2: Test factura generation (admin.html → Pedidos → Factura)
+- [ ] Step 3: Verify no console errors, images visible in PDF
+- [ ] Step 4: Update TODO-LOGO-QR-Facturas.md to FIXED
+- [ ] Step 5: Complete task
 
-✅ **2. Edit js/admin.js** *(Done)*
-
-✅ **3. Test PDF generation** *(User can verify in admin.html → Pedidos → Factura)*
-
-**4. Edge cases handled**:
-   - All imgs try-catch + fallbacks
-   - Compact table (font 7px, fixed widths)
-   - Single page layout
-
-✅ **Task Complete**
-
+Current: Understanding complete. Ready for edits.
