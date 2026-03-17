@@ -142,11 +142,11 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://cdn.jsdelivr.net'],
 scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.socket.io', 'https://jsdelivr.net', 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com', 'https://cdn.onesignal.com', 'https://onesignal.com'],
-      imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com', 'https://images.unsplash.com'],
-      connectSrc: ["'self'", 'wss://tienda-1vps.onrender.com', 'https://tienda-1vps.onrender.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com', 'https://cdn.jsdelivr.net', 'https://cdn.onesignal.com', 'https://onesignal.com', 'https://api.onesignal.com']
+      imgSrc: ["'self'", 'data:', 'https://res.cloudinary.com', 'https://images.unsplash.com', 'https://res.cloudinary.com/ https://cloudinary.com'],
+      connectSrc: ["'self'", 'wss://tienda-1vps.onrender.com', 'https://tienda-1vps.onrender.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com', 'https://cdn.jsdelivr.net', 'https://cdn.onesignal.com', 'https://onesignal.com', 'https://api.onesignal.com', 'https://res.cloudinary.com']
     }
   }
-})); // CSP: + cdn.jsdelivr.net para source maps
+})); // CSP FIXED: + res.cloudinary.com para jsPDF images + connect-src
 app.use(morgan('combined'));
 
 const limiterLogin = rateLimit({
