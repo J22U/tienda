@@ -542,18 +542,18 @@ async function generarFacturaPDF(p, numeroPedido) {
     doc.setFillColor(34, 74, 43);
     doc.rect(0, 0, 5, 297, 'F');
     
-    // Logo restaurado ✅
+    // 🎨 ENHANCED Logo (larger, rounded) ✅
     try {
-        doc.addImage('uploads/logo-trebol.png', 'PNG', 20, 12, 35, 18);
+        doc.addImage('uploads/logo-trebol.png', 'PNG', 18, 10, 42, 25); // Bigger + positioned better
     } catch(e) {
         console.warn('Logo fallback:', e);
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(28);
+        doc.setFontSize(30);
         doc.setTextColor(34, 74, 43);
-        doc.text("TRÉBOL", 22, 25);
+        doc.text("TRÉBOL", 20, 28);
     }
     
-doc.setFontSize(9);
+    doc.setFontSize(9);
     doc.setTextColor(100);
     doc.setFont("helvetica", "normal");
     doc.text("Repuestos profesionales", 20, 32);
@@ -561,15 +561,15 @@ doc.setFontSize(9);
     doc.text("El Peñol, Antioquia | Cel: 310 123 4567", 20, 42);
     doc.text("trebol@gmail.com", 20, 47);
     
-    // QR restaurado ✅
+    // 📱 ENHANCED QR (larger, better pos) ✅
     try {
-        doc.addImage('uploads/qr-contacto.png', 'PNG', 165, 12, 25, 25);
+        doc.addImage('uploads/qr-contacto.png', 'PNG', 162, 10, 32, 32); // Bigger
     } catch(e) {
         console.warn('QR fallback:', e);
         doc.setFontSize(8);
         doc.setTextColor(120);
-        doc.text("📱 Escanear QR o llamar:", 165, 45);
-        doc.text("Cel: 310 123 4567", 165, 51);
+        doc.text("📱 Escanear QR o llamar:", 162, 45);
+        doc.text("Cel: 310 123 4567", 162, 52);
     }
 
     // CUADRO DE ORDEN
@@ -604,14 +604,20 @@ doc.setFontSize(9);
     doc.text(`Teléfono: ${p.Telefono || '---'}`, 20, 83);
     doc.text(`Dirección: ${p.Direccion || 'Entrega en local'}`, 20, 88);
 
-    // 4. TABLA DE PRODUCTOS
+// 4. TABLA DE PRODUCTOS CON IMÁGENES ✅
     const rows = productosArr.map(item => {
         const pOriginal = Number(item.PrecioOriginal || item.Precio);
         const pVenta = Number(item.Precio);
         const descItem = pOriginal > 0 ? Math.round(((pOriginal - pVenta) / pOriginal) * 100) : 0;
+        
+        // 🖼️ Product img: Try uploads/ match or first upload img
+        const imgName = item.Nombre.toLowerCase().replace(/[^a-z0-9]/g,'') || 'default';
+        const productImgPath = `uploads/${imgName}.jpg` || 'uploads/1770487849511.jpg'; // fallback first product
+        
         return [
+            { image: productImgPath, style: { width: 12, height: 12 } }, // Thumbnail col
             item.cantidad,
-            { content: `${item.Nombre}${descItem > 0 ? ` (-${descItem}%)` : ''}`, styles: { fontStyle: 'bold' } },
+            { content: `${item.Nombre}${descItem > 0 ? ` (-${descItem}%)` : ''}`, styles: { fontStyle: 'bold', cellWidth: 70 } },
             `$ ${pOriginal.toLocaleString()}`,
             `$ ${(item.cantidad * pVenta).toLocaleString()}`
         ];
@@ -619,16 +625,23 @@ doc.setFontSize(9);
 
     doc.autoTable({
         startY: 95,
-        head: [['CANT.', 'DESCRIPCIÓN', 'VALOR UNIT.', 'SUBTOTAL']],
+        head: [['IMG', 'CANT.', 'DESCRIPCIÓN', 'VALOR UNIT.', 'SUBTOTAL']],
         body: rows,
-        headStyles: { fillColor: primaryColor, textColor: [255, 255, 255], halign: 'center' },
-        columnStyles: { 0: { halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right' } },
+        headStyles: { fillColor: primaryColor, textColor: [255, 255, 255], halign: 'center', fontSize: 8 },
+        columnStyles: { 
+            0: { halign: 'center', cellWidth: 15 }, // IMG fixed narrow
+            1: { halign: 'center', cellWidth: 12 }, // CANT narrow
+            2: { halign: 'left', cellWidth: 65 },   // DESC shrink for imgs
+            3: { halign: 'right', cellWidth: 28 },  // UNIT
+            4: { halign: 'right' }                  // SUBTOTAL flex
+        },
         theme: 'striped',
-        margin: { left: 20, right: 15 }
+        margin: { left: 20, right: 15 },
+        styles: { fontSize: 7, cellPadding: 2 } // Compact for imgs
     });
 
     // 5. RESUMEN DE TOTALES (DISEÑO DE BLOQUES CORREGIDO)
-    let currentY = doc.lastAutoTable.finalY + 10;
+    let currentY = doc.lastAutoTable.finalY + 12; // +2px for img table
     
     // Fila Bruto
     doc.setFillColor(240, 240, 240);
@@ -656,13 +669,45 @@ doc.setFontSize(9);
     currentY += 10;
     doc.setFillColor(34, 74, 43); // Verde oscuro
     doc.rect(130, currentY, 65, 12, 'F');
-    doc.setTextColor(255, 255, 255); // TEXTO BLANCO (Indispensable para lectura)
+    doc.setTextColor(255, 255, 255); // TEXTO BLANCO
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.text("TOTAL NETO:", 132, currentY + 8);
     doc.text(`$ ${totalNetoReal.toLocaleString()}`, 192, currentY + 8, { align: 'right' });
 
     // PIE DE PÁGINA
+    // 🖼️ SIGNATURE + BARCODE FOOTER ✅
+    try {
+        // Signature (use first jpg or placeholder)
+        doc.addImage('uploads/1770487849511.jpg', 'JPEG', 170, 232, 25, 15); // Bottom right sig
+        doc.setFontSize(7);
+        doc.setTextColor(120);
+        doc.text("Firma cliente __________________", 130, 240);
+    } catch(e) {
+        console.warn('Signature fallback');
+        doc.setFontSize(8);
+        doc.setTextColor(120);
+        doc.text("Firma: _______________________", 130, 238);
+    }
+    
+    // Barcode/Order QR (simple text barcode fallback)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(34, 74, 43);
+    doc.text(`* ${numeroPedido.toString().padStart(6, '0')} *`, 20, 262); // EAN-like
+    
+    // Faint watermark
+    try {
+        doc.save();
+        doc.addImage('uploads/logo-trebol.png', 'PNG', 60, 140, 80, 40, '', 'FAST'); // Watermark (transparent via mode)
+        doc.setGState(new doc.GState({opacity: 0.08}));
+        doc.addImage('uploads/logo-trebol.png', 'PNG', 60, 140, 80, 40);
+        doc.restoreGState();
+    } catch(e) {
+        console.warn('Watermark fallback');
+    }
+    
+    // Original footer
     doc.setFontSize(10);
     doc.setTextColor(34, 74, 43);
     doc.text("¡GRACIAS POR SU COMPRA!", 105, 270, { align: 'center' });
