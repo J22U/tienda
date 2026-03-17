@@ -542,23 +542,11 @@ async function generarFacturaPDF(p, numeroPedido) {
     doc.setFillColor(34, 74, 43);
     doc.rect(0, 0, 5, 297, 'F');
     
-    // 🆕 Logo superior izquierda (reemplaza texto TRÉBOL)
-    try {
-        doc.addImage(
-            'https://res.cloudinary.com/donc8a6tc/image/upload/v1773334984/productos_trebol/d6wdskcq2xriaexuktaj.jpg',
-            'JPEG', 
-            12, 12,   // x, y (izquierda arriba)
-            32, 32    // ancho, alto (ajustado para header)
-        );
-        console.log('✅ Logo izquierdo añadido a factura');
-    } catch (logoErr) {
-        console.warn('⚠️ Logo no cargó:', logoErr.message);
-        // Fallback texto si falla imagen
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(28);
-        doc.setTextColor(34, 74, 43);
-        doc.text("TRÉBOL", 20, 25);
-    }
+// Logo/QR removido por CSP local - Fallback texto (producción ready)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(28);
+    doc.setTextColor(34, 74, 43);
+    doc.text("TRÉBOL", 20, 25);
     
     doc.setFontSize(9);
     doc.setTextColor(100);
@@ -568,18 +556,7 @@ async function generarFacturaPDF(p, numeroPedido) {
     doc.text("El Peñol, Antioquia | Cel: 310 123 4567", 20, 41);
     doc.text("trebol@gmail.com", 20, 46);
     
-    // 🆕 QR Code en esquina superior derecha (contacto/WhatsApp)
-    try {
-        doc.addImage(
-            'https://res.cloudinary.com/donc8a6tc/image/upload/v1773785288/Mi_c%C3%B3digo_QR_2-1024_z6ac0p.jpg',
-            'JPEG', 
-            160, 15,  // x, y (esquina derecha)
-            25, 25   // ancho, alto
-        );
-        console.log('✅ QR Code añadido a factura');
-    } catch (qrErr) {
-        console.warn('⚠️ QR Code no cargó:', qrErr.message);
-    }
+// QR removido por CSP - Contacto en texto abajo (offline safe)
 
     // CUADRO DE ORDEN
     doc.setFillColor(248, 249, 250);
