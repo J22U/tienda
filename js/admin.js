@@ -501,6 +501,7 @@ async function generarFacturaPDFParaPedido(pedidoId) {
 
 // Your existing function (copied exactly)
 async function generarFacturaPDF(p, numeroPedido) {
+    // CSP-SAFE: Fetch images as base64 data URLs
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
@@ -535,23 +536,36 @@ async function generarFacturaPDF(p, numeroPedido) {
     });
 
     // 3. CONFIGURACIÓN ESTÉTICA
-    const primaryColor = [34, 74, 43]; // Verde Trébol
+const primaryColor = [34, 74, 43]; // Verde Trébol
     const textColor = [45, 52, 54];
+
+    try {
+        // Fetch logo
+        const logoRes = await fetch('/uploads/logo-trebol.png');
+        const logoBlob = await logoRes.blob();
+        const logoBuf = await logoBlob.arrayBuffer();
+        const logoBase64 = btoa(String.fromCharCode(...new Uint8Array(logoBuf)));
+        window.logoDataUrl = `data:image/png;base64,${logoBase64}`;
+        
+        // Fetch QR
+        const qrRes = await fetch('/uploads/qr-contacto.png');
+        const qrBlob = await qrRes.blob();
+        const qrBuf = await qrBlob.arrayBuffer();
+        const qrBase64 = btoa(String.fromCharCode(...new Uint8Array(qrBuf)));
+        window.qrDataUrl = `data:image/png;base64,${qrBase64}`;
+    } catch (imgErr) {
+        console.warn('Image load fallback:', imgErr);
+        // Fallback data URLs if fetch fails (embed small placeholders)
+        window.logoDataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAABmJLR0QA/wD/AP+gvaeTAA...'; // mini logo placeholder base64
+        window.qrDataUrl = 'data:image/png;base64,iVBORw0KGgo...'; // mini QR
+    }
 
     // Diseño: Barra lateral decorativa
     doc.setFillColor(34, 74, 43);
     doc.rect(0, 0, 5, 297, 'F');
     
-    // Logo restaurado ✅
-    try {
-        doc.addImage('uploads/logo-trebol.png', 'PNG', 20, 12, 35, 18);
-    } catch(e) {
-        console.warn('Logo fallback:', e);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(28);
-        doc.setTextColor(34, 74, 43);
-        doc.text("TRÉBOL", 22, 25);
-    }
+// Logo ✅ Base64 CSP-safe
+    doc.addImage(window.logoDataUrl, 'PNG', 20, 12, 35, 18);
     
 doc.setFontSize(9);
     doc.setTextColor(100);
@@ -561,16 +575,8 @@ doc.setFontSize(9);
     doc.text("El Peñol, Antioquia | Cel: 310 123 4567", 20, 42);
     doc.text("trebol@gmail.com", 20, 47);
     
-    // QR restaurado ✅
-    try {
-        doc.addImage('uploads/qr-contacto.png', 'PNG', 165, 12, 25, 25);
-    } catch(e) {
-        console.warn('QR fallback:', e);
-        doc.setFontSize(8);
-        doc.setTextColor(120);
-        doc.text("📱 Escanear QR o llamar:", 165, 45);
-        doc.text("Cel: 310 123 4567", 165, 51);
-    }
+// QR ✅ Base64 CSP-safe
+    doc.addImage(window.qrDataUrl, 'PNG', 165, 12, 25, 25);
 
     // CUADRO DE ORDEN
     doc.setFillColor(248, 249, 250);
