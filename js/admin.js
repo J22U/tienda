@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
     socket.on('connect', () => console.log('🔌 Socket admin conectado'));
     socket.on('nuevo-pedido', (data) => {
         mostrarNotificacion(`🛒 Nuevo pedido #${data.NumeroDisplay}`);
-        cargarPedidos(); 
+        cargarPedidos(true); // Preserve collapsed states
     });
     socket.on('connect_error', (err) => {
         console.warn('⚠️ Socket connect error:', err.message);
@@ -88,19 +88,21 @@ listaProductos.addEventListener('click', e => {
 
 
 
-    // 🔥 EVENT DELEGATION - PEDIDOS (CSP FIX)
+// 🔥 EVENT DELEGATION - PEDIDOS TABLE (Updated for collapsable rows)
     const listaPedidos = document.getElementById('lista-pedidos');
     listaPedidos.addEventListener('click', e => {
-        // 🆕 Click pedido-row → details (stopPropagation on buttons)
-        const pedidoRow = e.target.closest('.pedido-row');
-        if (pedidoRow && !e.target.closest('button')) {
-            const pedidoIdEl = pedidoRow.querySelector('[data-pedido-id]');
-            if (pedidoIdEl) {
-                mostrarDetallesPedido(pedidoIdEl.dataset.pedidoId);
-            }
+        // Prevent toggle on buttons/actions
+        if (e.target.closest('button')) return;
+        
+        // Toggle on main row click (collapsable table)
+        const mainRow = e.target.closest('.table-row-main');
+        if (mainRow) {
+            const pedidoId = mainRow.dataset.pedidoId;
+            mainRow.click(); // Trigger toggle
             return;
         }
         
+        // Legacy support + new button selectors
         const statusBtn = e.target.closest('.pedido-btn-status');
         if (statusBtn) {
             const id = statusBtn.dataset.pedidoId;
@@ -124,6 +126,7 @@ listaProductos.addEventListener('click', e => {
         }
     });
 
+
     // 🎯 Inicializar
     cargarProductos();
     cargarPedidos();
@@ -133,7 +136,7 @@ listaProductos.addEventListener('click', e => {
     window.cargarProductos = cargarProductos;
     window.filtrarPedidos = function(estado) { 
         window.filtroEstado = estado; 
-        cargarPedidos(); 
+        cargarPedidos(true); // Preserve states on filter
     };
 });
 
@@ -206,28 +209,27 @@ function renderProductos(prods, container) {
     }).join('');
 }
 
-// 📋 Cargar Pedidos
-async function cargarPedidos() {
+// 📋 Cargar Pedidos - Preserve collapsed states ✅
+async function cargarPedidos(preserveCollapsed = true) {
     const lista = document.getElementById('lista-pedidos');
     mostrarLoader(lista, true);
     try {
         const res = await fetch('/pedidos');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         let allPedidos = await res.json();
-// 🔄 Sort newest first (Fecha DESC) + highest # stable
+        // 🔄 Sort newest first (Fecha DESC) + highest # stable
         allPedidos.sort((a, b) => {
             const dateA = new Date(a.Fecha);
             const dateB = new Date(b.Fecha);
             if (dateB > dateA) return 1;
             if (dateA > dateB) return -1;
-            // Same date: highest NumeroDisplay
             const numA = parseInt(a.NumeroDisplay || '0');
             const numB = parseInt(b.NumeroDisplay || '0');
             return numB - numA;
         });
         console.log('Pedidos cargados:', allPedidos.map(p => ({ID: p.PedidoID, Cliente: p.NombreCliente})));
         const filtered = allPedidos.filter(p => (window.filtroEstado || 'Todos') === 'Todos' || p.Estado === (window.filtroEstado || 'Todos'));
-        renderPedidos(filtered, lista);
+        renderPedidos(filtered, lista, preserveCollapsed);
         document.getElementById('order-count').textContent = `${filtered.length} pedidos`;
     } catch (err) {
         lista.innerHTML = `<div class="alert alert-danger text-center">
@@ -239,51 +241,144 @@ async function cargarPedidos() {
     }
 }
 
-// 📦 Render Pedidos
-function renderPedidos(peds, container) {
+
+// 📦 Render Pedidos - COLLAPSABLE TABLE ✅
+let collapsedStates = new Map(); // Global state tracker
+
+function renderPedidos(peds, container, preserveCollapsed = false) {
     if (!peds.length) {
         container.innerHTML = '<div class="text-center py-5 text-muted"><i class="bi bi-cart-x fs-1 mb-3"></i>No hay pedidos</div>';
         return;
     }
-    
-    container.innerHTML = peds.map((p, index) => {
-        const newEstado = p.Estado === 'Completado' ? 'Pendiente' : 'Completado';
-        const btnClass = p.Estado === 'Completado' ? 'success' : 'warning';
-        const btnText = p.Estado === 'Completado' ? 'Pendiente' : 'Completar';
-        const numeroVisual = peds.length - index;
-        return `
-        <div class="pedido-row p-3 border-bottom" data-pedido-id="${p.PedidoID}">
-            <div class="d-flex justify-content-between">
-                <div>
-                    <strong>#${numeroVisual}</strong> - ${p.NombreCliente}
-                    <br><small class="text-muted">${new Date(p.Fecha).toLocaleString('es-ES')}</small>
-                </div>
-                <div class="text-end" style="min-width: 120px;">
-                    ${p.DescuentoPorcentaje > 0 ? `
-                        <small style="text-decoration: line-through; color: #888; font-size: 0.75em; display: block;">$${Number(p.Total).toLocaleString()}</small>
-                    ` : ''}
-                    <div class="h5 fw-bold text-success" style="color: #27ae60 !important;">$${Number(p.TotalManual || p.Total).toLocaleString()}</div>
-                    <span class="badge bg-${p.Estado === 'Completado' ? 'success' : p.Estado === 'Pendiente' ? 'warning' : 'secondary'}">${p.Estado}</span>
-                </div>
-            </div>
-            <div class="mt-2">
-                <button class="btn btn-sm btn-outline-${btnClass} me-1 pedido-btn-status" 
-                        data-pedido-id="${p.PedidoID}" 
-                        data-new-estado="${newEstado}">
-                    ${btnText}
-                </button>
-                <button class="btn btn-sm btn-primary me-1 pedido-btn-factura" 
-                        data-pedido-id="${p.PedidoID}">
-                    <i class="bi bi-file-earmark-pdf me-1"></i>Factura
-                </button>
-                <button class="btn btn-sm btn-outline-danger pedido-btn-delete" 
-                        data-pedido-id="${p.PedidoID}">
-                    Eliminar
-                </button>
-            </div>
-        </div>`;
-    }).join('');
+
+    const tableHTML = `
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Cliente</th>
+                    <th>Fecha</th>
+                    <th>Total</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${peds.map((p, index) => {
+                    const numeroVisual = peds.length - index;
+                    const isCollapsed = preserveCollapsed ? !collapsedStates.get(p.PedidoID) : true;
+                    const estadoClass = p.Estado === 'Completado' ? 'success' : p.Estado === 'Pendiente' ? 'warning' : 'secondary';
+                    const newEstado = p.Estado === 'Completado' ? 'Pendiente' : 'Completado';
+                    const btnClass = p.Estado === 'Completado' ? 'success' : 'warning';
+                    const btnText = p.Estado === 'Completado' ? 'Pendiente' : 'Completar';
+                    const chevronClass = isCollapsed ? '' : 'rotated';
+                    const detailsClass = isCollapsed ? '' : 'show';
+                    return `
+                        <tr class="table-row-main" data-pedido-id="${p.PedidoID}">
+                            <td>
+                                <i class="bi bi-chevron-down row-toggle ${chevronClass} me-2"></i>
+                                <strong>#${numeroVisual}</strong>
+                            </td>
+                            <td>${p.NombreCliente}</td>
+                            <td><small class="text-muted">${new Date(p.Fecha).toLocaleString('es-ES')}</small></td>
+                            <td>
+                                ${p.DescuentoPorcentaje > 0 ? `
+                                    <small class="text-decoration-line-through text-muted d-block">$${Number(p.Total).toLocaleString()}</small>
+                                ` : ''}
+                                <strong class="text-success">$${Number(p.TotalManual || p.Total).toLocaleString()}</strong>
+                            </td>
+                            <td><span class="badge bg-${estadoClass}">${p.Estado}</span></td>
+                            <td class="table-actions">
+                                <button class="btn btn-sm btn-outline-${btnClass} me-1 table-action-${btnClass.replace('success', 'edit').replace('warning', 'edit')} pedido-btn-status" 
+                                        data-pedido-id="${p.PedidoID}" data-new-estado="${newEstado}">
+                                    ${btnText}
+                                </button>
+                                <button class="btn btn-sm btn-primary table-action-factura pedido-btn-factura" data-pedido-id="${p.PedidoID}">
+                                    <i class="bi bi-file-earmark-pdf"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger table-action-delete pedido-btn-delete" data-pedido-id="${p.PedidoID}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr class="table-row-details ${detailsClass}" data-pedido-id="${p.PedidoID}">
+                            <td colspan="6">
+                                <div class="details-content">
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Producto</th>
+                                                    <th>Cant.</th>
+                                                    <th>Precio</th>
+                                                    <th>Subtotal</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="pedido-items-${p.PedidoID}"></tbody>
+                                        </table>
+                                    </div>
+                                    <div class="mt-3 pt-3 border-top">
+                                        <strong>Notas: </strong><span class="pedido-notas-${p.PedidoID}">-</span>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>`;
+                }).join('')}
+            </tbody>
+        </table>`;
+
+    container.innerHTML = tableHTML;
+
+    // Re-attach toggle listeners
+    container.querySelectorAll('.table-row-main').forEach(row => {
+        row.addEventListener('click', async (e) => {
+            if (e.target.closest('button')) return; // Preserve button actions
+            
+            const pedidoId = row.dataset.pedidoId;
+            const isCurrentlyCollapsed = !row.nextElementSibling.classList.contains('show');
+            
+            if (isCurrentlyCollapsed) {
+                await populatePedidoDetails(pedidoId);
+                row.nextElementSibling.classList.add('show');
+                row.querySelector('.row-toggle').classList.add('rotated');
+                collapsedStates.set(pedidoId, false);
+            } else {
+                row.nextElementSibling.classList.remove('show');
+                row.querySelector('.row-toggle').classList.remove('rotated');
+                collapsedStates.set(pedidoId, true);
+            }
+        });
+    });
 }
+
+// Helper to populate details row (reuse mostrarDetallesPedido logic)
+async function populatePedidoDetails(pedidoId) {
+    try {
+        const res = await fetch(`/pedidos/${pedidoId}`);
+        if (!res.ok) throw new Error('Pedido no encontrado');
+        const p = await res.json();
+
+        const itemsBody = document.querySelector(`.pedido-items-${pedidoId}`);
+        const notasSpan = document.querySelector(`.pedido-notas-${pedidoId}`);
+
+        // Items table
+        itemsBody.innerHTML = p.Items.map(item => `
+            <tr>
+                <td>${item.Nombre}</td>
+                <td class="text-center">${item.Cantidad}</td>
+                <td>$${Number(item.Precio).toLocaleString()}</td>
+                <td class="text-end fw-bold text-success">$${Number(item.Subtotal).toLocaleString()}</td>
+            </tr>
+        `).join('');
+
+        // Notes
+        notasSpan.textContent = p.Notas || 'Sin notas';
+
+    } catch(err) {
+        console.error('Error loading details:', err);
+    }
+}
+
 
 // 🔍 Filtrar productos
 function filtrarProductos() {

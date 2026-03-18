@@ -422,28 +422,175 @@ body {
 }
 
 /* ============================================================================
-   RESPONSIVE - Updated for Product Rows
+   TABLAS COLAPSABLES - Nueva implementación
+   ============================================================================ */
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    background: var(--glass-bg);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+    font-size: 0.9rem;
+}
+
+.admin-table thead th {
+    background: linear-gradient(135deg, var(--accent), #a29bfe);
+    color: white;
+    padding: 16px 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.8rem;
+    border: none;
+}
+
+.admin-table td {
+    padding: 16px 12px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    vertical-align: middle;
+}
+
+.table-row-main {
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: white;
+}
+
+.table-row-main:hover {
+    background: #f8f9fa;
+    transform: scale(1.01);
+}
+
+.table-row-main:hover .row-toggle {
+    color: var(--accent) !important;
+}
+
+.table-row-details {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-out, opacity 0.3s;
+    opacity: 0;
+    background: rgba(248, 249, 250, 0.8);
+}
+
+.table-row-details.show {
+    max-height: 300px;
+    opacity: 1;
+}
+
+.table-row-details td {
+    padding: 20px 12px !important;
+    border-top: 2px solid rgba(108,92,231,0.1);
+}
+
+.table-actions {
+    white-space: nowrap;
+}
+
+.table-action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    margin: 0 2px;
+}
+
+.table-action-edit { background: linear-gradient(135deg, #3498db, #2980b9); color: white; }
+.table-action-delete { background: linear-gradient(135deg, #ff6b6b, #ee5a52); color: white; }
+.table-action-discount { background: linear-gradient(135deg, #27ae60, #2ecc71); color: white; }
+
+.table-action-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.row-toggle {
+    font-size: 1.2rem;
+    transition: transform 0.3s;
+    color: #6c757d;
+}
+
+.row-toggle.rotated {
+    transform: rotate(180deg);
+    color: var(--accent);
+}
+
+.stock-badge-table {
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 12px;
+}
+
+.stock-low-table { background: linear-gradient(135deg, #ff6b6b, #ee5a52); color: white; }
+.stock-medium-table { background: linear-gradient(135deg, #feca57, #ff9ff3); color: #333; }
+.stock-high-table { background: linear-gradient(135deg, #00b894, #00cec9); color: white; }
+
+/* ============================================================================
+   RESPONSIVE - Updated for Product Rows (legacy)
    ============================================================================ */
 
 @media (max-width: 768px) {
     .product-card {
         flex-direction: column;
         gap: 16px;
+        padding: 20px;
+    }
+    
+    .product-img-card {
+        width: 100%;
+        height: 200px;
+        max-width: 300px;
+        margin: 0 auto;
     }
     
     .actions-card {
         margin-left: 0;
+        width: 100%;
     }
     
     .description-text {
-        font-size: 0.85rem;
-        line-height: 1.4;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        max-height: none;
+        overflow-y: visible;
+    }
+    
+    .product-name {
+        -webkit-line-clamp: unset;
+        max-height: none;
     }
     
     .bento-card { 
         padding: 20px; 
     }
+
+    /* Table responsive */
+    .admin-table {
+        font-size: 0.8rem;
+    }
+    
+    .admin-table thead th,
+    .admin-table td {
+        padding: 12px 8px;
+    }
+    
+    .table-action-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 0.9rem;
+    }
 }
+
 
 /* Pedido row clickable */
 .pedido-row {
