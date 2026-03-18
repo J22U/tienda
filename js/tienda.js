@@ -370,7 +370,16 @@ function incrementar(index) {
     const item = carrito[index];
     if (item.cantidad < item.stock) {
         item.cantidad++;
-        actualizarCarritoUI();
+        
+        // ACTUALIZACIÓN QUIRÚRGICA (Sin lag)
+        const inputCant = document.getElementById(`cant-${index}`);
+        if (inputCant) {
+            inputCant.value = item.cantidad; // Si es un input
+            inputCant.innerText = item.cantidad; // Si es un span/div
+        }
+        
+        actualizarTotalSolo(); // Solo recalcula el dinero, no redibuja todo
+        localStorage.setItem('carrito', JSON.stringify(carrito));
     } else {
         Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'Stock máximo', timer: 1500 });
     }
@@ -380,7 +389,16 @@ function decrementar(index) {
     const item = carrito[index];
     if (item.cantidad > 1) {
         item.cantidad--;
-        actualizarCarritoUI();
+        
+        // ACTUALIZACIÓN QUIRÚRGICA (Sin lag)
+        const inputCant = document.getElementById(`cant-${index}`);
+        if (inputCant) {
+            inputCant.value = item.cantidad;
+            inputCant.innerText = item.cantidad;
+        }
+        
+        actualizarTotalSolo();
+        localStorage.setItem('carrito', JSON.stringify(carrito));
     }
 }
 
@@ -390,7 +408,7 @@ function actualizarCantidad(index, nuevaCant) {
     
     if (isNaN(cant) || cant < 1) {
         Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: 'Mínimo 1', timer: 1500 });
-        actualizarCarritoUI(); // Reset to valid
+        actualizarCarritoUI(); // Aquí sí redibujamos para resetear el valor visual
         return;
     }
     
@@ -401,7 +419,25 @@ function actualizarCantidad(index, nuevaCant) {
     }
     
     item.cantidad = cant;
-    actualizarCarritoUI();
+    
+    // Actualización rápida
+    const inputCant = document.getElementById(`cant-${index}`);
+    if (inputCant) {
+        inputCant.value = item.cantidad;
+        inputCant.innerText = item.cantidad;
+    }
+    
+    actualizarTotalSolo();
+    localStorage.setItem('carrito', JSON.stringify(carrito));
+}
+
+// FUNCIÓN DE APOYO PARA EL TOTAL (Vital para quitar el lag)
+function actualizarTotalSolo() {
+    const total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+    const totalElement = document.getElementById('total-carrito'); // Asegúrate que el ID del total sea este
+    if (totalElement) {
+        totalElement.innerText = `$${total.toLocaleString()}`;
+    }
 }
 
 /* ============================================================================
