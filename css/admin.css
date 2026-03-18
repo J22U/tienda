@@ -312,27 +312,15 @@ min-height: 240px;
     color: #444;
     line-height: 1.5;
     max-height: none;
-    overflow-y: visible;
-    transition: max-height 0.3s ease;
+    overflow-x: auto;
+    white-space: nowrap;
+    max-width: 100%;
+    transition: none;
 }
 
 
 
-.desc-toggle {
-    background: none;
-    border: none;
-    color: var(--accent);
-    font-weight: 600;
-    font-size: 0.85rem;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 6px;
-    transition: 0.2s;
-}
 
-.desc-toggle:hover {
-    background: rgba(108,92,231,0.1);
-}
 
 .stock-badge-card {
     font-weight: 700;
