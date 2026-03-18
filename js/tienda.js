@@ -334,31 +334,26 @@ function actualizarCarritoUI() {
         total += item.Precio * item.cantidad;
         itemsCount += item.cantidad;
         return `
-            <li class="list-group-item py-3">
+
+            <li class="list-group-item py-3" data-index="${i}">
                 <div class="d-flex align-items-center justify-content-between w-100">
                     <div class="flex-grow-1 me-3">
                         <strong>${item.Nombre}</strong>
                         <div class="text-muted small">$${Number(item.Precio).toLocaleString()} c/u</div>
                     </div>
                     <div class="quantity-controls d-flex align-items-center gap-1">
-                        <button type="button" class="btn btn-outline-secondary btn-sm qty-minus" data-index="${i}" title="Quitar">
-                            <i class="bi bi-dash"></i>
-                        </button>
-                        <input type="number" class="form-control qty-input text-center" style="width: 70px;" 
-                               value="${item.cantidad}" min="1" max="${item.stock}" data-index="${i}">
-                        <button type="button" class="btn btn-outline-secondary btn-sm qty-plus" data-index="${i}" title="Agregar">
-                            <i class="bi bi-plus"></i>
-                        </button>
-                        <span class="text-muted small ms-2">/ ${item.stock} stock</span>
+                        <button class="btn btn-outline-secondary btn-sm qty-minus" data-index="${i}"><i class="bi bi-dash"></i></button>
+                        <span class="qty-count fw-bold px-3 py-1 border rounded bg-light" data-index="${i}">${item.cantidad}</span>
+                        <button class="btn btn-outline-secondary btn-sm qty-plus" data-index="${i}"><i class="bi bi-plus"></i></button>
+                        <span class="text-muted small ms-2">/ ${item.stock}</span>
                     </div>
-                    <button type="button" class="btn btn-outline-danger btn-sm qty-remove ms-2" data-index="${i}" title="Eliminar">
-                        <i class="bi bi-trash"></i>
-                    </button>
+                    <button class="btn btn-outline-danger btn-sm qty-remove" data-index="${i}"><i class="bi bi-trash"></i></button>
                 </div>
                 <div class="mt-2 pt-2 border-top">
-                    <strong class="text-success">Subtotal: $${(item.Precio * item.cantidad).toLocaleString()}</strong>
+                    <strong class="text-success subtotal" data-index="${i}">$${Math.round(item.Precio * item.cantidad).toLocaleString()}</strong>
                 </div>
             </li>`;
+
     }).join('');
 
     totalLabel.innerText = `$${total.toLocaleString()}`;
