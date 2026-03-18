@@ -597,6 +597,30 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target.id === 'btn-procesar-pago') {
             procesarPago();
         }
+        // Carrito quantity controls
+        if (e.target.matches('.qty-minus, .qty-plus')) {
+            const index = parseInt(e.target.dataset.index);
+            if (isNaN(index) || index >= carrito.length) return;
+            if (e.target.matches('.qty-minus')) {
+                decrementar(index);
+            } else {
+                incrementar(index);
+            }
+        }
+        if (e.target.matches('.qty-input')) {
+            e.target.addEventListener('change', function() {
+                const index = parseInt(this.dataset.index);
+                if (!isNaN(index) && index < carrito.length) {
+                    actualizarCantidad(index, this.value);
+                }
+            });
+        }
+        if (e.target.matches('.qty-remove')) {
+            const index = parseInt(e.target.dataset.index);
+            if (!isNaN(index) && index < carrito.length) {
+                eliminarItem(index);
+            }
+        }
     });
 
     // Update +/- button states (disabled/enabled)
