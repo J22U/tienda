@@ -598,26 +598,14 @@ document.addEventListener('DOMContentLoaded', function() {
             procesarPago();
         }
         // Carrito quantity controls
-        if (e.target.matches('.qty-minus, .qty-plus')) {
+        if (e.target.matches('.qty-minus, .qty-plus, .qty-remove')) {
             const index = parseInt(e.target.dataset.index);
             if (isNaN(index) || index >= carrito.length) return;
             if (e.target.matches('.qty-minus')) {
                 decrementar(index);
-            } else {
+            } else if (e.target.matches('.qty-plus')) {
                 incrementar(index);
-            }
-        }
-        if (e.target.matches('.qty-input')) {
-            e.target.addEventListener('change', function() {
-                const index = parseInt(this.dataset.index);
-                if (!isNaN(index) && index < carrito.length) {
-                    actualizarCantidad(index, this.value);
-                }
-            });
-        }
-        if (e.target.matches('.qty-remove')) {
-            const index = parseInt(e.target.dataset.index);
-            if (!isNaN(index) && index < carrito.length) {
+            } else if (e.target.matches('.qty-remove')) {
                 eliminarItem(index);
             }
         }
