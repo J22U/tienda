@@ -330,11 +330,17 @@ function actualizarCarritoUI() {
     let total = 0;
     let itemsCount = 0;
 
+    if (carrito.length === 0) {
+        lista.innerHTML = '<li class="list-group-item text-center py-3">Tu carrito está vacío</li>';
+        totalLabel.innerText = "$0";
+        badge.innerText = "0";
+        return;
+    }
+
     lista.innerHTML = carrito.map((item, i) => {
         total += item.Precio * item.cantidad;
         itemsCount += item.cantidad;
         return `
-
             <li class="list-group-item py-3" data-index="${i}">
                 <div class="d-flex align-items-center justify-content-between w-100">
                     <div class="flex-grow-1 me-3">
@@ -343,17 +349,16 @@ function actualizarCarritoUI() {
                     </div>
                     <div class="quantity-controls d-flex align-items-center gap-1">
                         <button class="btn btn-outline-secondary btn-sm qty-minus" data-index="${i}"><i class="bi bi-dash"></i></button>
-                        <span class="qty-count fw-bold px-3 py-1 border rounded bg-light" data-index="${i}">${item.cantidad}</span>
+                        <span id="cant-${i}" class="qty-count fw-bold px-3 py-1 border rounded bg-light">${item.cantidad}</span>
                         <button class="btn btn-outline-secondary btn-sm qty-plus" data-index="${i}"><i class="bi bi-plus"></i></button>
                         <span class="text-muted small ms-2">/ ${item.stock}</span>
                     </div>
                     <button class="btn btn-outline-danger btn-sm qty-remove" data-index="${i}"><i class="bi bi-trash"></i></button>
                 </div>
                 <div class="mt-2 pt-2 border-top">
-                    <strong class="text-success subtotal" data-index="${i}">$${Math.round(item.Precio * item.cantidad).toLocaleString()}</strong>
+                    <strong class="text-success" id="subtotal-${i}">$${Math.round(item.Precio * item.cantidad).toLocaleString()}</strong>
                 </div>
             </li>`;
-
     }).join('');
 
     totalLabel.innerText = `$${total.toLocaleString()}`;
