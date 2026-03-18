@@ -556,7 +556,7 @@ async function generarFacturaPDF(p, numeroPedido) {
     // --- IMÁGENES (Uso de constantes Base64 directas) ---
     // Logo (Incrustado)
     if (typeof LOGO_BASE64 !== 'undefined') {
-        doc.addImage(LOGO_BASE64, 'PNG', 20, 12, 35, 18);
+        doc.addImage(LOGO_BASE64, 'PNG', 20, 12, 25, 25);
     }
 
     // QR (Incrustado)
@@ -568,9 +568,9 @@ async function generarFacturaPDF(p, numeroPedido) {
     doc.setFontSize(9);
     doc.setTextColor(100);
     doc.setFont("helvetica", "normal");
-    doc.text("Repuestos profesionales", 20, 32);
-    doc.text("NIT: 900.555.123-1", 20, 37);
-    doc.text("El Peñol, Antioquia | Cel: 310 123 4567", 20, 42);
+    doc.text("Luis David Rojas", 20, 32);
+    doc.text("Cc 1038415279", 20, 37);
+    doc.text("El Peñol, Antioquia | Cel: 320 6313259", 20, 42);
     doc.text("trebol@gmail.com", 20, 47);
 
     // CUADRO DE ORDEN
@@ -579,7 +579,7 @@ async function generarFacturaPDF(p, numeroPedido) {
     doc.setFont("helvetica", "bold");
     doc.setTextColor(34, 74, 43);
     doc.setFontSize(10);
-    doc.text("ORDEN DE SERVICIO", 135, 25);
+    doc.text("ORDEN DE COBRO", 135, 25);
     doc.setFontSize(20);
     doc.text(`# ${numeroPedido.toString().padStart(4, '0')}`, 135, 35);
     doc.setFontSize(9);
