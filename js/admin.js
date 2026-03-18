@@ -66,7 +66,7 @@ document.getElementById('btn-logout').addEventListener('click', async () => {
     });
 
 // 🔥 EVENT DELEGATION - PRODUCTOS
-    listaProductos.addEventListener('click', e => {
+listaProductos.addEventListener('click', e => {
         const btn = e.target.closest('.action-btn');
         if (!btn) return;
 
@@ -83,6 +83,23 @@ document.getElementById('btn-logout').addEventListener('click', async () => {
         } catch (err) {
             console.error('Error parsing producto JSON:', err);
             Swal.fire('Error', 'Datos del producto corruptos. Recarga la página.', 'error');
+        }
+    });
+
+    // Description toggle delegation
+    listaProductos.addEventListener('click', e => {
+        if (e.target.matches('.desc-toggle')) {
+            e.stopPropagation();
+            const descText = e.target.previousElementSibling;
+            if (descText.classList.contains('description-text')) {
+                if (descText.style.maxHeight === 'none') {
+                    descText.style.maxHeight = '3rem';
+                    e.target.textContent = '▼';
+                } else {
+                    descText.style.maxHeight = 'none';
+                    e.target.textContent = '▲';
+                }
+            }
         }
     });
 
@@ -185,7 +202,8 @@ function renderProductos(prods, container) {
                         <div class="stock-info mt-2">
                             <span class="badge ${stockClass}">${p.Stock} und</span>
                         </div>
-                        ${p.Caracteristicas ? `<small class="description-text text-muted d-block mt-1 fs-6">${p.Caracteristicas}</small>` : ''}
+                        ${p.Caracteristicas ? `<small class="description-text text-muted d-block mt-1 fs-6">${p.Caracteristicas}</small>
+                            <button class="desc-toggle ms-2" title="Ver más/menos">▼</button>` : ''}
                     </div>
                 </div>
             </div>

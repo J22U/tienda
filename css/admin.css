@@ -206,8 +206,8 @@ body {
     overflow: hidden;
     cursor: pointer;
     backdrop-filter: blur(10px);
-    min-height: 240px;
-    max-height: 380px;
+min-height: 240px;
+    /* max-height removed for full detail visibility */
     display: flex;
     flex-direction: column;
 }
@@ -311,6 +311,9 @@ body {
     font-size: 0.88rem;
     color: #444;
     line-height: 1.5;
+    max-height: 3rem;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
 }
 
 
@@ -413,6 +416,11 @@ body {
     
     .product-card {
         min-height: auto;
+    }
+    
+    .description-text {
+        font-size: 0.85rem;
+        line-height: 1.4;
     }
     
     .bento-card { 

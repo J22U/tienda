@@ -1,10 +1,16 @@
-# PDF Logo/QR CSP Fix ✅ COMPLETE 5/5
+# Ferreteria Admin Inventory Full Detail - Progress Tracker
 
-## Completed Steps
-- [x] Step 1: Fix js/admin.js - Replace btoa with canvas.toDataURL for logo/qr
-- [x] Step 2: Test factura generation (admin.html → Pedidos → Factura)
-- [x] Step 3: Verify no console errors, images visible in PDF
-- [x] Step 4: Update TODO-LOGO-QR-Facturas.md to FIXED
-- [x] Step 5: Complete task
+**Status**: [2/5] ✅ css/admin.css updated
 
-**Result**: Invoices now generate with CSP-safe logo (top-left) + QR (top-right). No errors. Ready for centering update.
+**Approved Plan** (TODO-INVENTARIO-DETAIL.md):
+```
+1. ✅ [1/5] Create TODO.md ✓
+2. ✅ [2/5] Edit css/admin.css (remove max-height, add toggle styles, mobile text sizing) ✓
+3. [ ] Edit js/admin.js (add desc-toggle button in renderProductos(), delegation)
+4. [ ] Test: admin.html → Inventario tab (toggle works, full details visible)
+5. [ ] attempt_completion + update TODO status
+```
+
+**Next Step**: js/admin.js - Add description toggle button + event delegation
+
+
