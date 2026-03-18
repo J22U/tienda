@@ -174,7 +174,7 @@ function renderProductos(prods, container) {
             <div class="d-flex gap-3">
                 <img src="${p.ImagenURL || '/uploads/default.jpg'}" class="product-img-card">
                 <div class="flex-grow-1">
-                    <h6 class="fw-bold mb-1">${p.Nombre}</h6>
+                    <h6 class="product-name mb-1">${p.Nombre}</h6>
                     <small class="text-muted">${p.Marca} #${p.CodigoSKU || 'N/A'}</small>
                     <div class="mt-2">
                         ${p.DescuentoPorcentaje && p.DescuentoPorcentaje > 0 ? `

@@ -206,8 +206,7 @@ body {
     overflow: hidden;
     cursor: pointer;
     backdrop-filter: blur(10px);
-min-height: 240px;
-    /* max-height removed for full detail visibility */
+    /* Full natural height - cards expand to fit content */
     display: flex;
     flex-direction: column;
 }
@@ -256,15 +255,19 @@ min-height: 240px;
     min-width: 0;
 }
 
-.product-name-card {
+.product-name {
     font-weight: 800;
     font-size: 1.1rem;
     color: #1a1a1a;
-    line-height: 1.3;
+    line-height: 1.4;
     margin-bottom: 4px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    /* Multi-line visible - no truncation */
+    overflow: visible;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    max-height: 4.2em; /* 3 lines */
+    word-break: break-word;
 }
 
 .product-details {
@@ -308,12 +311,14 @@ min-height: 240px;
 }
 
 .description-text {
-    font-size: 0.88rem;
+    font-size: 0.92rem;
     color: #444;
     line-height: 1.5;
-    max-height: none;
-    overflow-x: auto;
-    white-space: nowrap;
+    /* Full multi-line visibility with optional scroll */
+    max-height: 6em; /* ~4 lines */
+    overflow-y: auto;
+    overflow-x: visible;
+    white-space: normal;
     max-width: 100%;
     transition: none;
     display: block;
