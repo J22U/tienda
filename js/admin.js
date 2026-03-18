@@ -187,7 +187,7 @@ function renderProductos(prods, container) {
                         <div class="stock-info mt-2">
                             <span class="badge ${stockClass}">${p.Stock} und</span>
                         </div>
-${p.Caracteristicas ? `<small class="description-text text-muted d-block mt-1 fs-6">${p.Caracteristicas}</small>` : ''}
+                        ${p.Caracteristicas ? `<small class="description-text text-muted d-block mt-1 fs-6" style="max-width: 100%;">${p.Caracteristicas}</small>` : ''}
                     </div>
                 </div>
             </div>

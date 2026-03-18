@@ -316,6 +316,26 @@ min-height: 240px;
     white-space: nowrap;
     max-width: 100%;
     transition: none;
+    display: block;
+    scrollbar-width: thin;
+    scrollbar-color: #ccc transparent;
+}
+
+.description-text::-webkit-scrollbar {
+    height: 8px;
+}
+
+.description-text::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.description-text::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+
+.description-text::-webkit-scrollbar-thumb:hover {
+    background: #999;
 }
 
 
