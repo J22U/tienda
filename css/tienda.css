@@ -351,12 +351,17 @@ footer h5::after {
     font-size: 1rem !important;
 }
 
+#modalDetalleProducto .btn-close::before {
+    content: '✕' !important;
+    font-size: 1.5rem !important;
+    line-height: 1 !important;
+}
+
 #modalDetalleProducto .btn-close {
     position: absolute !important;
     top: 1rem !important;
     right: 1rem !important;
     z-index: 1060 !important;
-    font-size: 1.5rem !important;
     color: #dc3545 !important;
     opacity: 1 !important;
     background: white !important;
