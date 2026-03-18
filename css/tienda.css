@@ -337,9 +337,14 @@ footer h5::after {
 }
 
 /* TIENDA DETAIL MODAL FIXES */
-#modalDetalleProducto .badge#detalle-stock-badge {
+#modalDetalleProducto .col-md-6:last-child label {
+    margin-bottom: 0.5rem !important;
+}
+
+#modalDetalleProducto #detalle-stock-badge {
     font-size: 0.85rem !important;
     padding: 0.5rem 1rem !important;
+    margin-top: 0.25rem !important;
 }
 
 #modalDetalleProducto #detalle-stock-numero {
