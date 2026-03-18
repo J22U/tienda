@@ -190,15 +190,18 @@ body {
 
 #lista-productos {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 16px;
+    grid-template-columns: 1fr;
+    gap: 24px;
     margin-top: 12px;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .product-card {
     background: rgba(255, 255, 255, 0.95);
     border-radius: 20px;
-    padding: 20px;
+    padding: 24px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.08);
     border: 1px solid rgba(255,255,255,0.6);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -206,9 +209,11 @@ body {
     overflow: hidden;
     cursor: pointer;
     backdrop-filter: blur(10px);
-    /* Full natural height - cards expand to fit content */
+    width: 100%;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    gap: 20px;
+    align-items: flex-start;
 }
 
 .product-card::before {
@@ -233,10 +238,7 @@ body {
 }
 
 .product-card-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
+    flex-shrink: 0;
 }
 
 .product-img-card {
@@ -365,6 +367,8 @@ body {
     margin-top: auto;
     padding-top: 12px;
     border-top: 1px solid rgba(0,0,0,0.05);
+    margin-left: 100px;
+    flex-shrink: 0;
 }
 
 .action-btn {
@@ -422,13 +426,13 @@ body {
    ============================================================================ */
 
 @media (max-width: 768px) {
-    #lista-productos {
-        grid-template-columns: 1fr;
-        gap: 12px;
+    .product-card {
+        flex-direction: column;
+        gap: 16px;
     }
     
-    .product-card {
-        min-height: auto;
+    .actions-card {
+        margin-left: 0;
     }
     
     .description-text {
