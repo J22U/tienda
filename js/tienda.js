@@ -341,19 +341,17 @@ function actualizarCarritoUI() {
                         <div class="text-muted small">$${Number(item.Precio).toLocaleString()} c/u</div>
                     </div>
                     <div class="quantity-controls d-flex align-items-center gap-1">
-class="qty-minus" data-index="${i}"
+                        <button type="button" class="btn btn-outline-secondary btn-sm qty-minus" data-index="${i}" title="Quitar">
                             <i class="bi bi-dash"></i>
                         </button>
                         <input type="number" class="form-control qty-input text-center" style="width: 70px;" 
-                               value="${item.cantidad}" min="1" max="${item.stock}"
-data-index="${i}"
-                               data-index="${i}">
-class="qty-plus" data-index="${i}"
+                               value="${item.cantidad}" min="1" max="${item.stock}" data-index="${i}">
+                        <button type="button" class="btn btn-outline-secondary btn-sm qty-plus" data-index="${i}" title="Agregar">
                             <i class="bi bi-plus"></i>
                         </button>
                         <span class="text-muted small ms-2">/ ${item.stock} stock</span>
                     </div>
-class="qty-remove" data-index="${i}"
+                    <button type="button" class="btn btn-outline-danger btn-sm qty-remove ms-2" data-index="${i}" title="Eliminar">
                         <i class="bi bi-trash"></i>
                     </button>
                 </div>
