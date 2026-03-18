@@ -255,6 +255,9 @@ function verDetalle(id) {
     inputCant.max = Math.max(1, p.Stock);
     inputCant.disabled = p.Stock <= 0;
     
+    // Update button states after loading product
+    setTimeout(updateQtyButtons, 100);
+    
     const btnAgregar = document.getElementById('detalle-btn-agregar');
     btnAgregar.disabled = p.Stock <= 0;
     btnAgregar.dataset.productoId = p.ProductoID;
@@ -531,6 +534,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         }
+        // +/- Quantity controls for detail modal
+        if (e.target.matches('#modalDetalleProducto .btn-minus')) {
+            const input = document.getElementById('detalle-cantidad');
+            const stockEl = document.getElementById('detalle-stock-numero');
+            const stock = parseInt(stockEl ? stockEl.textContent : 0) || 0;
+            let qty = parseInt(input.value) || 1;
+            if (qty > 1) {
+                input.value = qty - 1;
+            }
+            updateQtyButtons();
+        }
+        if (e.target.matches('#modalDetalleProducto .btn-plus')) {
+            const input = document.getElementById('detalle-cantidad');
+            const stockEl = document.getElementById('detalle-stock-numero');
+            const stock = parseInt(stockEl ? stockEl.textContent : 0) || 0;
+            let qty = parseInt(input.value) || 1;
+            if (qty < stock) {
+                input.value = qty + 1;
+            }
+            updateQtyButtons();
+        }
         if (e.target.matches('#detalle-btn-agregar')) {
             const id = e.target.dataset.productoId;
             const cantidad = parseInt(document.getElementById('detalle-cantidad').value) || 1;
@@ -563,6 +587,19 @@ document.addEventListener('DOMContentLoaded', function() {
             procesarPago();
         }
     });
+
+    // Update +/- button states (disabled/enabled)
+    function updateQtyButtons() {
+        const input = document.getElementById('detalle-cantidad');
+        const stockEl = document.getElementById('detalle-stock-numero');
+        const minusBtn = document.querySelector('#modalDetalleProducto .btn-minus');
+        const plusBtn = document.querySelector('#modalDetalleProducto .btn-plus');
+        const stock = parseInt(stockEl ? stockEl.textContent : 0) || 0;
+        const qty = parseInt(input ? input.value : 1) || 1;
+
+        if (minusBtn) minusBtn.disabled = qty <= 1;
+        if (plusBtn) plusBtn.disabled = qty >= stock || stock <= 0;
+    }
 
     // Check if user explicitly wants to view the store (via ?view=store parameter)
     const urlParams = new URLSearchParams(window.location.search);

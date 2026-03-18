@@ -336,6 +336,56 @@ footer h5::after {
     color: white; 
 }
 
+/* TIENDA DETAIL MODAL FIXES */
+#modalDetalleProducto .badge#detalle-stock-badge {
+    font-size: 0.85rem !important;
+    padding: 0.5rem 1rem !important;
+}
+
+#modalDetalleProducto #detalle-stock-numero {
+    font-size: 1rem !important;
+}
+
+#modalDetalleProducto .btn-close {
+    position: absolute !important;
+    top: 10px !important; /* Higher than top-20=~80px */
+    right: 15px !important;
+    z-index: 1055 !important; /* Higher than carousel/content */
+    font-size: 1.5rem !important;
+    color: #dc3545 !important; /* Red */
+    opacity: 1 !important;
+    background: rgba(255,255,255,0.95) !important;
+    border-radius: 50% !important;
+    width: 35px !important;
+    height: 35px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
+}
+
+#modalDetalleProducto .btn-close:hover {
+    color: #b02a37 !important;
+    background: white !important;
+    transform: scale(1.1);
+}
+
+#modalDetalleProducto .input-group {
+    max-width: 200px;
+}
+
+#modalDetalleProducto .input-group button {
+    font-size: 1.2rem;
+    font-weight: bold;
+    min-width: 45px;
+}
+
+#modalDetalleProducto #detalle-cantidad {
+    font-size: 1.5rem;
+    font-weight: bold;
+    min-height: 50px;
+}
+
 #lista-compra .list-group-item {
     border: none;
     margin-bottom: 8px;

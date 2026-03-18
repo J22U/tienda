@@ -556,7 +556,7 @@ async function generarFacturaPDF(p, numeroPedido) {
     // --- IMÁGENES (Uso de constantes Base64 directas) ---
     // Logo (Incrustado)
     if (typeof LOGO_BASE64 !== 'undefined') {
-        doc.addImage(LOGO_BASE64, 'PNG', 20, 12, 25, 25);
+        doc.addImage(LOGO_BASE64, 'PNG', 20, 5, 25, 25);
     }
 
     // QR (Incrustado)
@@ -671,7 +671,7 @@ async function generarFacturaPDF(p, numeroPedido) {
     
     Swal.fire({
         title: '✅ Factura Generada',
-        text: 'Logo y QR incrustados correctamente.',
+        text: 'Descargada correctamente.',
         icon: 'success',
         confirmButtonColor: '#224a2b'
     });
