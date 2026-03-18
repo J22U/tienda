@@ -256,7 +256,7 @@ function verDetalle(id) {
     inputCant.disabled = p.Stock <= 0;
     
     // Update button states after loading product
-    setTimeout(updateQtyButtons, 100);
+    setTimeout(window.updateQtyButtons, 100);
     
     const btnAgregar = document.getElementById('detalle-btn-agregar');
     btnAgregar.disabled = p.Stock <= 0;
@@ -507,7 +507,20 @@ async function procesarPago() {
 document.addEventListener('DOMContentLoaded', function() {
     cargarProductos();
 
-    // CSP-safe event delegation for products
+    // CSP-safe event delegation for products + qty controls
+    // Define updateQtyButtons globally first
+    window.updateQtyButtons = function() {
+        const input = document.getElementById('detalle-cantidad');
+        const stockEl = document.getElementById('detalle-stock-numero');
+        const minusBtn = document.querySelector('#modalDetalleProducto .btn-minus');
+        const plusBtn = document.querySelector('#modalDetalleProducto .btn-plus');
+        const stock = parseInt(stockEl ? stockEl.textContent : 0) || 0;
+        const qty = parseInt(input ? input.value : 1) || 1;
+
+        if (minusBtn) minusBtn.disabled = qty <= 1;
+        if (plusBtn) plusBtn.disabled = qty >= stock || stock <= 0;
+    };
+
     document.addEventListener('click', function(e) {
         if (e.target.matches('.img-producto')) {
             const id = e.target.dataset.id;
@@ -543,7 +556,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (qty > 1) {
                 input.value = qty - 1;
             }
-            updateQtyButtons();
+            window.updateQtyButtons();
         }
         if (e.target.matches('#modalDetalleProducto .btn-plus')) {
             const input = document.getElementById('detalle-cantidad');
@@ -553,7 +566,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (qty < stock) {
                 input.value = qty + 1;
             }
-            updateQtyButtons();
+            window.updateQtyButtons();
         }
         if (e.target.matches('#detalle-btn-agregar')) {
             const id = e.target.dataset.productoId;
