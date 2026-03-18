@@ -523,10 +523,9 @@ const QR_BASE64 = "data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1B
 
 // Your existing function (copied exactly)
 async function generarFacturaPDF(p, numeroPedido) {
-    // CSP-SAFE: Fetch images as base64 data URLs
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    
+
     // 1. PROCESAR PRODUCTOS
     let productosArr = [];
     try { 
@@ -535,73 +534,45 @@ async function generarFacturaPDF(p, numeroPedido) {
         productosArr = []; 
     }
 
-    // 2. CÁLCULOS DE TOTALES (FIXED: Priorizar TotalManual + DescuentoPorcentaje)
+    // 2. CÁLCULOS DE TOTALES
     let subtotalBruto = productosArr.reduce((acc, item) => {
         const pOriginal = Number(item.PrecioOriginal || item.Precio);
         return acc + (pOriginal * Number(item.cantidad));
     }, 0);
     
-    // ✅ FIXED v2: Total Neto = Bruto - Descuento (explícito)
     const descuentoPctExplicit = parseFloat(p.DescuentoPorcentaje) || 0;
     const dtoPesosExplicit = subtotalBruto * (descuentoPctExplicit / 100);
-    // Total neto siempre = bruto - descuento (garantiza consistencia matemática)
     const totalNetoReal = Math.round(subtotalBruto - dtoPesosExplicit);
-    const ahorroCalculado = dtoPesosExplicit; // = descuento explícito
+    const ahorroCalculado = dtoPesosExplicit; 
     const porcentajeDescGlobal = descuentoPctExplicit > 0 ? descuentoPctExplicit : (subtotalBruto > 0 ? Math.round((ahorroCalculado / subtotalBruto) * 100) : 0);
-    
-    console.log('PDF DEBUG (FIXED):', { 
-        subtotalBruto: subtotalBruto.toLocaleString(), 
-        dtoPesosExplicit: dtoPesosExplicit.toLocaleString(),
-        totalNetoCalculado: totalNetoReal.toLocaleString(), 
-        DescuentoPorcentaje: p.DescuentoPorcentaje,
-        TotalManual_DB: p.TotalManual 
-    });
 
     // 3. CONFIGURACIÓN ESTÉTICA
-const primaryColor = [34, 74, 43]; // Verde Trébol
+    const primaryColor = [34, 74, 43]; // Verde Trébol
     const textColor = [45, 52, 54];
 
-    // 💫 PDF Loading spinner
-    Swal.fire({
-      title: 'Generando Factura...',
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading(),
-      background: 'rgba(0,0,0,0.8)'
-    });
-    
-    let logoDataUrl, qrDataUrl;
-    try {
-        console.log('Loading images via canvas...');
-        // Load CSP-safe logo via canvas
-        logoDataUrl = await window.canvasToDataURL('/uploads/logo-trebol.png', 50, 25);
-        console.log('✅ Logo loaded:', logoDataUrl.substring(0, 50) + '...');
-        
-        // Load CSP-safe QR via canvas
-        qrDataUrl = await window.canvasToDataURL('/uploads/qr-contacto.png', 30, 30);
-        console.log('✅ QR loaded:', qrDataUrl.substring(0, 50) + '...');
-    } catch (imgErr) {
-        console.warn('❌ Image load fallback:', imgErr);
-        // Fallback 1x1 transparent PNG
-        logoDataUrl = qrDataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
-    }
-
-    // Diseño: Barra lateral decorativa
+    // Barra lateral decorativa
     doc.setFillColor(34, 74, 43);
     doc.rect(0, 0, 5, 297, 'F');
     
-    // Logo ✅ Base64 CSP-safe
-    doc.addImage(logoDataUrl, 'PNG', 20, 12, 35, 18);
-    
-doc.setFontSize(9);
+    // --- IMÁGENES (Uso de constantes Base64 directas) ---
+    // Logo (Incrustado)
+    if (typeof LOGO_BASE64 !== 'undefined') {
+        doc.addImage(LOGO_BASE64, 'PNG', 20, 12, 35, 18);
+    }
+
+    // QR (Incrustado)
+    if (typeof QR_BASE64 !== 'undefined') {
+        doc.addImage(QR_BASE64, 'JPEG', 165, 12, 25, 25);
+    }
+
+    // TEXTO CABECERA
+    doc.setFontSize(9);
     doc.setTextColor(100);
     doc.setFont("helvetica", "normal");
     doc.text("Repuestos profesionales", 20, 32);
     doc.text("NIT: 900.555.123-1", 20, 37);
     doc.text("El Peñol, Antioquia | Cel: 310 123 4567", 20, 42);
     doc.text("trebol@gmail.com", 20, 47);
-    
-// QR ✅ Base64 CSP-safe
-    doc.addImage(qrDataUrl, 'PNG', 165, 12, 25, 25);
 
     // CUADRO DE ORDEN
     doc.setFillColor(248, 249, 250);
@@ -658,10 +629,9 @@ doc.setFontSize(9);
         margin: { left: 20, right: 15 }
     });
 
-    // 5. RESUMEN DE TOTALES (DISEÑO DE BLOQUES CORREGIDO)
+    // 5. RESUMEN DE TOTALES
     let currentY = doc.lastAutoTable.finalY + 10;
     
-    // Fila Bruto
     doc.setFillColor(240, 240, 240);
     doc.rect(130, currentY, 65, 9, 'F');
     doc.setTextColor(textColor[0], textColor[1], textColor[2]);
@@ -669,25 +639,21 @@ doc.setFontSize(9);
     doc.text("SUMA TOTAL (BRUTO):", 132, currentY + 6);
     doc.text(`$ ${subtotalBruto.toLocaleString()}`, 192, currentY + 6, { align: 'right' });
     
-    // ✅ FIXED: Siempre mostrar descuento si % > 0 (pedido/product) con monto correcto
-    const mostrarDto = descuentoPctExplicit > 0 || ahorroCalculado > 0;
-    if (mostrarDto) {
+    if (descuentoPctExplicit > 0 || ahorroCalculado > 0) {
         currentY += 10;
-        doc.setFillColor(255, 230, 230); // Fondo rojizo suave
+        doc.setFillColor(255, 230, 230);
         doc.rect(130, currentY, 65, 9, 'F');
-        doc.setTextColor(200, 0, 0); // Texto Rojo
+        doc.setTextColor(200, 0, 0);
         doc.setFont("helvetica", "bold");
         doc.text(`DESCUENTO (${porcentajeDescGlobal}%):`, 132, currentY + 6);
-        // Usar dto explícito si pedido discount, sino calculado
         const dtoMostrado = descuentoPctExplicit > 0 ? dtoPesosExplicit : ahorroCalculado;
         doc.text(`-$ ${dtoMostrado.toLocaleString()}`, 192, currentY + 6, { align: 'right' });
     }
     
-    // Fila Neto Final
     currentY += 10;
-    doc.setFillColor(34, 74, 43); // Verde oscuro
+    doc.setFillColor(34, 74, 43);
     doc.rect(130, currentY, 65, 12, 'F');
-    doc.setTextColor(255, 255, 255); // TEXTO BLANCO (Indispensable para lectura)
+    doc.setTextColor(255, 255, 255);
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.text("TOTAL NETO:", 132, currentY + 8);
@@ -702,18 +668,15 @@ doc.setFontSize(9);
     doc.text("Esta es una representación gráfica de una cuenta de cobro interna.", 105, 280, { align: 'center' });
     doc.text("No somos responsables de IVA. Régimen Simplificado.", 105, 284, { align: 'center' });
 
-    // Close spinner + save
-    Swal.close();
     doc.save(`Factura_Trebol_${numeroPedido}.pdf`);
     
     Swal.fire({
         title: '✅ Factura Generada',
-        text: `Logo/QR ${logoDataUrl.startsWith('data:image/png;base64,iVBOR') ? 'fallback (transparent)' : '✅ LOADED'} | Descuento aplicado.`,
+        text: 'Logo y QR incrustados correctamente.',
         icon: 'success',
         confirmButtonColor: '#224a2b'
     });
 }
-
 
 // 🆕 Pedido Details Modal
 window.productosModalArr = []; // Global for discount updates
