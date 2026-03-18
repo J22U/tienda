@@ -562,7 +562,7 @@ async function generarFacturaPDF(p, numeroPedido) {
 
     // QR (Incrustado)
     if (typeof QR_BASE64 !== 'undefined') {
-        doc.addImage(QR_BASE64, 'JPEG', 165, 12, 25, 25);
+        doc.addImage(QR_BASE64, 'JPEG', 60, 12, 25, 25);
     }
 
     // TEXTO CABECERA
