@@ -624,17 +624,56 @@ async function cambiarEstado(id, nuevoEstado) {
         const accion = nuevoEstado.toLowerCase() === 'completado' ? 'completar' : 'pendiente';
         const url = `/pedidos/${id}/${accion}`;
         console.log('✅ PUT /pedidos/' + id + '/' + accion);
-        const response = await fetch(url, { method: 'PUT' });
-        console.log('📊 Status:', response.status, response.statusText);
+        
+        Swal.fire({
+            title: 'Actualizando...',
+            html: 'Cambiando estado del pedido <strong>#' + id + '</strong>',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => Swal.showLoading()
+        });
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
+        const response = await fetch(url, { 
+            method: 'PUT',
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error('❌ Server error:', response.status, errorText);
-            throw new Error(`HTTP ${response.status} - ${errorText}`);
+            const errorData = await response.json().catch(() => ({}));
+            console.error('❌ Server error:', response.status, errorData);
+            throw new Error(errorData.message || `HTTP ${response.status}`);
         }
-        cargarPedidos();
+        
+        await Swal.fire({
+            icon: 'success',
+            title: '¡Estado actualizado!',
+            text: `Pedido #${id} ahora está ${nuevoEstado}`,
+            timer: 1500,
+            showConfirmButton: false
+        });
+        
+        socket.emit('pedido-updated', { PedidoID: id, Estado: nuevoEstado });
+        cargarPedidos(true);
+        
     } catch (err) {
         console.error('💥 cambiarEstado failed:', err);
-        Swal.fire('Error', `Estado no actualizado: ${err.message}`, 'error');
+        
+        let errorMsg = 'Error de conexión';
+        if (err.name === 'AbortError') errorMsg = 'Timeout - servidor lento';
+        else if (err.message.includes('404')) errorMsg = 'Ruta no encontrada en servidor';
+        else if (err.message.includes('401')) errorMsg = 'Sesión expirada';
+        else errorMsg = err.message;
+        
+        Swal.fire({
+            icon: 'error',
+            title: 'No se pudo actualizar',
+            text: errorMsg,
+            footer: '<button class="btn btn-sm btn-outline-primary" onclick="cargarPedidos()">Recargar pedidos</button>'
+        });
     }
 }
 

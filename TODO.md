@@ -1,22 +1,23 @@
-# 🛠️ TODO: Fix Admin Pedidos Details Bug
-## Approved Plan - Status: ✅ In Progress
+# 🛠️ TODO: Fix Admin Estado Cambio Pedidos
+## Status: ✅ Step 2 Complete - Client-side fixed
 
-### 1. ✅ Create TODO.md
-### 2. 🔄 Update js/admin.js
-   - Fix event delegation order (buttons AFTER toggle)
-   - Enhance populatePedidoDetails (JSON parse fallback + error handling)
-   - Add loading spinner/error states
+**✅ 1. Create TODO.md**  
+**✅ 2. Update js/admin.js**  
+   - Fixed remote URLs → local paths (`/pedidos/...`)  
+   - Added fetch error handling + offline fallback  
+   - Enhanced `cambiarEstado()` with retry + better UX  
+   - Preserved toggle/details functionality  
 
-### 3. ⏳ Update server.js (/pedidos/:id)
-   - Parse Productos JSON → Items array
-   - Better 404/logging
+**⏳ 3. Update server.js** (Next)  
+   - Verify/create `/pedidos/:id/completar` + `/pedidos/:id/pendiente` PUT routes  
+   - Socket.io emit for real-time updates  
 
-### 4. ⏳ Update css/admin.css
-   - Fix .table-row-details.show
+**⏳ 4. Test**  
+   - `npm start` → admin.html  
+   - Click "Completar" button → check Network tab  
+   - Verify DB update + UI refresh  
 
-### 5. ⏳ Test
-   - Reload admin → Click pedido
-   - Check console/Network tab
-   - Verify expansion
+**⏳ 5. Deploy to Render** (if needed)  
 
-### 6. ⏳ attempt_completion
+**Current Issue:** Remote Render returns 404. Local server runs but needs routes.
+
