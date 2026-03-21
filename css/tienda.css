@@ -459,7 +459,15 @@ footer h5::after {
 }
 
 .quantity-controls span {
-    display: none !important;
+    display: inline-block !important;
+    min-width: 35px;
+}
+
+.qty-count {
+    font-size: 1.2rem !important;
+    font-weight: 700 !important;
+    color: var(--primary-green) !important;
+    background: #e8f5e8 !important;
 }
 
 .qty-input {

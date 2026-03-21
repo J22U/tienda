@@ -349,9 +349,13 @@ function actualizarCarritoUI() {
                     </div>
                     <div class="quantity-controls d-flex align-items-center gap-1">
                         <button class="btn btn-outline-secondary btn-sm qty-minus" data-index="${i}"><i class="bi bi-dash"></i></button>
-                        <span id="cant-${i}" class="qty-count fw-bold px-3 py-1 border rounded bg-light">${item.cantidad}</span>
+                        <div class="me-2 d-none d-md-block">
+                            <small class="text-muted d-block mb-1">Cantidad:</small>
+                            <span class="badge bg-success fs-6 fw-bold px-3 py-2">${item.cantidad} und</span>
+                        </div>
+                        <span id="cant-${i}" class="qty-count fw-bold px-3 py-2 border rounded bg-light text-primary fs-6 shadow-sm">${item.cantidad}</span>
                         <button class="btn btn-outline-secondary btn-sm qty-plus" data-index="${i}"><i class="bi bi-plus"></i></button>
-                        <span class="text-muted small ms-2">/ ${item.stock}</span>
+                        <span class="text-muted small ms-2">/ ${item.stock} disponibles</span>
                     </div>
                     <button class="btn btn-outline-danger btn-sm qty-remove" data-index="${i}"><i class="bi bi-trash"></i></button>
                 </div>

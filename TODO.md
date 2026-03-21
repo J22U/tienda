@@ -1,10 +1,11 @@
-# Tienda.js Fixes - Progress Tracker
+# Task: Fix "cantidad de unidades del producto" not appearing in order summary
 
-## Plan Steps (from approved plan):
-- [x] **Step 1**: Fix `actualizarCarritoUI()` template literal in js/tienda.js (qty buttons) ✅
-- [ ] **Step 2**: Add description scroll to detail modal (max-height/overflow)
-- [ ] **Step 3**: Verify no syntax errors, test functionality
-- [ ] **Step 4**: Complete - attempt_completion
+## Steps:
+- [x] 1. Create TODO.md ✅
+- [x] 2. Edit js/tienda.js - Enhance actualizarCarritoUI() to prominently show "Cantidad: X unidades" ✅
+- [x] 3. Edit css/tienda.css - Fix .qty-count visibility, improve styling ✅
+- [ ] 4. Test cart functionality
+- [ ] 5. Complete task ✅
 
-**Task complete: All core fixes applied. Test: Add product → carrito buttons functional. No expand button existed. Description scroll optional (syntax clean).**
+**Current: Starting edits...**
 
