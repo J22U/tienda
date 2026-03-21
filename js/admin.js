@@ -9,19 +9,31 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // 🌐 Socket.io real-time (CSP/SIMPLE AUTH FIX)
-    const socket = io({
+    // 🌐 Socket.io real-time (CSP/SIMPLE AUTH FIX) - FIXED GLOBAL SCOPE
+    window.socket = io({
         auth: {
             simpleAuth: localStorage.getItem('admin_logged') === 'true'
         }
     });
-    socket.on('connect', () => console.log('🔌 Socket admin conectado'));
-    socket.on('nuevo-pedido', (data) => {
+    
+    window.socket.on('connect', () => {
+        console.log('🔌 Socket admin conectado');
+        window.socketConnected = true;
+    });
+    
+    window.socket.on('nuevo-pedido', (data) => {
         mostrarNotificacion(`🛒 Nuevo pedido #${data.NumeroDisplay}`);
         cargarPedidos(true); // Preserve collapsed states
     });
-    socket.on('connect_error', (err) => {
+    
+    window.socket.on('connect_error', (err) => {
         console.warn('⚠️ Socket connect error:', err.message);
+        window.socketConnected = false;
+    });
+    
+    window.socket.on('pedido-updated', (data) => {
+        console.log('🔄 Pedido actualizado en tiempo real:', data);
+        cargarPedidos(true); // Refresh preserving state
     });
 
     // 📱 Elements
@@ -625,6 +637,13 @@ async function cambiarEstado(id, nuevoEstado) {
         const url = `/pedidos/${id}/${accion}`;
         console.log('✅ PUT /pedidos/' + id + '/' + accion);
         
+        // 🔄 Show loading ON BUTTON (preserve collapsed/filter)
+        const btn = event?.target.closest('.pedido-btn-status');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Guardando...';
+        }
+        
         Swal.fire({
             title: 'Actualizando...',
             html: 'Cambiando estado del pedido <strong>#' + id + '</strong>',
@@ -648,6 +667,12 @@ async function cambiarEstado(id, nuevoEstado) {
             throw new Error(errorData.message || `HTTP ${response.status}`);
         }
         
+        // 🔄 Restore button + success
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = nuevoEstado === 'Completado' ? 'Pendiente' : 'Completar';
+        }
+        
         await Swal.fire({
             icon: 'success',
             title: '¡Estado actualizado!',
@@ -656,11 +681,26 @@ async function cambiarEstado(id, nuevoEstado) {
             showConfirmButton: false
         });
         
-        socket.emit('pedido-updated', { PedidoID: id, Estado: nuevoEstado });
+        // 🔔 Socket emit (safe null-check)
+        if (window.socket && window.socket.connected) {
+            window.socket.emit('pedido-updated', { PedidoID: id, Estado: nuevoEstado });
+            console.log('📡 Socket emit enviado');
+        } else {
+            console.warn('⚠️ Socket unavailable, local refresh only');
+        }
+        
+        // 🔄 Preserve filter/collapsed + refresh
         cargarPedidos(true);
         
     } catch (err) {
         console.error('💥 cambiarEstado failed:', err);
+        
+        // 🔄 Restore button
+        const btn = event?.target.closest('.pedido-btn-status');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = nuevoEstado === 'Completado' ? 'Pendiente' : 'Completar';
+        }
         
         let errorMsg = 'Error de conexión';
         if (err.name === 'AbortError') errorMsg = 'Timeout - servidor lento';
@@ -672,7 +712,10 @@ async function cambiarEstado(id, nuevoEstado) {
             icon: 'error',
             title: 'No se pudo actualizar',
             text: errorMsg,
-            footer: '<button class="btn btn-sm btn-outline-primary" onclick="cargarPedidos()">Recargar pedidos</button>'
+            footer: `<div class="mt-2">
+                <button class="btn btn-sm btn-outline-primary me-2" onclick="cargarPedidos(true)">🔄 Recargar</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="cambiarEstado(${id}, '${nuevoEstado}')">🔄 Reintentar</button>
+            </div>`
         });
     }
 }

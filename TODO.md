@@ -1,23 +1,17 @@
 # 🛠️ TODO: Fix Admin Estado Cambio Pedidos
-## Status: ✅ Step 2 Complete - Client-side fixed
+## Status: 🔄 Step 3 In Progress - Creating TODO.md & preparing edits
 
 **✅ 1. Create TODO.md**  
-**✅ 2. Update js/admin.js**  
-   - Fixed remote URLs → local paths (`/pedidos/...`)  
-   - Added fetch error handling + offline fallback  
-   - Enhanced `cambiarEstado()` with retry + better UX  
-   - Preserved toggle/details functionality  
-
-**⏳ 3. Update server.js** (Next)  
-   - Verify/create `/pedidos/:id/completar` + `/pedidos/:id/pendiente` PUT routes  
-   - Socket.io emit for real-time updates  
+**✅ 2. Update js/admin.js** (Client-side delegation fixed)  
+**🔄 3. Update app.js** (Server verification + Socket emit)  
+   - [ ] Global window.socket declaration  
+   - [ ] Socket assignment on connect  
+   - [ ] Null-checks + offline handling in cambiarEstado()  
+   - [ ] Loading states + preserve collapsed/filter  
+   - [ ] Test local: node app.js → admin.html → Test "Completar"  
 
 **⏳ 4. Test**  
-   - `npm start` → admin.html  
-   - Click "Completar" button → check Network tab  
-   - Verify DB update + UI refresh  
+**⏳ 5. Deploy to Render**  
 
-**⏳ 5. Deploy to Render** (if needed)  
-
-**Current Issue:** Remote Render returns 404. Local server runs but needs routes.
+**Current Issue:** `ReferenceError: socket is not defined` (js/admin.js:659) - Scope fix incoming
 
