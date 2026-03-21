@@ -541,20 +541,29 @@ document.addEventListener('DOMContentLoaded', function() {
         if (plusBtn) plusBtn.disabled = qty >= stock || stock <= 0;
     };
 
-    document.addEventListener('click', function(e) {
-        // Handle input events separately for real-time validation
-        if (e.target.matches('.qty-input') && (e.type === 'input' || e.type === 'change')) {
+    // Separate input event for real-time manual quantity updates
+    document.addEventListener('input', function(e) {
+        if (e.target.matches('.qty-input')) {
             const index = parseInt(e.target.dataset.index);
             if (!isNaN(index) && index < carrito.length) {
                 const input = e.target;
-                const val = parseInt(input.value) || 1;
+                const nuevaQty = parseInt(input.value) || 1;
                 const item = carrito[index];
-                if (item) {
-                    if (val > item.stock) input.value = item.stock;
-                    else if (val < 1) input.value = 1;
+                
+                // Live validation
+                if (nuevaQty > item.stock) {
+                    input.value = item.stock;
+                } else if (nuevaQty < 1) {
+                    input.value = 1;
+                } else {
+                    // Update immediately on valid input
+                    actualizarCantidad(index, nuevaQty);
                 }
             }
         }
+    });
+    
+    document.addEventListener('click', function(e) {
         if (e.target.matches('.img-producto')) {
             const id = e.target.dataset.id;
             if (id) verDetalle(id);
