@@ -349,7 +349,7 @@ function actualizarCarritoUI() {
                     </div>
                         <div class="quantity-controls d-flex align-items-center gap-1">
                         <button class="btn btn-outline-secondary btn-sm qty-minus" data-index="${i}"><i class="bi bi-dash"></i></button>
-                        <span id="cant-${i}" class="qty-count fw-bold px-3 py-2 border rounded bg-light text-primary fs-6 shadow-sm">${item.cantidad}</span>
+                        <input type="number" id="cant-${i}" class="qty-input form-control qty-count fw-bold px-2 py-1 text-center border-primary fs-6 shadow-sm" min="1" max="${item.stock}" value="${item.cantidad}" style="width: 60px;">
                         <button class="btn btn-outline-secondary btn-sm qty-plus" data-index="${i}"><i class="bi bi-plus"></i></button>
                         <span class="text-muted small ms-2">/ ${item.stock} disponibles</span>
                     </div>
@@ -376,15 +376,11 @@ function incrementar(index) {
     if (item.cantidad < item.stock) {
         item.cantidad++;
         
-        // ACTUALIZACIÓN QUIRÚRGICA (Sin lag)
-        const inputCant = document.getElementById(`cant-${index}`);
-        if (inputCant) {
-            inputCant.value = item.cantidad; // Si es un input
-            inputCant.innerText = item.cantidad; // Si es un span/div
-        }
+        // Update display instantly
+        const qtyEl = document.getElementById(`cant-${index}`);
+        if (qtyEl) qtyEl.textContent = item.cantidad;
         
-        actualizarTotalSolo(); // Solo recalcula el dinero, no redibuja todo
-        localStorage.setItem('carrito', JSON.stringify(carrito));
+        actualizarTotalSolo();
     } else {
         Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'Stock máximo', timer: 1500 });
     }
@@ -395,15 +391,11 @@ function decrementar(index) {
     if (item.cantidad > 1) {
         item.cantidad--;
         
-        // ACTUALIZACIÓN QUIRÚRGICA (Sin lag)
-        const inputCant = document.getElementById(`cant-${index}`);
-        if (inputCant) {
-            inputCant.value = item.cantidad;
-            inputCant.innerText = item.cantidad;
-        }
+        // Update display instantly
+        const qtyEl = document.getElementById(`cant-${index}`);
+        if (qtyEl) qtyEl.textContent = item.cantidad;
         
         actualizarTotalSolo();
-        localStorage.setItem('carrito', JSON.stringify(carrito));
     }
 }
 
@@ -438,11 +430,21 @@ function actualizarCantidad(index, nuevaCant) {
 
 // FUNCIÓN DE APOYO PARA EL TOTAL (Vital para quitar el lag)
 function actualizarTotalSolo() {
-    const total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
-    const totalElement = document.getElementById('total-carrito'); // Asegúrate que el ID del total sea este
+    let total = 0;
+    carrito.forEach(item => {
+        total += item.Precio * item.cantidad;
+    });
+    const totalElement = document.getElementById('total-compra');
     if (totalElement) {
-        totalElement.innerText = `$${total.toLocaleString()}`;
+        totalElement.innerText = `$${Math.round(total).toLocaleString()}`;
     }
+    // Update subtotals
+    carrito.forEach((item, i) => {
+        const subtotalEl = document.getElementById(`subtotal-${i}`);
+        if (subtotalEl) {
+            subtotalEl.innerText = `$${Math.round(item.Precio * item.cantidad).toLocaleString()}`;
+        }
+    });
 }
 
 /* ============================================================================
