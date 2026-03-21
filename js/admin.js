@@ -94,14 +94,6 @@ listaProductos.addEventListener('click', e => {
         // Prevent toggle on buttons/actions
         if (e.target.closest('button')) return;
         
-        // Toggle on main row click (collapsable table)
-        const mainRow = e.target.closest('.table-row-main');
-        if (mainRow) {
-            const pedidoId = mainRow.dataset.pedidoId;
-            mainRow.click(); // Trigger toggle
-            return;
-        }
-        
         // Legacy support + new button selectors
         const statusBtn = e.target.closest('.pedido-btn-status');
         if (statusBtn) {
@@ -329,55 +321,99 @@ function renderPedidos(peds, container, preserveCollapsed = false) {
 
     container.innerHTML = tableHTML;
 
-    // Re-attach toggle listeners
-    container.querySelectorAll('.table-row-main').forEach(row => {
-        row.addEventListener('click', async (e) => {
-            if (e.target.closest('button')) return; // Preserve button actions
-            
-            const pedidoId = row.dataset.pedidoId;
-            const isCurrentlyCollapsed = !row.nextElementSibling.classList.contains('show');
-            
-            if (isCurrentlyCollapsed) {
-                await populatePedidoDetails(pedidoId);
-                row.nextElementSibling.classList.add('show');
-                row.querySelector('.row-toggle').classList.add('rotated');
-                collapsedStates.set(pedidoId, false);
-            } else {
-                row.nextElementSibling.classList.remove('show');
-                row.querySelector('.row-toggle').classList.remove('rotated');
-                collapsedStates.set(pedidoId, true);
-            }
-        });
-    });
+// Single document-level event delegation for row toggles (prevents recursive attachments)
+document.addEventListener('click', async (e) => {
+    const row = e.target.closest('.table-row-main');
+    if (!row || e.target.closest('button')) return;
+    
+    const pedidoId = row.dataset.pedidoId;
+    const detailsRow = row.nextElementSibling;
+    if (!detailsRow) return;
+    
+    const isCurrentlyCollapsed = !detailsRow.classList.contains('show');
+    console.log(`Toggle pedido ${pedidoId}: ${isCurrentlyCollapsed ? 'expand' : 'collapse'}`);
+    
+    if (isCurrentlyCollapsed) {
+        await populatePedidoDetails(pedidoId);
+        detailsRow.classList.add('show');
+        row.querySelector('.row-toggle')?.classList.add('rotated');
+        collapsedStates.set(pedidoId, false);
+    } else {
+        detailsRow.classList.remove('show');
+        row.querySelector('.row-toggle')?.classList.remove('rotated');
+        collapsedStates.set(pedidoId, true);
+    }
+});
+
 }
 
 // Helper to populate details row (reuse mostrarDetallesPedido logic)
 async function populatePedidoDetails(pedidoId) {
+    console.group(`🔍 Loading details for pedido ${pedidoId}`);
     try {
+        console.log('Fetching /pedidos/' + pedidoId);
         const res = await fetch(`/pedidos/${pedidoId}`);
-        if (!res.ok) throw new Error('Pedido no encontrado');
+        console.log('Fetch response:', res.status, res.statusText);
+        
+        if (res.status !== 200) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}. Verifica que el pedido existe en la BD.`);
+        }
+        
         const p = await res.json();
+        console.log('Pedido completo:', p);
+        
+        if (!p || !p.Items) {
+            console.warn('Pedido sin Items o inválido:', p);
+            throw new Error('El pedido no tiene datos de items válidos');
+        }
 
+        // Clear previous content first
         const itemsBody = document.querySelector(`.pedido-items-${pedidoId}`);
         const notasSpan = document.querySelector(`.pedido-notas-${pedidoId}`);
+        
+        if (!itemsBody || !notasSpan) {
+            throw new Error('Elementos DOM de detalles no encontrados. Recarga pedidos.');
+        }
+        
+        itemsBody.innerHTML = '';
+        notasSpan.textContent = '';
 
-        // Items table
-        itemsBody.innerHTML = p.Items.map(item => `
-            <tr>
-                <td>${item.Nombre}</td>
-                <td class="text-center">${item.Cantidad}</td>
-                <td>$${Number(item.Precio).toLocaleString()}</td>
-                <td class="text-end fw-bold text-success">$${Number(item.Subtotal).toLocaleString()}</td>
-            </tr>
-        `).join('');
+        // Items table - validate each item
+        if (Array.isArray(p.Items) && p.Items.length > 0) {
+            p.Items.forEach(item => {
+                if (item && item.Nombre) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.Nombre}</td>
+                        <td class="text-center">${item.Cantidad || 0}</td>
+                        <td>$${Number(item.Precio || 0).toLocaleString()}</td>
+                        <td class="text-end fw-bold text-success">$${Number(item.Subtotal || 0).toLocaleString()}</td>
+                    `;
+                    itemsBody.appendChild(row);
+                }
+            });
+        } else {
+            itemsBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">Sin items en este pedido</td></tr>';
+        }
 
-        // Notes
-        notasSpan.textContent = p.Notas || 'Sin notas';
+        // Notes - validate exists
+        notasSpan.textContent = (p.Notas && p.Notas.trim()) ? p.Notas : 'Sin notas';
 
+        console.log('✅ Details populated successfully. Items:', p.Items?.length || 0);
+        console.groupEnd();
     } catch(err) {
-        console.error('Error loading details:', err);
+        console.error('❌ Error loading details for ' + pedidoId + ':', err);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error al cargar detalles',
+            text: `${err.message}\n\nRevisa consola para más info. Verifica:\n• Pedido existe\n• Ruta /pedidos/:id funciona\n• Datos Items/Notas válidos`,
+            toast: true,
+            position: 'top-end'
+        });
+        console.groupEnd();
     }
 }
+
 
 
 // 🔍 Filtrar productos
