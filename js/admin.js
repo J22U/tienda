@@ -88,13 +88,21 @@ listaProductos.addEventListener('click', e => {
 
 
 
-// 🔥 EVENT DELEGATION - PEDIDOS TABLE (Updated for collapsable rows)
+// 🔥 EVENT DELEGATION - PEDIDOS TABLE (FIXED: Toggle FIRST, then buttons)
     const listaPedidos = document.getElementById('lista-pedidos');
-    listaPedidos.addEventListener('click', e => {
-        // Prevent toggle on buttons/actions
-        if (e.target.closest('button')) return;
+    listaPedidos.addEventListener('click', async e => {
+        // FIRST: Check for row toggle
+        const row = e.target.closest('.table-row-main');
+        if (row && !e.target.closest('button')) {
+            const pedidoId = row.dataset.pedidoId;
+            if (pedidoId) {
+                // Toggle logic here will be moved/enhanced in populatePedidoDetails
+                await togglePedidoDetails(pedidoId, row);
+                return; // Toggle handled
+            }
+        }
         
-        // Legacy support + new button selectors
+        // THEN: Button handlers
         const statusBtn = e.target.closest('.pedido-btn-status');
         if (statusBtn) {
             const id = statusBtn.dataset.pedidoId;
@@ -117,6 +125,39 @@ listaProductos.addEventListener('click', e => {
             return;
         }
     });
+
+    // NEW: Dedicated toggle function
+    async function togglePedidoDetails(pedidoId, row) {
+        const detailsRow = row.nextElementSibling;
+        if (!detailsRow) return;
+        
+        const isCurrentlyCollapsed = !detailsRow.classList.contains('show');
+        console.log(`Toggle pedido ${pedidoId}: ${isCurrentlyCollapsed ? 'expand' : 'collapse'}`);
+        
+        if (isCurrentlyCollapsed) {
+            // Show loading
+            detailsRow.innerHTML = '<td colspan="6" class="text-center p-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div></td>';
+            detailsRow.classList.add('show');
+            row.querySelector('.row-toggle')?.classList.add('rotated');
+            collapsedStates.set(pedidoId, false);
+            
+            try {
+                await populatePedidoDetails(pedidoId);
+            } catch (err) {
+                console.error('Toggle failed:', err);
+                detailsRow.innerHTML = `<td colspan="6" class="text-center p-4 text-danger">
+                    <i class="bi bi-exclamation-triangle fs-1 mb-2"></i>
+                    <div>Error cargando detalles</div>
+                    <small>${err.message}</small>
+                    <button class="btn btn-sm btn-outline-primary mt-2" onclick="cargarPedidos(true)">Recargar</button>
+                </td>`;
+            }
+        } else {
+            detailsRow.classList.remove('show');
+            row.querySelector('.row-toggle')?.classList.remove('rotated');
+            collapsedStates.set(pedidoId, true);
+        }
+    }
 
 
     // 🎯 Inicializar

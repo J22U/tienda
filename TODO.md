@@ -1,15 +1,22 @@
-# Task: Fix Admin Pedidos Details Loading - "click en pedido no carga detalles"
+# 🛠️ TODO: Fix Admin Pedidos Details Bug
+## Approved Plan - Status: ✅ In Progress
 
-Plan approved by user: Minimal changes only to make click on pedido row load details properly.
+### 1. ✅ Create TODO.md
+### 2. 🔄 Update js/admin.js
+   - Fix event delegation order (buttons AFTER toggle)
+   - Enhance populatePedidoDetails (JSON parse fallback + error handling)
+   - Add loading spinner/error states
 
-**Breakdown into steps:**
+### 3. ⏳ Update server.js (/pedidos/:id)
+   - Parse Productos JSON → Items array
+   - Better 404/logging
 
-1. ✅ [COMPLETE] Create this TODO.md with approved plan steps
-2. [ ] Update js/admin.js: Enhance event delegation and populatePedidoDetails() with better error handling/logging, fix any toggle/fetch issues
-3. [ ] Test: Login to admin, load pedidos, click row to verify details populate (items table + notas)
-4. [ ] Verify backend /pedidos/:id endpoint
-5. [ ] Update TODO.md with progress
-6. [ ] attempt_completion once fixed and tested
+### 4. ⏳ Update css/admin.css
+   - Fix .table-row-details.show
 
-**Current Status:** Starting implementation of js/admin.js fixes...
+### 5. ⏳ Test
+   - Reload admin → Click pedido
+   - Check console/Network tab
+   - Verify expansion
 
+### 6. ⏳ attempt_completion
