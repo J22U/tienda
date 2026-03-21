@@ -635,16 +635,30 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target.id === 'btn-procesar-pago') {
             procesarPago();
         }
-        // Carrito quantity controls
-        if (e.target.matches('.qty-minus, .qty-plus, .qty-remove')) {
-            const index = parseInt(e.target.dataset.index);
-            if (isNaN(index) || index >= carrito.length) return;
-            if (e.target.matches('.qty-minus')) {
-                decrementar(index);
-            } else if (e.target.matches('.qty-plus')) {
-                incrementar(index);
-            } else if (e.target.matches('.qty-remove')) {
-                eliminarItem(index);
+// Carrito quantity controls - FIXED
+        const qtyTarget = e.target.closest('.list-group-item');
+        if (qtyTarget) {
+            const index = parseInt(qtyTarget.dataset.index);
+            if (!isNaN(index) && index < carrito.length) {
+                if (e.target.matches('.qty-minus')) {
+                    decrementar(index);
+                } else if (e.target.matches('.qty-plus')) {
+                    incrementar(index);
+                } else if (e.target.matches('.qty-remove')) {
+                    eliminarItem(index);
+                }
+            }
+        }
+        
+        // Manual quantity change handler
+        if (e.target.matches('.qty-input')) {
+            const inputId = e.target.id;
+            const match = inputId.match(/cant-(\d+)/);
+            if (match) {
+                const index = parseInt(match[1]);
+                if (!isNaN(index) && index < carrito.length) {
+                    actualizarCantidad(index, e.target.value);
+                }
             }
         }
     });
