@@ -347,12 +347,10 @@ function actualizarCarritoUI() {
                         <strong>${item.Nombre}</strong>
                         <div class="text-muted small">$${Number(item.Precio).toLocaleString()} c/u</div>
                     </div>
-                        <div class="quantity-controls d-flex align-items-center gap-1">
-                        <button class="btn btn-outline-secondary btn-sm qty-minus" data-index="${i}"><i class="bi bi-dash"></i></button>
-                        <input type="number" id="cant-${i}" class="qty-input form-control qty-count fw-bold px-2 py-1 text-center border-primary fs-6 shadow-sm" min="1" max="${item.stock}" value="${item.cantidad}" style="width: 60px;">
-                        <button class="btn btn-outline-secondary btn-sm qty-plus" data-index="${i}"><i class="bi bi-plus"></i></button>
-                        <span class="text-muted small ms-2">/ ${item.stock} disponibles</span>
-                    </div>
+                        <div class="quantity-display d-flex align-items-center gap-2">
+                            <span class="badge bg-success fs-6 fw-bold px-3 py-2">${item.cantidad} unidades</span>
+                            <small class="text-muted">/ ${item.stock} disponibles</small>
+                        </div>
                     <button class="btn btn-outline-danger btn-sm qty-remove" data-index="${i}"><i class="bi bi-trash"></i></button>
                 </div>
                 <div class="mt-2 pt-2 border-top">
@@ -371,62 +369,7 @@ function eliminarItem(index) {
 }
 
 // Nuevas funciones para editar cantidades
-function incrementar(index) {
-    const item = carrito[index];
-    if (item.cantidad < item.stock) {
-        item.cantidad++;
-        
-        // Update display instantly
-        const qtyEl = document.getElementById(`cant-${index}`);
-        if (qtyEl) qtyEl.textContent = item.cantidad;
-        
-        actualizarTotalSolo();
-    } else {
-        Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'Stock máximo', timer: 1500 });
-    }
-}
 
-function decrementar(index) {
-    const item = carrito[index];
-    if (item.cantidad > 1) {
-        item.cantidad--;
-        
-        // Update display instantly
-        const qtyEl = document.getElementById(`cant-${index}`);
-        if (qtyEl) qtyEl.textContent = item.cantidad;
-        
-        actualizarTotalSolo();
-    }
-}
-
-function actualizarCantidad(index, nuevaCant) {
-    const item = carrito[index];
-    const cant = parseInt(nuevaCant);
-    
-    if (isNaN(cant) || cant < 1) {
-        Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: 'Mínimo 1', timer: 1500 });
-        actualizarCarritoUI(); // Aquí sí redibujamos para resetear el valor visual
-        return;
-    }
-    
-    if (cant > item.stock) {
-        Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: `Máx: ${item.stock}`, timer: 1500 });
-        actualizarCarritoUI();
-        return;
-    }
-    
-    item.cantidad = cant;
-    
-    // Actualización rápida
-    const inputCant = document.getElementById(`cant-${index}`);
-    if (inputCant) {
-        inputCant.value = item.cantidad;
-        inputCant.innerText = item.cantidad;
-    }
-    
-    actualizarTotalSolo();
-    localStorage.setItem('carrito', JSON.stringify(carrito));
-}
 
 // FUNCIÓN DE APOYO PARA EL TOTAL (Vital para quitar el lag)
 function actualizarTotalSolo() {
@@ -635,29 +578,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target.id === 'btn-procesar-pago') {
             procesarPago();
         }
-// Carrito quantity controls - FIXED
-        const qtyTarget = e.target.closest('.list-group-item');
-        if (qtyTarget) {
-            const index = parseInt(qtyTarget.dataset.index);
+// Cart remove only
+        if (e.target.matches('.qty-remove')) {
+            const index = parseInt(e.target.dataset.index);
             if (!isNaN(index) && index < carrito.length) {
-                if (e.target.matches('.qty-minus')) {
-                    decrementar(index);
-                } else if (e.target.matches('.qty-plus')) {
-                    incrementar(index);
-                } else if (e.target.matches('.qty-remove')) {
+                if (confirm('¿Eliminar este producto del carrito?')) {
                     eliminarItem(index);
-                }
-            }
-        }
-        
-        // Manual quantity change handler
-        if (e.target.matches('.qty-input')) {
-            const inputId = e.target.id;
-            const match = inputId.match(/cant-(\d+)/);
-            if (match) {
-                const index = parseInt(match[1]);
-                if (!isNaN(index) && index < carrito.length) {
-                    actualizarCantidad(index, e.target.value);
                 }
             }
         }
