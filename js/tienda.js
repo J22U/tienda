@@ -347,17 +347,22 @@ function actualizarCarritoUI() {
                         <strong>${item.Nombre}</strong>
                         <div class="text-muted small">$${Number(item.Precio).toLocaleString()} c/u</div>
                     </div>
-                        <div class="quantity-display d-flex align-items-center gap-2">
-                            <span class="badge bg-success fs-6 fw-bold px-3 py-2">${item.cantidad} unidades</span>
-                            <small class="text-muted">/ ${item.stock} disponibles</small>
+                    <div class="quantity-display d-flex align-items-center gap-2 flex-column flex-md-row">
+                        <small class="text-muted mb-1 mb-md-0">/ ${item.stock} disponibles</small>
+                        <div class="input-group input-group-sm quantity-controls ms-md-2">
+                            <button class="btn btn-outline-secondary cart-minus" type="button" data-index="${i}">-</button>
+                            <input type="number" class="form-control qty-input text-center fw-bold" data-index="${i}" value="${item.cantidad}" min="1" max="${item.stock}">
+                            <button class="btn btn-outline-secondary cart-plus" type="button" data-index="${i}">+</button>
                         </div>
-                    <button class="btn btn-outline-danger btn-sm qty-remove" data-index="${i}"><i class="bi bi-trash"></i></button>
+                    </div>
+                    <button class="btn btn-outline-danger btn-sm qty-remove ms-2" data-index="${i}"><i class="bi bi-trash"></i></button>
                 </div>
                 <div class="mt-2 pt-2 border-top">
                     <strong class="text-success" id="subtotal-${i}">$${Math.round(item.Precio * item.cantidad).toLocaleString()}</strong>
                 </div>
             </li>`;
     }).join('');
+
 
     totalLabel.innerText = `$${total.toLocaleString()}`;
     badge.innerText = itemsCount;
@@ -368,7 +373,23 @@ function eliminarItem(index) {
     actualizarCarritoUI();
 }
 
+// Nueva función para actualizar cantidad en carrito
+function actualizarCantidad(index, nuevaCantidad) {
+    if (index < 0 || index >= carrito.length) return false;
+    
+    const item = carrito[index];
+    nuevaCantidad = Math.max(1, Math.min(nuevaCantidad, item.stock));
+    
+    if (nuevaCantidad !== item.cantidad) {
+        item.cantidad = nuevaCantidad;
+        actualizarTotalSolo(); // Fast update without full re-render
+        return true;
+    }
+    return false;
+}
+
 // Nuevas funciones para editar cantidades
+
 
 
 // FUNCIÓN DE APOYO PARA EL TOTAL (Vital para quitar el lag)
@@ -579,6 +600,33 @@ document.addEventListener('DOMContentLoaded', function() {
             procesarPago();
         }
 // Cart remove only
+        // Cart quantity controls
+        if (e.target.matches('.cart-minus')) {
+            const index = parseInt(e.target.dataset.index);
+            if (!isNaN(index) && index < carrito.length) {
+                const item = carrito[index];
+                if (item.cantidad > 1) {
+                    actualizarCantidad(index, item.cantidad - 1);
+                }
+            }
+        }
+        if (e.target.matches('.cart-plus')) {
+            const index = parseInt(e.target.dataset.index);
+            if (!isNaN(index) && index < carrito.length) {
+                const item = carrito[index];
+                if (item.cantidad < item.stock) {
+                    actualizarCantidad(index, item.cantidad + 1);
+                }
+            }
+        }
+        if (e.target.matches('.qty-input')) {
+            const index = parseInt(e.target.dataset.index);
+            if (!isNaN(index) && index < carrito.length) {
+                const nuevaQty = parseInt(e.target.value) || 1;
+                actualizarCantidad(index, nuevaQty);
+                e.target.value = carrito[index].cantidad; // Sync back
+            }
+        }
         if (e.target.matches('.qty-remove')) {
             const index = parseInt(e.target.dataset.index);
             if (!isNaN(index) && index < carrito.length) {
@@ -588,6 +636,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+
 
     // Update +/- button states (disabled/enabled)
     function updateQtyButtons() {
