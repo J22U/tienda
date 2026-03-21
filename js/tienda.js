@@ -383,10 +383,30 @@ function actualizarCantidad(index, nuevaCantidad) {
     if (nuevaCantidad !== item.cantidad) {
         item.cantidad = nuevaCantidad;
         actualizarTotalSolo(); // Fast update without full re-render
+        
+        // Sync UI display
+        setTimeout(() => updateCartQuantityDisplay(index), 10);
         return true;
     }
     return false;
 }
+
+// Sync input value and button states for specific cart item
+function updateCartQuantityDisplay(index) {
+    const input = document.querySelector(`.qty-input[data-index="${index}"]`);
+    const minusBtn = document.querySelector(`.cart-minus[data-index="${index}"]`);
+    const plusBtn = document.querySelector(`.cart-plus[data-index="${index}"]`);
+    
+    if (!input || !carrito[index]) return;
+    
+    const item = carrito[index];
+    input.value = item.cantidad;
+    input.max = item.stock;
+    
+    if (minusBtn) minusBtn.disabled = item.cantidad <= 1;
+    if (plusBtn) plusBtn.disabled = item.cantidad >= item.stock;
+}
+
 
 // Nuevas funciones para editar cantidades
 
@@ -522,6 +542,19 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     document.addEventListener('click', function(e) {
+        // Handle input events separately for real-time validation
+        if (e.target.matches('.qty-input') && (e.type === 'input' || e.type === 'change')) {
+            const index = parseInt(e.target.dataset.index);
+            if (!isNaN(index) && index < carrito.length) {
+                const input = e.target;
+                const val = parseInt(input.value) || 1;
+                const item = carrito[index];
+                if (item) {
+                    if (val > item.stock) input.value = item.stock;
+                    else if (val < 1) input.value = 1;
+                }
+            }
+        }
         if (e.target.matches('.img-producto')) {
             const id = e.target.dataset.id;
             if (id) verDetalle(id);
@@ -600,34 +633,50 @@ document.addEventListener('DOMContentLoaded', function() {
             procesarPago();
         }
 // Cart remove only
-        // Cart quantity controls
-        if (e.target.matches('.cart-minus')) {
+        // Cart quantity controls - +/- buttons
+        if (e.target.matches('.cart-minus, .cart-plus')) {
             const index = parseInt(e.target.dataset.index);
             if (!isNaN(index) && index < carrito.length) {
                 const item = carrito[index];
-                if (item.cantidad > 1) {
-                    actualizarCantidad(index, item.cantidad - 1);
+                const delta = e.target.matches('.cart-minus') ? -1 : 1;
+                if ((delta === -1 && item.cantidad > 1) || (delta === 1 && item.cantidad < item.stock)) {
+                    actualizarCantidad(index, item.cantidad + delta);
                 }
             }
+            return; // Prevent bubbling
         }
-        if (e.target.matches('.cart-plus')) {
-            const index = parseInt(e.target.dataset.index);
-            if (!isNaN(index) && index < carrito.length) {
-                const item = carrito[index];
-                if (item.cantidad < item.stock) {
-                    actualizarCantidad(index, item.cantidad + 1);
-                }
-            }
-        }
+        
+        // Manual input changes (click/focus events)
         if (e.target.matches('.qty-input')) {
             const index = parseInt(e.target.dataset.index);
             if (!isNaN(index) && index < carrito.length) {
-                const nuevaQty = parseInt(e.target.value) || 1;
-                actualizarCantidad(index, nuevaQty);
-                e.target.value = carrito[index].cantidad; // Sync back
+                // Debounced sync on blur/enter
+                const input = e.target;
+                clearTimeout(input.dataset.syncTimeout);
+                input.dataset.syncTimeout = setTimeout(() => {
+                    const nuevaQty = parseInt(input.value) || 1;
+                    if (actualizarCantidad(index, nuevaQty)) {
+                        input.value = carrito[index].cantidad;
+                    }
+                }, 300);
             }
         }
+        
+        // Input events for real-time validation (separate delegation)
+        if (e.target.matches('.qty-input') && ['input', 'change'].includes(e.type)) {
+            const index = parseInt(e.target.dataset.index);
+            const input = e.target;
+            const val = parseInt(input.value) || 1;
+            const item = carrito[index];
+            if (item && val > item.stock) {
+                input.value = item.stock;
+            } else if (val < 1) {
+                input.value = 1;
+            }
+        }
+        
         if (e.target.matches('.qty-remove')) {
+
             const index = parseInt(e.target.dataset.index);
             if (!isNaN(index) && index < carrito.length) {
                 if (confirm('¿Eliminar este producto del carrito?')) {
