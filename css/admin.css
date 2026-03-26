@@ -604,27 +604,43 @@ body {
 @media (max-width: 768px) {
     .product-card {
         flex-direction: column;
-        gap: 16px;
-        padding: 20px;
+        gap: 14px;
+        padding: 16px;
+        width: 100%;
+        max-width: 100%;
+        align-items: stretch;
+        min-height: auto;
+        margin-bottom: 0.8rem;
     }
     
     .product-img-card {
         width: 100%;
-        height: 200px;
-        max-width: 300px;
+        height: auto;
+        max-width: 100%;
         margin: 0 auto;
+        object-fit: contain;
+    }
+
+    .product-meta-card {
+        width: 100%;
     }
     
     .actions-card {
         margin-left: 0;
         width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
     }
     
     .description-text {
         font-size: 0.95rem;
         line-height: 1.6;
-        max-height: none;
-        overflow-y: visible;
+        max-height: none !important;
+        overflow-y: visible !important;
+        overflow: visible !important;
+        white-space: normal !important;
     }
     
     .product-name {
@@ -634,21 +650,27 @@ body {
         overflow: visible;
         white-space: normal;
     }
-    
-    .description-text {
-        max-height: none !important;
-        overflow-y: visible !important;
-        overflow: visible !important;
-        white-space: normal !important;
+
+    .quantity-controls button {
+        min-width: 36px;
+        min-height: 36px;
+        width: 36px;
+        height: 36px;
+        font-size: 0.95rem;
     }
 
-    .product-card {
-        min-height: auto;
-        margin-bottom: 0.8rem;
+    .quantity-display .text-muted {
+        font-size: 0.78rem;
+        min-width: 116px;
     }
-    
-    .bento-card { 
-        padding: 20px; 
+
+    .qty-input {
+        width: 60px !important;
+        min-width: 60px;
+    }
+
+    .bento-card {
+        padding: 16px;
     }
 
     /* Table responsive */
