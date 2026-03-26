@@ -321,7 +321,7 @@ function renderPedidos(peds, container, preserveCollapsed = false) {
                 ${peds.map((p, index) => {
                     const numeroVisual = peds.length - index;
                     const isCollapsed = preserveCollapsed ? !collapsedStates.get(p.PedidoID) : true;
-                    // Ajuste de estadoClass para incluir 'danger' si está cancelado
+                    // Agregamos 'danger' para el estado Cancelado
                     const estadoClass = p.Estado === 'Completado' ? 'success' : p.Estado === 'Pendiente' ? 'warning' : p.Estado === 'Cancelado' ? 'danger' : 'secondary';
                     const newEstado = p.Estado === 'Completado' ? 'Pendiente' : 'Completado';
                     const btnClass = p.Estado === 'Completado' ? 'success' : 'warning';
@@ -356,7 +356,7 @@ function renderPedidos(peds, container, preserveCollapsed = false) {
                                 
                                 ${p.Estado !== 'Cancelado' ? `
                                     <button class="btn btn-sm btn-outline-danger me-1 pedido-btn-cancelar" 
-                                            data-pedido-id="${p.PedidoID}" title="Cancelar y restaurar stock">
+                                            data-pedido-id="${p.PedidoID}" title="Cancelar pedido y retornar stock">
                                         <i class="bi bi-x-circle"></i>
                                     </button>
                                 ` : ''}
@@ -404,7 +404,6 @@ document.addEventListener('click', async (e) => {
     if (!detailsRow) return;
     
     const isCurrentlyCollapsed = !detailsRow.classList.contains('show');
-    console.log(`Toggle pedido ${pedidoId}: ${isCurrentlyCollapsed ? 'expand' : 'collapse'}`);
     
     if (isCurrentlyCollapsed) {
         await populatePedidoDetails(pedidoId);
@@ -418,7 +417,6 @@ document.addEventListener('click', async (e) => {
     }
 });
 }
-
 
 // Helper to populate details row (reuse mostrarDetallesPedido logic)
 async function populatePedidoDetails(pedidoId) {
