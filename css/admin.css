@@ -425,6 +425,63 @@ body {
    TABLAS COLAPSABLES - Nueva implementación
    ============================================================================ */
 
+.pedido-cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+}
+
+.pedido-card {
+    background: white;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 14px;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.06);
+    padding: 14px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.pedido-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px rgba(0,0,0,0.1);
+}
+
+.pedido-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.pedido-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.pedido-card-actions button {
+    flex: 1 1 45%;
+    min-width: 120px;
+}
+
+.pedido-card-details {
+    border-top: 1px solid rgba(128,128,128,0.2);
+    padding-top: 10px;
+}
+
+.pedido-card-details.collapse {
+    display: none;
+}
+
+.pedido-card-details.show {
+    display: block;
+}
+
+.pedido-details-body {
+    font-size: 0.9rem;
+}
+
+
 .admin-table {
     width: 100%;
     border-collapse: collapse;

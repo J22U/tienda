@@ -104,16 +104,40 @@ listaProductos.addEventListener('click', e => {
     const listaPedidos = document.getElementById('lista-pedidos');
 
 listaPedidos.addEventListener('click', async e => {
-    // 1. Manejo del Toggle (Abrir/Cerrar detalles)
+    // 1. Manejo del Toggle (Abrir/Cerrar detalles) en card / tabla
+    const card = e.target.closest('.pedido-card');
+    if (card && !e.target.closest('button')) {
+        const pedidoId = card.dataset.pedidoId;
+        if (!pedidoId) return;
+
+        const detailsContainer = card.querySelector('.pedido-card-details');
+        if (!detailsContainer) return;
+
+        const isOpen = detailsContainer.classList.contains('show');
+        if (isOpen) {
+            detailsContainer.classList.remove('show');
+            return;
+        }
+
+        detailsContainer.classList.add('show');
+        const body = detailsContainer.querySelector('.pedido-details-body');
+        if (body) {
+            body.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div>';
+        }
+
+        await populatePedidoDetails(pedidoId, card);
+        return;
+    }
+
     const row = e.target.closest('.table-row-main');
     if (row && !e.target.closest('button')) {
         const pedidoId = row.dataset.pedidoId;
         if (pedidoId) {
             await togglePedidoDetails(pedidoId, row);
-            return; 
+            return;
         }
     }
-    
+
     // 2. Botón de CAMBIAR ESTADO (Completar/Pendiente)
     const statusBtn = e.target.closest('.pedido-btn-status');
     if (statusBtn) {
@@ -312,112 +336,38 @@ function renderPedidos(peds, container, preserveCollapsed = false) {
         return;
     }
 
-    const tableHTML = `
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Cliente</th>
-                    <th>Fecha</th>
-                    <th>Total</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${peds.map((p, index) => {
-                    const numeroVisual = peds.length - index;
-                    const isCollapsed = preserveCollapsed ? !collapsedStates.get(p.PedidoID) : true;
-                    const estadoClass = p.Estado === 'Completado' ? 'success' : p.Estado === 'Pendiente' ? 'warning' : p.Estado === 'Cancelado' ? 'danger' : 'secondary';
-                    const newEstado = p.Estado === 'Completado' ? 'Pendiente' : 'Completado';
-                    const btnClass = p.Estado === 'Completado' ? 'success' : 'warning';
-                    const btnText = p.Estado === 'Completado' ? 'Pendiente' : 'Completar';
-                    const chevronClass = isCollapsed ? '' : 'rotated';
-                    const detailsClass = isCollapsed ? '' : 'show';
-                    return `
-                        <tr class="table-row-main" data-pedido-id="${p.PedidoID}">
-                            <td>
-                                <i class="bi bi-chevron-down row-toggle ${chevronClass} me-2"></i>
-                                <strong>#${numeroVisual}</strong>
-                            </td>
-                            <td>${p.NombreCliente}</td>
-                            <td><small class="text-muted">${new Date(p.Fecha).toLocaleString('es-ES')}</small></td>
-                            <td>
-                                ${p.DescuentoPorcentaje > 0 ? `
-                                    <small class="text-decoration-line-through text-muted d-block">$${Number(p.Total).toLocaleString()}</small>
-                                ` : ''}
-                                <strong class="text-success">$${Number(p.TotalManual || p.Total).toLocaleString()}</strong>
-                            </td>
-                            <td><span class="badge bg-${estadoClass}">${p.Estado}</span></td>
-                            <td class="table-actions">
-                                <button class="btn btn-sm btn-outline-${btnClass} me-1 table-action-${btnClass.replace('success', 'edit').replace('warning', 'edit')} pedido-btn-status d-none d-md-inline-block" 
-                                        data-pedido-id="${p.PedidoID}" data-new-estado="${newEstado}">
-                                    ${btnText}
-                                </button>
-                                
-                                <button class="btn btn-sm btn-primary table-action-factura pedido-btn-factura me-1 d-none d-md-inline-block" data-pedido-id="${p.PedidoID}">
-                                    <i class="bi bi-file-earmark-pdf"></i>
-                                </button>
-                                
-                                <button class="btn btn-sm btn-outline-danger me-1 pedido-btn-cancelar" 
-                                        data-pedido-id="${p.PedidoID}" title="Cancelar pedido y retornar stock">
-                                    <i class="bi bi-x-circle"></i>
-                                </button>
+    const cardsHTML = peds.map((p, index) => {
+        const numeroVisual = peds.length - index;
+        const estadoClass = p.Estado === 'Completado' ? 'success' : p.Estado === 'Pendiente' ? 'warning' : p.Estado === 'Cancelado' ? 'danger' : 'secondary';
+        const newEstado = p.Estado === 'Completado' ? 'Pendiente' : 'Completado';
+        const btnClass = p.Estado === 'Completado' ? 'success' : 'warning';
+        const btnText = p.Estado === 'Completado' ? 'Pendiente' : 'Completar';
 
-                                <button class="btn btn-sm btn-outline-danger table-action-delete pedido-btn-delete d-none d-md-inline-block" data-pedido-id="${p.PedidoID}">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                                
-                                <!-- Dropdown menu para mobile -->
-                                <div class="dropdown d-md-none">
-                                    <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="bi bi-three-dots-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        <li><button class="dropdown-item pedido-btn-status" data-pedido-id="${p.PedidoID}" data-new-estado="${newEstado}">
-                                            ${btnText}
-                                        </button></li>
-                                        <li><button class="dropdown-item pedido-btn-factura" data-pedido-id="${p.PedidoID}">
-                                            <i class="bi bi-file-earmark-pdf me-2"></i>Descargar PDF
-                                        </button></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><button class="dropdown-item text-danger pedido-btn-cancelar" data-pedido-id="${p.PedidoID}">
-                                            <i class="bi bi-x-circle me-2"></i>Cancelar pedido
-                                        </button></li>
-                                        <li><button class="dropdown-item text-danger pedido-btn-delete" data-pedido-id="${p.PedidoID}">
-                                            <i class="bi bi-trash me-2"></i>Eliminar
-                                        </button></li>
-                                    </ul>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr class="table-row-details ${detailsClass}" data-pedido-id="${p.PedidoID}">
-                            <td colspan="6">
-                                <div class="details-content">
-                                    <div class="table-responsive">
-                                        <table class="table table-sm table-hover">
-                                            <thead class="table-light">
-                                                <tr>
-                                                    <th>Producto</th>
-                                                    <th>Cant.</th>
-                                                    <th>Precio</th>
-                                                    <th>Subtotal</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="pedido-items-${p.PedidoID}"></tbody>
-                                        </table>
-                                    </div>
-                                    <div class="mt-3 pt-3 border-top">
-                                        <strong>Notas: </strong><span class="pedido-notas-${p.PedidoID}">-</span>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>`;
-                }).join('')}
-            </tbody>
-        </table>`;
+        return `
+            <article class="pedido-card" data-pedido-id="${p.PedidoID}">
+                <div class="pedido-card-header">
+                    <div>
+                        <h5 class="pedido-card-title">#${numeroVisual} - ${p.NombreCliente}</h5>
+                        <small class="text-muted">${new Date(p.Fecha).toLocaleString('es-ES')}</small>
+                    </div>
+                    <div class="text-end">
+                        <div class="h5 text-success mb-1">$${Number(p.TotalManual || p.Total).toLocaleString()}</div>
+                        <span class="badge bg-${estadoClass}">${p.Estado}</span>
+                    </div>
+                </div>
+                <div class="pedido-card-actions">
+                    <button class="btn btn-sm btn-outline-${btnClass} pedido-btn-status" data-pedido-id="${p.PedidoID}" data-new-estado="${newEstado}">${btnText}</button>
+                    <button class="btn btn-sm btn-primary pedido-btn-factura" data-pedido-id="${p.PedidoID}"><i class="bi bi-file-earmark-pdf"></i> Factura</button>
+                    <button class="btn btn-sm btn-outline-danger pedido-btn-cancelar" data-pedido-id="${p.PedidoID}"><i class="bi bi-x-circle"></i> Cancelar</button>
+                    <button class="btn btn-sm btn-outline-danger pedido-btn-delete" data-pedido-id="${p.PedidoID}"><i class="bi bi-trash"></i> Eliminar</button>
+                </div>
+                <div class="pedido-card-details collapse" id="pedido-details-${p.PedidoID}">
+                    <div class="pedido-details-placeholder">Haz clic en la card para ver detalles.</div>
+                </div>
+            </article>`;
+    }).join('');
 
-    container.innerHTML = tableHTML;
+    container.innerHTML = `<section class="pedido-cards-container">${cardsHTML}</section>`;
 
     // Delegation for row toggles
     document.addEventListener('click', async (e) => {
@@ -443,7 +393,7 @@ function renderPedidos(peds, container, preserveCollapsed = false) {
     });
 }
 
-window.cancelarPedido = async function(id) {
+window.cancelarPedido = async function(id, btn) {
     const result = await Swal.fire({
         title: '¿Cancelar pedido?',
         html: 'Se restaurará el stock de productos automáticamente.<br><strong>Esta acción no se puede deshacer.</strong>',
@@ -459,7 +409,6 @@ window.cancelarPedido = async function(id) {
 
     try {
         // Loading state
-        const btn = event?.target.closest('.pedido-btn-cancelar');
         if (btn) {
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
@@ -490,9 +439,11 @@ window.cancelarPedido = async function(id) {
     }
 };
 
-// Helper to populate details row (reuse mostrarDetallesPedido logic)
-async function populatePedidoDetails(pedidoId) {
+// Helper to populate details row/card (reuse mostrarDetallesPedido logic)
+async function populatePedidoDetails(pedidoId, cardElement = null) {
     console.group(`🔍 Loading details for pedido ${pedidoId}`);
+    const detailsContainer = cardElement ? cardElement.querySelector('.pedido-card-details') : null;
+    const detailsBody = detailsContainer ? detailsContainer.querySelector('.pedido-details-body') : null;
     try {
         console.log('Fetching /pedidos/' + pedidoId);
         const res = await fetch(`/pedidos/${pedidoId}`);
@@ -508,6 +459,37 @@ async function populatePedidoDetails(pedidoId) {
         if (!p || !p.Items) {
             console.warn('Pedido sin Items o inválido:', p);
             throw new Error('El pedido no tiene datos de items válidos');
+        }
+
+        // Si estamos en card mode, mostramos detalles en el cuerpo de card
+        if (cardElement && detailsBody) {
+            const itemsHtml = Array.isArray(p.Items) && p.Items.length > 0
+                ? p.Items.map(item => {
+                    if (!item || !item.Nombre) return '';
+                    return `<tr>
+                        <td>${item.Nombre}</td>
+                        <td class="text-center">${item.Cantidad || 0}</td>
+                        <td>$${Number(item.Precio || 0).toLocaleString()}</td>
+                        <td class="text-end fw-bold text-success">$${Number(item.Subtotal || 0).toLocaleString()}</td>
+                    </tr>`;
+                  }).join('')
+                : '<tr><td colspan="4" class="text-center text-muted py-3">Sin items en este pedido</td></tr>';
+
+            detailsBody.innerHTML = `
+                <div class="table-responsive mb-3">
+                    <table class="table table-sm table-hover">
+                        <thead class="table-light">
+                            <tr><th>Producto</th><th>Cant.</th><th>Precio</th><th>Subtotal</th></tr>
+                        </thead>
+                        <tbody>${itemsHtml}</tbody>
+                    </table>
+                </div>
+                <div><strong>Notas:</strong> ${(p.Notas && p.Notas.trim()) ? p.Notas : 'Sin notas'}</div>
+            `;
+
+            console.log('✅ Details populated in card mode. Items:', p.Items?.length || 0);
+            console.groupEnd();
+            return;
         }
 
         // Clear previous content first
