@@ -744,7 +744,7 @@ async function cambiarEstado(id, nuevoEstado) {
         await Swal.fire({
             icon: 'success',
             title: '¡Estado actualizado!',
-            text: `Pedido #${id} ahora está ${nuevoEstado}`,
+            text: `El edido ahora está ${nuevoEstado}`,
             timer: 1500,
             showConfirmButton: false
         });
