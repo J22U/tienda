@@ -629,7 +629,22 @@ body {
     
     .product-name {
         -webkit-line-clamp: unset;
+        line-clamp: unset;
         max-height: none;
+        overflow: visible;
+        white-space: normal;
+    }
+    
+    .description-text {
+        max-height: none !important;
+        overflow-y: visible !important;
+        overflow: visible !important;
+        white-space: normal !important;
+    }
+
+    .product-card {
+        min-height: auto;
+        margin-bottom: 0.8rem;
     }
     
     .bento-card { 
