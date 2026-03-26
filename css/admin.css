@@ -469,11 +469,13 @@ body {
     padding-top: 10px;
 }
 
-.pedido-card-details.collapse {
+.pedido-card-details.collapse,
+.pedido-row-details.collapse {
     display: none;
 }
 
-.pedido-card-details.show {
+.pedido-card-details.show,
+.pedido-row-details.show {
     display: block;
 }
 

@@ -129,6 +129,30 @@ listaPedidos.addEventListener('click', async e => {
         return;
     }
 
+    const pedidoRow = e.target.closest('.pedido-row');
+    if (pedidoRow && !e.target.closest('button')) {
+        const pedidoId = pedidoRow.dataset.pedidoId;
+        if (!pedidoId) return;
+
+        const detailsContainer = pedidoRow.querySelector('.pedido-row-details');
+        if (!detailsContainer) return;
+
+        const isOpen = detailsContainer.classList.contains('show');
+        if (isOpen) {
+            detailsContainer.classList.remove('show');
+            return;
+        }
+
+        detailsContainer.classList.add('show');
+        const body = detailsContainer.querySelector('.pedido-details-body');
+        if (body) {
+            body.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div>';
+        }
+
+        await populatePedidoDetails(pedidoId, pedidoRow);
+        return;
+    }
+
     const row = e.target.closest('.table-row-main');
     if (row && !e.target.closest('button')) {
         const pedidoId = row.dataset.pedidoId;
@@ -442,7 +466,7 @@ window.cancelarPedido = async function(id, btn) {
 // Helper to populate details row/card (reuse mostrarDetallesPedido logic)
 async function populatePedidoDetails(pedidoId, cardElement = null) {
     console.group(`🔍 Loading details for pedido ${pedidoId}`);
-    const detailsContainer = cardElement ? cardElement.querySelector('.pedido-card-details') : null;
+    const detailsContainer = cardElement ? (cardElement.querySelector('.pedido-card-details') || cardElement.querySelector('.pedido-row-details')) : null;
     const detailsBody = detailsContainer ? detailsContainer.querySelector('.pedido-details-body') : null;
     try {
         console.log('Fetching /pedidos/' + pedidoId);
@@ -1283,10 +1307,17 @@ function renderPedidos(peds, container) {
                         data-pedido-id="${p.PedidoID}">
                     <i class="bi bi-file-earmark-pdf me-1"></i>Factura
                 </button>
+                <button class="btn btn-sm btn-outline-danger me-1 pedido-btn-cancelar" 
+                        data-pedido-id="${p.PedidoID}" title="Cancelar pedido y retornar stock">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
                 <button class="btn btn-sm btn-outline-danger pedido-btn-delete" 
                         data-pedido-id="${p.PedidoID}">
                     Eliminar
                 </button>
+            </div>
+            <div class="pedido-row-details collapse mt-3">
+                <div class="pedido-details-body p-2"></div>
             </div>
         </div>`;
     }).join('');
