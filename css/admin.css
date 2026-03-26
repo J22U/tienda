@@ -416,10 +416,22 @@ body {
     }
 
     .product-img-card {
-        width: 60px;
-        height: 60px;
-        border-radius: 12px;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
         margin-bottom: 8px;
+    }
+
+    #lista-productos {
+        max-height: calc(100vh - 220px);
+        overflow-y: auto;
+        padding-right: 6px;
+    }
+
+    .pedido-cards-container {
+        max-height: calc(100vh - 200px);
+        overflow-y: auto;
+        padding-right: 6px;
     }
 
     .product-meta-card {
