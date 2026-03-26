@@ -408,6 +408,13 @@ body {
         max-width: 100%;
     }
 
+    .product-card > .d-flex {
+        flex-direction: column !important;
+        align-items: flex-start;
+        gap: 10px;
+        width: 100%;
+    }
+
     .product-img-card {
         width: 60px;
         height: 60px;
@@ -459,8 +466,10 @@ body {
         margin-top: 8px;
         flex-wrap: wrap;
         gap: 6px;
+        width: 100%;
     }
 }
+
 
 /* Animaciones stagger */
 .product-card:nth-child(odd) { animation: fadeInUp 0.6s ease forwards; animation-delay: 0.1s; }
