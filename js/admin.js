@@ -104,62 +104,14 @@ listaProductos.addEventListener('click', e => {
     const listaPedidos = document.getElementById('lista-pedidos');
 
 listaPedidos.addEventListener('click', async e => {
-    // 1. Manejo del Toggle (Abrir/Cerrar detalles) en card / tabla
-    const card = e.target.closest('.pedido-card');
-    if (card && !e.target.closest('button')) {
-        const pedidoId = card.dataset.pedidoId;
-        if (!pedidoId) return;
-
-        const detailsContainer = card.querySelector('.pedido-card-details');
-        if (!detailsContainer) return;
-
-        const isOpen = detailsContainer.classList.contains('show');
-        if (isOpen) {
-            detailsContainer.classList.remove('show');
-            return;
-        }
-
-        detailsContainer.classList.add('show');
-        const body = detailsContainer.querySelector('.pedido-details-body');
-        if (body) {
-            body.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div>';
-        }
-
-        await populatePedidoDetails(pedidoId, card);
-        return;
-    }
-
-    const pedidoRow = e.target.closest('.pedido-row');
+    // 1. Mostrar detalles en modal al hacer click en fila (sin botón)
+    const pedidoRow = e.target.closest('.pedido-row, .table-row-main, .pedido-card');
     if (pedidoRow && !e.target.closest('button')) {
         const pedidoId = pedidoRow.dataset.pedidoId;
-        if (!pedidoId) return;
-
-        const detailsContainer = pedidoRow.querySelector('.pedido-row-details');
-        if (!detailsContainer) return;
-
-        const isOpen = detailsContainer.classList.contains('show');
-        if (isOpen) {
-            detailsContainer.classList.remove('show');
-            return;
-        }
-
-        detailsContainer.classList.add('show');
-        const body = detailsContainer.querySelector('.pedido-details-body');
-        if (body) {
-            body.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div>';
-        }
-
-        await populatePedidoDetails(pedidoId, pedidoRow);
-        return;
-    }
-
-    const row = e.target.closest('.table-row-main');
-    if (row && !e.target.closest('button')) {
-        const pedidoId = row.dataset.pedidoId;
         if (pedidoId) {
-            await togglePedidoDetails(pedidoId, row);
-            return;
+            await mostrarDetallesPedido(pedidoId);
         }
+        return;
     }
 
     // 2. Botón de CAMBIAR ESTADO (Completar/Pendiente)
@@ -479,8 +431,18 @@ async function populatePedidoDetails(pedidoId, cardElement = null) {
         
         const p = await res.json();
         console.log('Pedido completo:', p);
-        
-        if (!p || !p.Items) {
+
+        // Asegurar que Items exista (compatibilidad con API actual que guarda Productos JSON)
+        if ((!p || !p.Items) && p && p.Productos) {
+            try {
+                p.Items = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos;
+                console.log('Productos parseados a Items:', p.Items);
+            } catch (parseErr) {
+                console.warn('No se pudo parsear Productos:', parseErr, p.Productos);
+            }
+        }
+
+        if (!p || !p.Items || !Array.isArray(p.Items)) {
             console.warn('Pedido sin Items o inválido:', p);
             throw new Error('El pedido no tiene datos de items válidos');
         }
