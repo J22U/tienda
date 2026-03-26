@@ -328,7 +328,6 @@ function renderPedidos(peds, container, preserveCollapsed = false) {
                 ${peds.map((p, index) => {
                     const numeroVisual = peds.length - index;
                     const isCollapsed = preserveCollapsed ? !collapsedStates.get(p.PedidoID) : true;
-                    // Agregamos 'danger' para el estado Cancelado
                     const estadoClass = p.Estado === 'Completado' ? 'success' : p.Estado === 'Pendiente' ? 'warning' : p.Estado === 'Cancelado' ? 'danger' : 'secondary';
                     const newEstado = p.Estado === 'Completado' ? 'Pendiente' : 'Completado';
                     const btnClass = p.Estado === 'Completado' ? 'success' : 'warning';
@@ -351,22 +350,19 @@ function renderPedidos(peds, container, preserveCollapsed = false) {
                             </td>
                             <td><span class="badge bg-${estadoClass}">${p.Estado}</span></td>
                             <td class="table-actions">
-                                ${p.Estado !== 'Cancelado' ? `
-                                    <button class="btn btn-sm btn-outline-${btnClass} me-1 table-action-${btnClass.replace('success', 'edit').replace('warning', 'edit')} pedido-btn-status" 
-                                            data-pedido-id="${p.PedidoID}" data-new-estado="${newEstado}">
-                                        ${btnText}
-                                    </button>
-                                ` : ''}
+                                <button class="btn btn-sm btn-outline-${btnClass} me-1 table-action-${btnClass.replace('success', 'edit').replace('warning', 'edit')} pedido-btn-status" 
+                                        data-pedido-id="${p.PedidoID}" data-new-estado="${newEstado}">
+                                    ${btnText}
+                                </button>
+                                
                                 <button class="btn btn-sm btn-primary table-action-factura pedido-btn-factura me-1" data-pedido-id="${p.PedidoID}">
                                     <i class="bi bi-file-earmark-pdf"></i>
                                 </button>
                                 
-                                ${p.Estado !== 'Cancelado' ? `
-                                    <button class="btn btn-sm btn-outline-danger me-1 pedido-btn-cancelar" 
-                                            data-pedido-id="${p.PedidoID}" title="Cancelar pedido y retornar stock">
-                                        <i class="bi bi-x-circle"></i>
-                                    </button>
-                                ` : ''}
+                                <button class="btn btn-sm btn-outline-danger me-1 pedido-btn-cancelar" 
+                                        data-pedido-id="${p.PedidoID}" title="Cancelar pedido y retornar stock">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
 
                                 <button class="btn btn-sm btn-outline-danger table-action-delete pedido-btn-delete" data-pedido-id="${p.PedidoID}">
                                     <i class="bi bi-trash"></i>
@@ -401,28 +397,28 @@ function renderPedidos(peds, container, preserveCollapsed = false) {
 
     container.innerHTML = tableHTML;
 
-// Single document-level event delegation for row toggles (prevents recursive attachments)
-document.addEventListener('click', async (e) => {
-    const row = e.target.closest('.table-row-main');
-    if (!row || e.target.closest('button')) return;
-    
-    const pedidoId = row.dataset.pedidoId;
-    const detailsRow = row.nextElementSibling;
-    if (!detailsRow) return;
-    
-    const isCurrentlyCollapsed = !detailsRow.classList.contains('show');
-    
-    if (isCurrentlyCollapsed) {
-        await populatePedidoDetails(pedidoId);
-        detailsRow.classList.add('show');
-        row.querySelector('.row-toggle')?.classList.add('rotated');
-        collapsedStates.set(pedidoId, false);
-    } else {
-        detailsRow.classList.remove('show');
-        row.querySelector('.row-toggle')?.classList.remove('rotated');
-        collapsedStates.set(pedidoId, true);
-    }
-});
+    // Delegation for row toggles
+    document.addEventListener('click', async (e) => {
+        const row = e.target.closest('.table-row-main');
+        if (!row || e.target.closest('button')) return;
+        
+        const pedidoId = row.dataset.pedidoId;
+        const detailsRow = row.nextElementSibling;
+        if (!detailsRow) return;
+        
+        const isCurrentlyCollapsed = !detailsRow.classList.contains('show');
+        
+        if (isCurrentlyCollapsed) {
+            if (typeof populatePedidoDetails === 'function') await populatePedidoDetails(pedidoId);
+            detailsRow.classList.add('show');
+            row.querySelector('.row-toggle')?.classList.add('rotated');
+            collapsedStates.set(pedidoId, false);
+        } else {
+            detailsRow.classList.remove('show');
+            row.querySelector('.row-toggle')?.classList.remove('rotated');
+            collapsedStates.set(pedidoId, true);
+        }
+    });
 }
 
 window.cancelarPedido = async function(id) {
