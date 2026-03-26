@@ -515,12 +515,72 @@ body {
    TABLAS COLAPSABLES - Nueva implementación
    ============================================================================ */
 
-.pedido-cards-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 16px;
+/* Tab-panes estilo contenedor con encabezado fijo + cuerpo scrollable */
+.tab-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    height: calc(100vh - 320px);
 }
 
+.tab-pane > #lista-productos,
+.tab-pane > #lista-agotados,
+.tab-pane > #lista-pedidos {
+    flex: 1;
+    min-height: 0;
+}
+
+/* Contenedor scroll interno para inventario / agotados / pedidos */
+#lista-productos,
+#lista-agotados,
+#lista-pedidos {
+    max-height: calc(100vh - 360px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 8px;
+    border: 1px solid rgba(108,92,231,0.15);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.95);
+}
+
+#lista-productos::-webkit-scrollbar,
+#lista-agotados::-webkit-scrollbar,
+#lista-pedidos::-webkit-scrollbar {
+    width: 7px;
+}
+
+#lista-productos::-webkit-scrollbar-thumb,
+#lista-agotados::-webkit-scrollbar-thumb,
+#lista-pedidos::-webkit-scrollbar-thumb {
+    background: rgba(108,92,231,0.35);
+    border-radius: 999px;
+}
+
+#lista-productos::-webkit-scrollbar-track,
+#lista-agotados::-webkit-scrollbar-track,
+#lista-pedidos::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.pedido-cards-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+}
+
+.pedido-card {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    border: 1px solid rgba(108,92,231,0.15);
+    border-radius: 12px;
+    padding: 10px;
+    min-width: 0;
+}
+
+/* apariencia */
 .pedido-card {
     background: white;
     border: 1px solid rgba(0,0,0,0.08);
@@ -572,6 +632,7 @@ body {
 .pedido-details-body {
     font-size: 0.9rem;
 }
+/* fin apariencia */
 
 
 .admin-table {
