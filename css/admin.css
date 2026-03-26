@@ -487,7 +487,10 @@ body {
 }
 
 .table-actions {
-    white-space: nowrap;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
 }
 
 .table-action-btn {

@@ -359,7 +359,7 @@ function renderPedidos(peds, container, preserveCollapsed = false) {
                                     <i class="bi bi-file-earmark-pdf"></i>
                                 </button>
                                 
-                                <button class="btn btn-sm btn-outline-danger me-1 pedido-btn-cancelar d-none d-md-inline-block" 
+                                <button class="btn btn-sm btn-outline-danger me-1 pedido-btn-cancelar" 
                                         data-pedido-id="${p.PedidoID}" title="Cancelar pedido y retornar stock">
                                     <i class="bi bi-x-circle"></i>
                                 </button>
