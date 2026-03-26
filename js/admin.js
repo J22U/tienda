@@ -102,49 +102,56 @@ listaProductos.addEventListener('click', e => {
 
 // 🔥 EVENT DELEGATION - PEDIDOS TABLE (FIXED: Toggle FIRST, then buttons)
     const listaPedidos = document.getElementById('lista-pedidos');
-    listaPedidos.addEventListener('click', async e => {
-        // FIRST: Check for row toggle
-        const row = e.target.closest('.table-row-main');
-        if (row && !e.target.closest('button')) {
-            const pedidoId = row.dataset.pedidoId;
-            if (pedidoId) {
-                // Toggle logic here will be moved/enhanced in populatePedidoDetails
-                await togglePedidoDetails(pedidoId, row);
-                return; // Toggle handled
-            }
-        }
-        
-        // THEN: Button handlers
-        const statusBtn = e.target.closest('.pedido-btn-status');
-        if (statusBtn) {
-            const id = statusBtn.dataset.pedidoId;
-            const estado = statusBtn.dataset.newEstado;
-            cambiarEstado(id, estado);
-            return;
-        }
-        
-        const deleteBtn = e.target.closest('.pedido-btn-delete');
-        if (deleteBtn) {
-            const id = deleteBtn.dataset.pedidoId;
-            eliminarPedido(id);
-            return;
-        }
-        
-        const facturaBtn = e.target.closest('.pedido-btn-factura');
-        if (facturaBtn) {
-            const id = facturaBtn.dataset.pedidoId;
-            generarFacturaPDFParaPedido(id);
-            return;
-        }
 
-        // Cancelar pedido button
-        const cancelarBtn = e.target.closest('.pedido-btn-cancelar');
-        if (cancelarBtn) {
-            const id = cancelarBtn.dataset.pedidoId;
-            cancelarPedido(id);
-            return;
+listaPedidos.addEventListener('click', async e => {
+    // 1. Manejo del Toggle (Abrir/Cerrar detalles)
+    const row = e.target.closest('.table-row-main');
+    if (row && !e.target.closest('button')) {
+        const pedidoId = row.dataset.pedidoId;
+        if (pedidoId) {
+            await togglePedidoDetails(pedidoId, row);
+            return; 
         }
-    });
+    }
+    
+    // 2. Botón de CAMBIAR ESTADO (Completar/Pendiente)
+    const statusBtn = e.target.closest('.pedido-btn-status');
+    if (statusBtn) {
+        const id = statusBtn.dataset.pedidoId;
+        const estado = statusBtn.dataset.newEstado;
+        cambiarEstado(id, estado);
+        return;
+    }
+    
+    // 3. Botón de ELIMINAR (Borrado físico)
+    const deleteBtn = e.target.closest('.pedido-btn-delete');
+    if (deleteBtn) {
+        const id = deleteBtn.dataset.pedidoId;
+        eliminarPedido(id);
+        return;
+    }
+    
+    // 4. Botón de FACTURA PDF
+    const facturaBtn = e.target.closest('.pedido-btn-factura');
+    if (facturaBtn) {
+        const id = facturaBtn.dataset.pedidoId;
+        generarFacturaPDFParaPedido(id);
+        return;
+    }
+
+    // 5. NUEVO: Botón de CANCELAR PEDIDO (Retorno de stock)
+    const cancelarBtn = e.target.closest('.pedido-btn-cancelar');
+    if (cancelarBtn) {
+        const id = cancelarBtn.dataset.pedidoId;
+        // Llamamos a la función enviando el ID y el botón (para el spinner)
+        if (window.cancelarPedido) {
+            window.cancelarPedido(id, cancelarBtn);
+        } else {
+            console.error("La función cancelarPedido no está definida.");
+        }
+        return;
+    }
+});
 
 
     // NEW: Dedicated toggle function
