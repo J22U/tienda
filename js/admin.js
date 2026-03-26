@@ -350,23 +350,45 @@ function renderPedidos(peds, container, preserveCollapsed = false) {
                             </td>
                             <td><span class="badge bg-${estadoClass}">${p.Estado}</span></td>
                             <td class="table-actions">
-                                <button class="btn btn-sm btn-outline-${btnClass} me-1 table-action-${btnClass.replace('success', 'edit').replace('warning', 'edit')} pedido-btn-status" 
+                                <button class="btn btn-sm btn-outline-${btnClass} me-1 table-action-${btnClass.replace('success', 'edit').replace('warning', 'edit')} pedido-btn-status d-none d-md-inline-block" 
                                         data-pedido-id="${p.PedidoID}" data-new-estado="${newEstado}">
                                     ${btnText}
                                 </button>
                                 
-                                <button class="btn btn-sm btn-primary table-action-factura pedido-btn-factura me-1" data-pedido-id="${p.PedidoID}">
+                                <button class="btn btn-sm btn-primary table-action-factura pedido-btn-factura me-1 d-none d-md-inline-block" data-pedido-id="${p.PedidoID}">
                                     <i class="bi bi-file-earmark-pdf"></i>
                                 </button>
                                 
-                                <button class="btn btn-sm btn-outline-danger me-1 pedido-btn-cancelar" 
+                                <button class="btn btn-sm btn-outline-danger me-1 pedido-btn-cancelar d-none d-md-inline-block" 
                                         data-pedido-id="${p.PedidoID}" title="Cancelar pedido y retornar stock">
                                     <i class="bi bi-x-circle"></i>
                                 </button>
 
-                                <button class="btn btn-sm btn-outline-danger table-action-delete pedido-btn-delete" data-pedido-id="${p.PedidoID}">
+                                <button class="btn btn-sm btn-outline-danger table-action-delete pedido-btn-delete d-none d-md-inline-block" data-pedido-id="${p.PedidoID}">
                                     <i class="bi bi-trash"></i>
                                 </button>
+                                
+                                <!-- Dropdown menu para mobile -->
+                                <div class="dropdown d-md-none">
+                                    <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li><button class="dropdown-item pedido-btn-status" data-pedido-id="${p.PedidoID}" data-new-estado="${newEstado}">
+                                            ${btnText}
+                                        </button></li>
+                                        <li><button class="dropdown-item pedido-btn-factura" data-pedido-id="${p.PedidoID}">
+                                            <i class="bi bi-file-earmark-pdf me-2"></i>Descargar PDF
+                                        </button></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><button class="dropdown-item text-danger pedido-btn-cancelar" data-pedido-id="${p.PedidoID}">
+                                            <i class="bi bi-x-circle me-2"></i>Cancelar pedido
+                                        </button></li>
+                                        <li><button class="dropdown-item text-danger pedido-btn-delete" data-pedido-id="${p.PedidoID}">
+                                            <i class="bi bi-trash me-2"></i>Eliminar
+                                        </button></li>
+                                    </ul>
+                                </div>
                             </td>
                         </tr>
                         <tr class="table-row-details ${detailsClass}" data-pedido-id="${p.PedidoID}">
@@ -714,7 +736,7 @@ async function cambiarEstado(id, nuevoEstado) {
         
         Swal.fire({
             title: 'Actualizando...',
-            html: 'Cambiando estado del pedido <strong>#' + id + '</strong>',
+            html: 'Cambiando estado del pedido',
             allowOutsideClick: false,
             showConfirmButton: false,
             didOpen: () => Swal.showLoading()
@@ -744,7 +766,7 @@ async function cambiarEstado(id, nuevoEstado) {
         await Swal.fire({
             icon: 'success',
             title: '¡Estado actualizado!',
-            text: `El edido ahora está ${nuevoEstado}`,
+            text: `El pedido ahora está ${nuevoEstado}`,
             timer: 1500,
             showConfirmButton: false
         });
