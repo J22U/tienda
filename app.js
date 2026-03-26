@@ -643,6 +643,66 @@ app.put('/pedidos/:id/total-manual', async (req, res) => {
     }
 });
 
+// Nuevo endpoint para cancelar pedido
+app.put('/pedidos/:id/cancelar', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const pool = await poolPromise;
+        
+        // Obtener detalles del pedido para restaurar stock
+        const pedidoResult = await pool.request()
+            .input('id', sql.Int, id)
+            .query('SELECT * FROM Pedidos WHERE PedidoID = @id');
+        
+        if (pedidoResult.recordset.length === 0) {
+            return res.status(404).json({ error: 'Pedido no encontrado' });
+        }
+        
+        const pedido = pedidoResult.recordset[0];
+        const items = JSON.parse(pedido.Productos || '[]');
+        
+        if (items.length === 0) {
+            // Sin items, solo cambiar estado
+            await pool.request()
+                .input('id', sql.Int, id)
+                .query("UPDATE Pedidos SET Estado = 'Cancelado' WHERE PedidoID = @id");
+        } else {
+            // Transacción para restaurar stock
+            const transaction = new sql.Transaction(pool);
+            await transaction.begin();
+            
+            try {
+                // Restaurar stock por cada item
+                for (const item of items) {
+                    await transaction.request()
+                        .input('pId', sql.Int, item.ProductoID)
+                        .input('cant', sql.Int, item.cantidad || 0)
+                        .query('UPDATE Productos SET Stock = Stock + @cant WHERE ProductoID = @pId');
+                }
+                
+                // Cambiar estado a Cancelado
+                await transaction.request()
+                    .input('id', sql.Int, id)
+                    .query("UPDATE Pedidos SET Estado = 'Cancelado' WHERE PedidoID = @id");
+                
+                await transaction.commit();
+            } catch (txErr) {
+                await transaction.rollback();
+                throw txErr;
+            }
+        }
+        
+        // Emitir evento socket para refresh real-time
+        io.emit('pedido-updated', { PedidoID: id, Estado: 'Cancelado' });
+        
+        res.json({ success: true, message: 'Pedido cancelado y stock restaurado' });
+    } catch (err) {
+        console.error('Error cancelar pedido:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
 // 🔥 PEDIDO-LEVEL DISCOUNT (new endpoint)
 app.put('/pedidos/:id/descuento-pedido', async (req, res) => {
     const { id } = req.params;

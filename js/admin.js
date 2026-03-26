@@ -136,7 +136,16 @@ listaProductos.addEventListener('click', e => {
             generarFacturaPDFParaPedido(id);
             return;
         }
+
+        // Cancelar pedido button
+        const cancelarBtn = e.target.closest('.pedido-btn-cancelar');
+        if (cancelarBtn) {
+            const id = cancelarBtn.dataset.pedidoId;
+            cancelarPedido(id);
+            return;
+        }
     });
+
 
     // NEW: Dedicated toggle function
     async function togglePedidoDetails(pedidoId, row) {
