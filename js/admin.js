@@ -320,6 +320,11 @@ function renderPedidos(peds, container, preserveCollapsed = false) {
         const btnClass = p.Estado === 'Completado' ? 'success' : 'warning';
         const btnText = p.Estado === 'Completado' ? 'Pendiente' : 'Completar';
 
+        const totalOriginal = Number(p.Total) || 0;
+        const totalFinal = Number(p.TotalManual || p.Total) || 0;
+        const descuentoCardPct = totalOriginal > totalFinal && totalOriginal > 0 ? ((totalOriginal - totalFinal) / totalOriginal) * 100 : 0;
+        const descuentoCardHtml = totalOriginal > totalFinal ? `<div style="font-size:0.85rem;"><span style="text-decoration:line-through; color:#999;">$${totalOriginal.toLocaleString()}</span> <span class="badge bg-success">-${descuentoCardPct.toFixed(1)}%</span></div>` : '';
+
         return `
             <article class="pedido-card" data-pedido-id="${p.PedidoID}" data-pedido-numero="${numeroVisual}">
                 <div class="pedido-card-header">
@@ -328,7 +333,8 @@ function renderPedidos(peds, container, preserveCollapsed = false) {
                         <small class="text-muted">${new Date(p.Fecha).toLocaleString('es-ES')}</small>
                     </div>
                     <div class="text-end">
-                        <div class="h5 text-success mb-1">$${Number(p.TotalManual || p.Total).toLocaleString()}</div>
+                        ${descuentoCardHtml}
+                        <div class="h5 text-success mb-1">$${totalFinal.toLocaleString()}</div>
                         <span class="badge bg-${estadoClass}">${p.Estado}</span>
                     </div>
                 </div>
@@ -1114,10 +1120,14 @@ function renderModalItems() {
 
         const badgeDescuento = descuentoLinea > 0 ? `<span style="background:#ff9800; color:white; padding:2px 4px; border-radius:3px; font-size:0.7em;">-${descuentoLinea}%</span>` : '';
 
+        const precioDisplay = descuentoLinea > 0 ?
+            `<div><span style="text-decoration:line-through; color:#999; font-size:0.85em;">$${precioOriginal.toLocaleString()}</span><br><strong>$${precioConDescuento.toLocaleString()}</strong></div>` :
+            `$${precioOriginal.toLocaleString()}`;
+
         html += `<tr>
             <td>${item.Nombre}</td>
             <td>${cantidad}</td>
-            <td>$${precioOriginal.toLocaleString()}</td>
+            <td>${precioDisplay}</td>
             <td style="text-align:right;"><strong>$${subtotalDescontado.toLocaleString()}</strong></td>
             <td style="text-align: center; min-width: 80px;">
                 <button class="btn btn-sm btn-outline-warning btn-descuento-linea" data-index="${idx}" title="Aplicar descuento" style="padding:3px 6px; font-size:0.7rem;">
