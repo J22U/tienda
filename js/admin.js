@@ -1132,7 +1132,7 @@ async function mostrarDetallesPedido(pedidoId, pedidoNumeroVisual) {
     }
 }
 
-function renderModalItems() {
+function renderModalItems(descuentoPedidoOverride = null) {
     const productosArr = window.productosModalArr;
     const tbody = document.getElementById('modalProductosBody');
     if (!tbody) {
@@ -1143,6 +1143,19 @@ function renderModalItems() {
 
     let bruto = 0;
     let neto = 0;
+
+    let descuentoPedido = 0;
+    if (typeof descuentoPedidoOverride === 'number' && !isNaN(descuentoPedidoOverride)) {
+        descuentoPedido = descuentoPedidoOverride;
+    } else if (window.pedidoModalData && Number(window.pedidoModalData.DescuentoPorcentaje) > 0) {
+        descuentoPedido = Number(window.pedidoModalData.DescuentoPorcentaje);
+    } else {
+        const input = document.getElementById('modalDescuentoInput');
+        if (input) {
+            const val = parseFloat(input.value);
+            if (!isNaN(val) && val > 0) descuentoPedido = val;
+        }
+    }
 
     for (let idx = 0; idx < productosArr.length; idx++) {
         const item = productosArr[idx];
@@ -1186,7 +1199,8 @@ function renderModalItems() {
         </tr>`;
     }
 
-    const descuentoTotal = bruto - neto;
+    const netoConPedido = neto * (1 - descuentoPedido / 100);
+    const descuentoTotal = bruto - netoConPedido;
     const descuentoPctPromedio = bruto > 0 ? (descuentoTotal / bruto * 100) : 0;
 
     html += `
@@ -1200,16 +1214,21 @@ function renderModalItems() {
         </tr>
         <tr style="background:#f0f0f0; font-weight:bold;">
             <td colspan="4" style="text-align:right; padding: 10px;">TOTAL FINAL:</td>
-            <td style="text-align:right; color:#27ae60; padding: 10px;">$${neto.toLocaleString()}</td>
+            <td style="text-align:right; color:#27ae60; padding: 10px;">$${netoConPedido.toLocaleString()}</td>
         </tr>`;
 
-    tbody.innerHTML = html || '<tr><td colspan="5" class="text-center text-muted py-4">Sin productos</td></tr>';
+    const totalPreview = document.getElementById('totalPreview');
+    if (totalPreview) {
+        totalPreview.textContent = `${descuentoPedido > 0 ? `Pedido: ${descuentoPedido.toFixed(2)}%` : ''}`;
+    }
 
     const modalTotalEl = document.getElementById('modalTotal');
     if (modalTotalEl) {
         const totalBadge = descuentoPctPromedio > 0 ? `<span style="background:#27ae60; color:#fff; padding:2px 6px; border-radius:4px; font-size:0.82rem; margin-left:10px;">Dto. ${descuentoPctPromedio.toFixed(2)}%</span>` : '';
-        modalTotalEl.innerHTML = `<strong>$${neto.toLocaleString()}</strong>${totalBadge}`;
+        modalTotalEl.innerHTML = `<strong>$${netoConPedido.toLocaleString()}</strong>${totalBadge}`;
     }
+
+    tbody.innerHTML = html || '<tr><td colspan="5" class="text-center text-muted py-4">Sin productos</td></tr>';
 
     console.log('Tabla brutos + resumen:', productosArr.length, 'items | Bruto:', bruto, 'Dto:', descuentoTotal, 'Neto:', neto);
 
@@ -1234,41 +1253,7 @@ function recalcularModalTotal() {
 function livePreviewTotal() {
     const input = document.getElementById('modalDescuentoInput');
     const descuentoPedido = parseFloat(input.value) || 0;
-    const productosArr = window.productosModalArr;
-
-    let totalBase = 0;
-    let totalConDesc = 0;
-
-    productosArr.forEach(item => {
-        const cantidad = Number(item.cantidad || 0);
-        const precioOriginal = Number(item.PrecioOriginal || item.Precio || 0);
-
-        let descuentoLinea = Number(item.DescuentoPorcentajePedido || 0);
-        if (!descuentoLinea && item.PrecioConDescuento && precioOriginal > 0) {
-            const precioConDesc = Number(item.PrecioConDescuento);
-            if (!isNaN(precioConDesc)) {
-                descuentoLinea = ((precioOriginal - precioConDesc) / precioOriginal) * 100;
-            }
-        }
-
-        const precioConDescuento = item.PrecioConDescuento ? Number(item.PrecioConDescuento) : (precioOriginal * (1 - descuentoLinea / 100));
-
-        totalBase += cantidad * precioOriginal;
-        totalConDesc += cantidad * precioConDescuento;
-    });
-
-    const totalConDescuentoPedido = totalConDesc * (1 - descuentoPedido / 100);
-    const porcDescuentoTotal = totalBase > 0 ? ((totalBase - totalConDescuentoPedido) / totalBase * 100) : 0;
-
-    const modalTotalEl = document.getElementById('modalTotal');
-    if (modalTotalEl) {
-        modalTotalEl.innerHTML = `<strong>$${Number(totalConDescuentoPedido).toLocaleString()}</strong> <small class="text-success">Dto. ${porcDescuentoTotal.toFixed(2)}%</small>`;
-    }
-
-    const totalPreview = document.getElementById('totalPreview');
-    if (totalPreview) {
-        totalPreview.textContent = `~ $${Number(totalConDescuentoPedido).toLocaleString()} | Dto. ${porcDescuentoTotal.toFixed(2)}%`;
-    }
+    renderModalItems(descuentoPedido);
 }
 
 window.aplicarDescuentoModal = async function() {
@@ -1293,6 +1278,12 @@ window.aplicarDescuentoModal = async function() {
         
         const data = await res.json();
         
+        // ✅ Actualizar estado de descuento en memoria y tabla modal
+        if (!window.pedidoModalData) window.pedidoModalData = {};
+        window.pedidoModalData.DescuentoPorcentaje = descuento;
+        window.pedidoModalData.TotalManual = data.totalManual;
+        renderModalItems(descuento);
+
         // ✅ Update modal total (clean)
         const formattedManual = Number(data.totalManual || data.Total).toLocaleString();
         const descuentoBadge = descuento > 0 ? `<span style="background:#27ae60; color:white; padding:2px 6px; border-radius:4px; font-size:0.8em; margin-left:10px;">Dto. ${descuento}%</span>` : '';
