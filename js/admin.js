@@ -1108,14 +1108,21 @@ async function mostrarDetallesPedido(pedidoId, pedidoNumeroVisual) {
         const modalTotalEl = document.getElementById('modalTotal');
         descuentoInput.dataset.productoId = '';
         descuentoInput.value = '';
-        
-        // Total limpio + mostrar descuento aplicado
-        const formattedTotal = Number(p.TotalManual || p.Total).toLocaleString();
-        const descuentoBadge = p.DescuentoPorcentaje > 0 ? `<span style="background:#27ae60; color:white; padding:2px 6px; border-radius:4px; font-size:0.8em; margin-left:10px;">Dto. ${p.DescuentoPorcentaje}%</span>` : '';
-        modalTotalEl.innerHTML = `<strong>$${formattedTotal}</strong>${descuentoBadge}`;
-        
+
+        // Siempre permitir editar descuento pedido
         descuentoInput.value = p.DescuentoPorcentaje || '';
+        descuentoInput.disabled = false;
+
+        // Renderizar línea de productos y cálculo de descuentos de línea
         renderModalItems();
+
+        // Si hay descuento de pedido se mantiene visible (prioritario)
+        if (p.DescuentoPorcentaje > 0 && modalTotalEl) {
+            const formattedTotal = Number(p.TotalManual || p.Total).toLocaleString();
+            const descuentoBadge = `<span style="background:#27ae60; color:white; padding:2px 6px; border-radius:4px; font-size:0.8em; margin-left:10px;">Dto. ${p.DescuentoPorcentaje}%</span>`;
+            modalTotalEl.innerHTML = `<strong>$${formattedTotal}</strong>${descuentoBadge}`;
+        }
+
         descuentoInput.addEventListener('input', livePreviewTotal);
         
         // Show modal
@@ -1141,8 +1148,16 @@ function renderModalItems() {
         const item = productosArr[idx];
         const cantidad = Number(item.cantidad || 0);
         const precioOriginal = Number(item.PrecioOriginal || item.Precio || 0);
-        const descuentoLinea = Number(item.DescuentoPorcentajePedido || 0);
-        const precioConDescuento = precioOriginal - (precioOriginal * descuentoLinea / 100);
+
+        let descuentoLinea = Number(item.DescuentoPorcentajePedido || 0);
+        if (!descuentoLinea && item.PrecioConDescuento && precioOriginal > 0) {
+            const precioConDesc = Number(item.PrecioConDescuento);
+            if (!isNaN(precioConDesc)) {
+                descuentoLinea = ((precioOriginal - precioConDesc) / precioOriginal) * 100;
+            }
+        }
+
+        const precioConDescuento = item.PrecioConDescuento ? Number(item.PrecioConDescuento) : (precioOriginal - (precioOriginal * descuentoLinea / 100));
 
         const subtotalOriginal = precioOriginal * cantidad;
         const subtotalDescontado = precioConDescuento * cantidad;
@@ -1150,9 +1165,10 @@ function renderModalItems() {
         bruto += subtotalOriginal;
         neto += subtotalDescontado;
 
-        const badgeDescuento = descuentoLinea > 0 ? `<span style="background:#ff9800; color:white; padding:2px 4px; border-radius:3px; font-size:0.7em;">-${descuentoLinea}%</span>` : '';
+        const pctLinea = Number(descuentoLinea) || 0;
+        const badgeDescuento = pctLinea > 0 ? `<span style="background:#ff9800; color:white; padding:2px 4px; border-radius:3px; font-size:0.7em;">-${pctLinea.toFixed(1)}%</span>` : '';
 
-        const precioDisplay = descuentoLinea > 0 ?
+        const precioDisplay = pctLinea > 0 ?
             `<div><span style="text-decoration:line-through; color:#999; font-size:0.85em;">$${precioOriginal.toLocaleString()}</span><br><strong>$${precioConDescuento.toLocaleString()}</strong></div>` :
             `$${precioOriginal.toLocaleString()}`;
 
@@ -1188,6 +1204,13 @@ function renderModalItems() {
         </tr>`;
 
     tbody.innerHTML = html || '<tr><td colspan="5" class="text-center text-muted py-4">Sin productos</td></tr>';
+
+    const modalTotalEl = document.getElementById('modalTotal');
+    if (modalTotalEl) {
+        const totalBadge = descuentoPctPromedio > 0 ? `<span style="background:#27ae60; color:#fff; padding:2px 6px; border-radius:4px; font-size:0.82rem; margin-left:10px;">Dto. ${descuentoPctPromedio.toFixed(2)}%</span>` : '';
+        modalTotalEl.innerHTML = `<strong>$${neto.toLocaleString()}</strong>${totalBadge}`;
+    }
+
     console.log('Tabla brutos + resumen:', productosArr.length, 'items | Bruto:', bruto, 'Dto:', descuentoTotal, 'Neto:', neto);
 
     document.querySelectorAll('.btn-descuento-linea').forEach(btn => {
@@ -1210,19 +1233,42 @@ function recalcularModalTotal() {
 // 🆕 Live preview for discount input (non-persisted)
 function livePreviewTotal() {
     const input = document.getElementById('modalDescuentoInput');
-    const descuento = parseFloat(input.value) || 0;
+    const descuentoPedido = parseFloat(input.value) || 0;
     const productosArr = window.productosModalArr;
-    
-    let totalOriginal = 0;
+
+    let totalBase = 0;
+    let totalConDesc = 0;
+
     productosArr.forEach(item => {
-        totalOriginal += item.cantidad * Number(item.Precio);
+        const cantidad = Number(item.cantidad || 0);
+        const precioOriginal = Number(item.PrecioOriginal || item.Precio || 0);
+
+        let descuentoLinea = Number(item.DescuentoPorcentajePedido || 0);
+        if (!descuentoLinea && item.PrecioConDescuento && precioOriginal > 0) {
+            const precioConDesc = Number(item.PrecioConDescuento);
+            if (!isNaN(precioConDesc)) {
+                descuentoLinea = ((precioOriginal - precioConDesc) / precioOriginal) * 100;
+            }
+        }
+
+        const precioConDescuento = item.PrecioConDescuento ? Number(item.PrecioConDescuento) : (precioOriginal * (1 - descuentoLinea / 100));
+
+        totalBase += cantidad * precioOriginal;
+        totalConDesc += cantidad * precioConDescuento;
     });
-    
-    const totalPreview = totalOriginal * (1 - descuento / 100);
-    document.getElementById('modalTotal').innerHTML = `
-        <strong>Preview: $${Number(totalPreview).toLocaleString()}</strong>
-        <small class="text-muted">-${descuento.toFixed(2)}%</small>
-    `;
+
+    const totalConDescuentoPedido = totalConDesc * (1 - descuentoPedido / 100);
+    const porcDescuentoTotal = totalBase > 0 ? ((totalBase - totalConDescuentoPedido) / totalBase * 100) : 0;
+
+    const modalTotalEl = document.getElementById('modalTotal');
+    if (modalTotalEl) {
+        modalTotalEl.innerHTML = `<strong>$${Number(totalConDescuentoPedido).toLocaleString()}</strong> <small class="text-success">Dto. ${porcDescuentoTotal.toFixed(2)}%</small>`;
+    }
+
+    const totalPreview = document.getElementById('totalPreview');
+    if (totalPreview) {
+        totalPreview.textContent = `~ $${Number(totalConDescuentoPedido).toLocaleString()} | Dto. ${porcDescuentoTotal.toFixed(2)}%`;
+    }
 }
 
 window.aplicarDescuentoModal = async function() {
@@ -1322,17 +1368,57 @@ function mostrarNotificacion(msg) {
 window.pedidosActuales = []; // Cache current filtered list
 
 function renderPedidos(peds, container) {
-    window.pedidosActuales = peds; // Cache for numeroVisual lookup
+    window.pedidosActuales = peds; // Cache current filtered list
     if (!peds.length) {
         container.innerHTML = '<div class="text-center py-5 text-muted"><i class="bi bi-cart-x fs-1 mb-3"></i>No hay pedidos</div>';
         return;
     }
-    
+
     container.innerHTML = peds.map((p, index) => {
         const newEstado = p.Estado === 'Completado' ? 'Pendiente' : 'Completado';
         const btnClass = p.Estado === 'Completado' ? 'success' : 'warning';
         const btnText = p.Estado === 'Completado' ? 'Pendiente' : 'Completar';
         const numeroVisual = peds.length - index;
+
+        let totalOriginal = Number(p.Total || 0);
+        let totalFinal = Number(p.TotalManual || p.Total || 0);
+
+        try {
+            const prodArr = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos;
+            if (Array.isArray(prodArr) && prodArr.length) {
+                const orig = prodArr.reduce((sum, item) => {
+                    const cant = Number(item.cantidad || 0);
+                    const price = Number(item.PrecioOriginal || item.Precio || 0);
+                    return sum + price * cant;
+                }, 0);
+                const final = prodArr.reduce((sum, item) => {
+                    const cant = Number(item.cantidad || 0);
+                    let price = Number(item.PrecioConDescuento || 0);
+                    if (!price) {
+                        const pOrig = Number(item.PrecioOriginal || item.Precio || 0);
+                        const dlinea = Number(item.DescuentoPorcentajePedido || 0);
+                        price = pOrig * (1 - dlinea / 100);
+                    }
+                    return sum + price * cant;
+                }, 0);
+
+                if (orig > 0) {
+                    totalOriginal = orig;
+                    totalFinal = final;
+                }
+            }
+        } catch (e) {
+            console.warn('Error parsing Productos para resumen de descuento:', e);
+        }
+
+        const descuentoPct = totalOriginal > 0 && totalFinal < totalOriginal ? ((totalOriginal - totalFinal) / totalOriginal * 100) : 0;
+
+        const discountHeader = descuentoPct > 0
+            ? `<div><small style="text-decoration: line-through; color: #888; font-size: 0.8em;">$${Number(totalOriginal).toLocaleString()}</small><span style="background:#27ae60; color:white; padding:2px 5px; border-radius:4px; font-size:0.7em; margin-left:5px;">Dto. ${descuentoPct.toFixed(2)}%</span></div>`
+            : p.DescuentoPorcentaje > 0
+                ? `<div><small style="text-decoration: line-through; color: #888; font-size: 0.8em;">$${Number(p.Total).toLocaleString()}</small><span style="background:#27ae60; color:white; padding:2px 5px; border-radius:4px; font-size:0.7em; margin-left:5px;">Dto. ${Number(p.DescuentoPorcentaje).toFixed(2)}%</span></div>`
+                : '';
+
         return `
         <div class="pedido-row p-3 border-bottom" data-pedido-id="${p.PedidoID}" data-numero-visual="${numeroVisual}">
             <div class="d-flex justify-content-between">
@@ -1341,38 +1427,18 @@ function renderPedidos(peds, container) {
                     <br><small class="text-muted">${new Date(p.Fecha).toLocaleString('es-ES')}</small>
                 </div>
                 <div class="text-end">
-                    ${p.DescuentoPorcentaje > 0 ? `
-                        <div>
-                            <small style="text-decoration: line-through; color: #888; font-size: 0.8em;">$${Number(p.Total).toLocaleString()}</small>
-                            <span style="background:#27ae60; color:white; padding:2px 5px; border-radius:4px; font-size:0.7em; margin-left:5px;">-${p.DescuentoPorcentaje}%</span>
-                        </div>
-                    ` : ''}
-                    <div class="h5 fw-bold" style="color: #2563eb;">$${Number(p.TotalManual || p.Total).toLocaleString()}</div>
+                    ${discountHeader}
+                    <div class="h5 fw-bold" style="color: #2563eb;">$${Number(totalFinal).toLocaleString()}</div>
                     <span class="badge bg-${p.Estado === 'Completado' ? 'success' : p.Estado === 'Pendiente' ? 'warning' : 'secondary'}">${p.Estado}</span>
                 </div>
             </div>
             <div class="mt-2">
-                <button class="btn btn-sm btn-outline-${btnClass} me-1 pedido-btn-status" 
-                        data-pedido-id="${p.PedidoID}" 
-                        data-new-estado="${newEstado}">
-                    ${btnText}
-                </button>
-                <button class="btn btn-sm btn-primary me-1 pedido-btn-factura" 
-                        data-pedido-id="${p.PedidoID}">
-                    <i class="bi bi-file-earmark-pdf me-1"></i>Factura
-                </button>
-                <button class="btn btn-sm btn-outline-danger me-1 pedido-btn-cancelar" 
-                        data-pedido-id="${p.PedidoID}" title="Cancelar pedido y retornar stock">
-                    <i class="bi bi-x-circle me-1"></i>Cancelar
-                </button>
-                <button class="btn btn-sm btn-outline-danger pedido-btn-delete" 
-                        data-pedido-id="${p.PedidoID}">
-                    Eliminar
-                </button>
+                <button class="btn btn-sm btn-outline-${btnClass} me-1 pedido-btn-status" data-pedido-id="${p.PedidoID}" data-new-estado="${newEstado}">${btnText}</button>
+                <button class="btn btn-sm btn-primary me-1 pedido-btn-factura" data-pedido-id="${p.PedidoID}"><i class="bi bi-file-earmark-pdf me-1"></i>Factura</button>
+                <button class="btn btn-sm btn-outline-danger me-1 pedido-btn-cancelar" data-pedido-id="${p.PedidoID}" title="Cancelar pedido y retornar stock"><i class="bi bi-x-circle me-1"></i>Cancelar</button>
+                <button class="btn btn-sm btn-outline-danger pedido-btn-delete" data-pedido-id="${p.PedidoID}">Eliminar</button>
             </div>
-            <div class="pedido-row-details collapse mt-3">
-                <div class="pedido-details-body p-2"></div>
-            </div>
+            <div class="pedido-row-details collapse mt-3"><div class="pedido-details-body p-2"></div></div>
         </div>`;
     }).join('');
 }
@@ -1513,3 +1579,4 @@ document.addEventListener('DOMContentLoaded', function() {
     if (btnCancelar) btnCancelar.onclick = forzarCierreModal;
     if (btnClose) btnClose.onclick = forzarCierreModal;
 });
+
