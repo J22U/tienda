@@ -320,8 +320,30 @@ function renderPedidos(peds, container, preserveCollapsed = false) {
         const btnClass = p.Estado === 'Completado' ? 'success' : 'warning';
         const btnText = p.Estado === 'Completado' ? 'Pendiente' : 'Completar';
 
-        const totalOriginal = Number(p.Total) || 0;
-        const totalFinal = Number(p.TotalManual || p.Total) || 0;
+        // Si fue descuento por producto en el pedido, calcular con productos para mostrar precio tachado en card
+        let totalOriginal = Number(p.Total) || 0;
+        let totalFinal = Number(p.TotalManual || p.Total) || 0;
+        try {
+            const prodArr = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos;
+            if (Array.isArray(prodArr) && prodArr.length) {
+                const orig = prodArr.reduce((sum, item) => {
+                    const cant = Number(item.cantidad) || 0;
+                    const priceOrig = Number(item.PrecioOriginal || item.Precio || 0);
+                    return sum + (priceOrig * cant);
+                }, 0);
+                const final = prodArr.reduce((sum, item) => {
+                    const cant = Number(item.cantidad) || 0;
+                    const priceFinal = Number(item.PrecioConDescuento || item.Precio || item.PrecioOriginal || 0);
+                    return sum + (priceFinal * cant);
+                }, 0);
+                if (orig > 0) {
+                    totalOriginal = orig;
+                    totalFinal = final;
+                }
+            }
+        } catch (e) {
+            // ignore parse errors
+        }
         const descuentoCardPct = totalOriginal > totalFinal && totalOriginal > 0 ? ((totalOriginal - totalFinal) / totalOriginal) * 100 : 0;
         const descuentoCardHtml = totalOriginal > totalFinal ? `<div style="font-size:0.85rem;"><span style="text-decoration:line-through; color:#999;">$${totalOriginal.toLocaleString()}</span> <span class="badge bg-success">-${descuentoCardPct.toFixed(1)}%</span></div>` : '';
 
