@@ -685,8 +685,27 @@ async function aplicarDescuentoProducto(id, descuentoActual, nombreProducto) {
     document.getElementById('inputDescuento').value = descuentoActual || 0;
     document.getElementById('inputDescuento').dataset.productId = id;
     document.getElementById('btnConfirmarDescuento').dataset.productId = id;
+    document.getElementById('modalDescuentoTipo').value = 'producto';
     new bootstrap.Modal(document.getElementById('modalDescuento')).show();
 }
+
+// 🎯 Abrir modal descuento para línea específica del pedido
+function abrirModalDescuentoLinea(productoIndex) {
+    const producto = window.productosModalArr[productoIndex];
+    if (!producto) {
+        Swal.fire('Error', 'Producto no encontrado', 'error');
+        return;
+    }
+    const descuentoActual = producto.DescuentoPorcentajePedido || 0;
+    document.getElementById('modal-product-name').textContent = `${producto.Nombre} (Línea ${productoIndex + 1})`;
+    document.getElementById('inputDescuento').value = descuentoActual;
+    document.getElementById('modalDescuentoTitulo').textContent = 'Descuento por Línea';
+    document.getElementById('modalDescuentoTipo').value = 'linea';
+    document.getElementById('modalDescuentoProductoIndex').value = productoIndex;
+    document.getElementById('btnConfirmarDescuento').dataset.productoIndex = productoIndex;
+    new bootstrap.Modal(document.getElementById('modalDescuento')).show();
+}
+
 
 // Pedidos actions
 async function cambiarEstado(id, nuevoEstado) {
@@ -1078,31 +1097,49 @@ function renderModalItems() {
     const dtoPesos = bruto * (descuentoPct / 100);
     const neto = bruto - dtoPesos;
     
-    for (let item of productosArr) {
+    for (let idx = 0; idx < productosArr.length; idx++) {
+        const item = productosArr[idx];
         const subtotal = item.cantidad * item.Precio;
+        const dtoProducto = item.DescuentoPorcentajePedido || 0;
+        const badgeDescuento = dtoProducto > 0 ? `<span style="background:#ff9800; color:white; padding:2px 4px; border-radius:3px; font-size:0.7em;">Dto. ${dtoProducto}%</span>` : '';
+        
         html += `<tr>
             <td>${item.Nombre}</td>
             <td>${item.cantidad}</td>
             <td>$${Number(item.Precio).toLocaleString()}</td>
             <td style="text-align:right;"><strong>$${Number(subtotal).toLocaleString()}</strong></td>
+            <td style="text-align: center; min-width: 120px;">
+                <button class="btn btn-sm btn-outline-warning btn-descuento-linea" data-index="${idx}" title="Aplicar descuento a esta línea">
+                    <i class="bi bi-tag"></i> Descuento
+                </button>
+                ${badgeDescuento}
+            </td>
         </tr>`;
     }
     
     html += `
         <tr style="border-top: 1px solid #ddd;">
-            <td colspan="3" style="text-align:right; padding: 5px; color: #666;">Suma Bruta:</td>
+            <td colspan="4" style="text-align:right; padding: 5px; color: #666;">Suma Bruta:</td>
             <td style="text-align:right; padding: 5px; color: #666;">$${bruto.toLocaleString()}</td>
         </tr>
         <tr style="color:#d32f2f;">
-            <td colspan="3" style="text-align:right; padding: 5px;">Descuento (${descuentoPct}%):</td>
+            <td colspan="4" style="text-align:right; padding: 5px;">Descuento (${descuentoPct}%):</td>
             <td style="text-align:right; padding: 5px;">-$${dtoPesos.toLocaleString()}</td>
         </tr>
         <tr style="background:#f0f0f0; font-weight:bold;">
-            <td colspan="3" style="text-align:right; padding: 10px;">TOTAL FINAL:</td>
+            <td colspan="4" style="text-align:right; padding: 10px;">TOTAL FINAL:</td>
             <td style="text-align:right; color:#27ae60; padding: 10px;">$${Math.round(neto).toLocaleString()}</td>
         </tr>`;
-    tbody.innerHTML = html || '<tr><td colspan="4" class="text-center text-muted py-4">Sin productos</td></tr>';
+    tbody.innerHTML = html || '<tr><td colspan="5" class="text-center text-muted py-4">Sin productos</td></tr>';
     console.log('Tabla brutos + resumen:', productosArr.length, 'items | Bruto:', bruto, 'Dto:', dtoPesos, 'Neto:', neto);
+    
+    // Agregar event listeners a botones de descuento
+    document.querySelectorAll('.btn-descuento-linea').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const index = parseInt(this.dataset.index);
+            abrirModalDescuentoLinea(index);
+        });
+    });
 }
 
 function recalcularModalTotal() {
@@ -1308,7 +1345,12 @@ function forzarCierreModal() {
     const modalInstance = bootstrap.Modal.getInstance(modalEl);
     if (modalInstance) modalInstance.hide();
 
-    // 2. ELIMINAR EL GRIS A LA FUERZA
+    // 2. Limpiar estado del modal
+    document.getElementById('modalDescuentoTitulo').textContent = 'Aplicar Descuento';
+    document.getElementById('modalDescuentoTipo').value = 'producto';
+    document.getElementById('inputDescuento').value = '';
+
+    // 3. ELIMINAR EL GRIS A LA FUERZA
     document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
     document.body.classList.remove('modal-open');
     document.body.style.overflow = 'auto';
@@ -1319,38 +1361,88 @@ function forzarCierreModal() {
 document.addEventListener('click', function(e) {
     if (e.target.matches('#btnConfirmarDescuento')) {
         const btn = e.target;
-        const id = btn.dataset.productId;
         const descuentoEl = document.getElementById('inputDescuento');
         const descuento = parseFloat(descuentoEl.value);
+        const tipoDescuento = document.getElementById('modalDescuentoTipo').value;
         
         if (isNaN(descuento) || descuento < 0 || descuento > 100) {
             Swal.fire('Error', 'Descuento debe estar entre 0-100%', 'warning');
             return;
         }
         
-        // Ejecutar PUT
-        fetch(`/productos/${id}/descuento`, {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({descuento: descuento})
-        })
-        .then(res => {
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            return res.json();
-        })
-        .then(() => {
-            forzarCierreModal();
+        // Descuento a PRODUCTO (globalmente)
+        if (tipoDescuento === 'producto') {
+            const id = btn.dataset.productId;
+            fetch(`/productos/${id}/descuento`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({descuento: descuento})
+            })
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
+            .then(() => {
+                forzarCierreModal();
+                descuentoEl.value = '';
+                descuentoEl.dataset.productId = '';
+                btn.dataset.productId = '';
+                Swal.fire('Descuento aplicado', '', 'success');
+                cargarProductos();
+            })
+            .catch(err => {
+                forzarCierreModal();
+                Swal.fire('Error', err.message, 'error');
+            });
+        }
+        // Descuento a LÍNEA del pedido
+        else if (tipoDescuento === 'linea') {
+            const productoIndex = parseInt(btn.dataset.productoIndex);
+            const pedidoId = window.pedidoModalData?.PedidoID;
             
-            descuentoEl.value = '';
-            descuentoEl.dataset.productId = '';
-            btn.dataset.productId = '';
-            Swal.fire('Descuento aplicado', '', 'success');
-            cargarProductos();
-        })
-        .catch(err => {
-            forzarCierreModal();
-            Swal.fire('Error', err.message, 'error');
-        });
+            if (!pedidoId) {
+                Swal.fire('Error', 'Pedido no identificado', 'error');
+                return;
+            }
+            
+            fetch(`/pedidos/${pedidoId}/producto-descuento`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    productoIndex: productoIndex,
+                    descuentoPorcentaje: descuento
+                })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
+            .then(data => {
+                forzarCierreModal();
+                window.productosModalArr = data.productos;
+                
+                // Recalcular total considerando descuentos globales del pedido
+                const brutoConDescuentosLinea = data.nuevoTotal;
+                const descuentoPctGlobal = window.pedidoModalData?.DescuentoPorcentaje || 0;
+                const totalFinal = brutoConDescuentosLinea * (1 - descuentoPctGlobal / 100);
+                
+                window.pedidoModalData.TotalManual = totalFinal;
+                
+                // Actualizar UI
+                const totalEl = document.getElementById('modalTotal');
+                const descuentoBadge = descuentoPctGlobal > 0 ? `<span style="background:#27ae60; color:white; padding:2px 6px; border-radius:4px; font-size:0.8em; margin-left:10px;">Dto. ${descuentoPctGlobal}%</span>` : '';
+                totalEl.innerHTML = `<strong>$${totalFinal.toLocaleString()}</strong>${descuentoBadge}`;
+                
+                renderModalItems();
+                Swal.fire('Descuento aplicado', `Nuevo total: $${totalFinal.toLocaleString()}`, 'success');
+                descuentoEl.value = '';
+                btn.dataset.productoIndex = '';
+            })
+            .catch(err => {
+                forzarCierreModal();
+                Swal.fire('Error', err.message, 'error');
+            });
+        }
     }
 });
 

@@ -808,6 +808,73 @@ app.get('/pedidos', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// 🎯 DESCUENTO POR PRODUCTO EN PEDIDO - Aplica descuento a una línea específica
+app.put('/pedidos/:pedidoId/producto-descuento', async (req, res) => {
+    const { pedidoId } = req.params;
+    const { productoIndex, descuentoPorcentaje } = req.body;
+    
+    try {
+        const pool = await poolPromise;
+        
+        // Obtener el pedido actual
+        const pedidoResult = await pool.request()
+            .input('id', sql.Int, pedidoId)
+            .query('SELECT Productos, Total FROM Pedidos WHERE PedidoID = @id');
+            
+        if (pedidoResult.recordset.length === 0) {
+            return res.status(404).json({ error: 'Pedido no encontrado' });
+        }
+        
+        let productos = pedidoResult.recordset[0].Productos;
+        if (typeof productos === 'string') {
+            productos = JSON.parse(productos);
+        }
+        
+        // Validar que el índice existe
+        if (!productos[productoIndex]) {
+            return res.status(400).json({ error: 'Producto no encontrado en el pedido' });
+        }
+        
+        // Aplicar descuento al producto específico
+        const producto = productos[productoIndex];
+        const precioOriginal = parseFloat(producto.PrecioOriginal || producto.Precio) || 0;
+        const descuento = parseFloat(descuentoPorcentaje) || 0;
+        const precioConDescuento = precioOriginal - (precioOriginal * descuento / 100);
+        
+        // Guardar el descuento en el producto
+        producto.DescuentoPorcentajePedido = descuento;
+        producto.Precio = precioConDescuento;
+        
+        // Recalcular total del pedido considerando todos los descuentos por línea
+        let nuevoTotal = 0;
+        for (let item of productos) {
+            const desc = parseFloat(item.DescuentoPorcentajePedido || 0) || 0;
+            const precioOrigItem = parseFloat(item.PrecioOriginal || item.Precio) || 0;
+            const precioFinal = precioOrigItem - (precioOrigItem * desc / 100);
+            nuevoTotal += precioFinal * item.cantidad;
+        }
+        
+        // Guardar cambios
+        await pool.request()
+            .input('id', sql.Int, pedidoId)
+            .input('productos', sql.NVarChar, JSON.stringify(productos))
+            .input('total', sql.Decimal(18, 2), nuevoTotal)
+            .query('UPDATE Pedidos SET Productos = @productos, TotalManual = @total WHERE PedidoID = @id');
+        
+        console.log(`💳 Pedido ${pedidoId}: Descuento ${descuento}% a producto ${productoIndex} → Nuevo total: $${nuevoTotal}`);
+        
+        res.json({
+            success: true,
+            productos,
+            nuevoTotal,
+            productoIndex
+        });
+    } catch (err) {
+        console.error('Descuento producto error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ===== BADGE SUPPORT - Unread Count Endpoint =====
 app.get('/unread-count', async (req, res) => {
     try {
