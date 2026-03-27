@@ -1095,22 +1095,30 @@ function renderModalItems() {
         return;
     }
     let html = '';
-    const descuentoPct = window.pedidoModalData?.DescuentoPorcentaje || 0;
-    const bruto = window.productosModalArr.reduce((acc, i) => acc + (i.cantidad * i.Precio), 0);
-    const dtoPesos = bruto * (descuentoPct / 100);
-    const neto = bruto - dtoPesos;
-    
+
+    let bruto = 0;
+    let neto = 0;
+
     for (let idx = 0; idx < productosArr.length; idx++) {
         const item = productosArr[idx];
-        const subtotal = item.cantidad * item.Precio;
-        const dtoProducto = item.DescuentoPorcentajePedido || 0;
-        const badgeDescuento = dtoProducto > 0 ? `<span style="background:#ff9800; color:white; padding:2px 4px; border-radius:3px; font-size:0.7em;">-${dtoProducto}%</span>` : '';
-        
+        const cantidad = Number(item.cantidad || 0);
+        const precioOriginal = Number(item.PrecioOriginal || item.Precio || 0);
+        const descuentoLinea = Number(item.DescuentoPorcentajePedido || 0);
+        const precioConDescuento = precioOriginal - (precioOriginal * descuentoLinea / 100);
+
+        const subtotalOriginal = precioOriginal * cantidad;
+        const subtotalDescontado = precioConDescuento * cantidad;
+
+        bruto += subtotalOriginal;
+        neto += subtotalDescontado;
+
+        const badgeDescuento = descuentoLinea > 0 ? `<span style="background:#ff9800; color:white; padding:2px 4px; border-radius:3px; font-size:0.7em;">-${descuentoLinea}%</span>` : '';
+
         html += `<tr>
             <td>${item.Nombre}</td>
-            <td>${item.cantidad}</td>
-            <td>$${Number(item.Precio).toLocaleString()}</td>
-            <td style="text-align:right;"><strong>$${Number(subtotal).toLocaleString()}</strong></td>
+            <td>${cantidad}</td>
+            <td>$${precioOriginal.toLocaleString()}</td>
+            <td style="text-align:right;"><strong>$${subtotalDescontado.toLocaleString()}</strong></td>
             <td style="text-align: center; min-width: 80px;">
                 <button class="btn btn-sm btn-outline-warning btn-descuento-linea" data-index="${idx}" title="Aplicar descuento" style="padding:3px 6px; font-size:0.7rem;">
                     <i class="bi bi-tag"></i>
@@ -1119,24 +1127,27 @@ function renderModalItems() {
             </td>
         </tr>`;
     }
-    
+
+    const descuentoTotal = bruto - neto;
+    const descuentoPctPromedio = bruto > 0 ? (descuentoTotal / bruto * 100) : 0;
+
     html += `
         <tr style="border-top: 1px solid #ddd;">
             <td colspan="4" style="text-align:right; padding: 5px; color: #666;">Suma Bruta:</td>
             <td style="text-align:right; padding: 5px; color: #666;">$${bruto.toLocaleString()}</td>
         </tr>
         <tr style="color:#d32f2f;">
-            <td colspan="4" style="text-align:right; padding: 5px;">Descuento (${descuentoPct}%):</td>
-            <td style="text-align:right; padding: 5px;">-$${dtoPesos.toLocaleString()}</td>
+            <td colspan="4" style="text-align:right; padding: 5px;">Descuento (${descuentoPctPromedio.toFixed(1)}%):</td>
+            <td style="text-align:right; padding: 5px;">-$${descuentoTotal.toLocaleString()}</td>
         </tr>
         <tr style="background:#f0f0f0; font-weight:bold;">
             <td colspan="4" style="text-align:right; padding: 10px;">TOTAL FINAL:</td>
-            <td style="text-align:right; color:#27ae60; padding: 10px;">$${Math.round(neto).toLocaleString()}</td>
+            <td style="text-align:right; color:#27ae60; padding: 10px;">$${neto.toLocaleString()}</td>
         </tr>`;
+
     tbody.innerHTML = html || '<tr><td colspan="5" class="text-center text-muted py-4">Sin productos</td></tr>';
-    console.log('Tabla brutos + resumen:', productosArr.length, 'items | Bruto:', bruto, 'Dto:', dtoPesos, 'Neto:', neto);
-    
-    // Agregar event listeners a botones de descuento
+    console.log('Tabla brutos + resumen:', productosArr.length, 'items | Bruto:', bruto, 'Dto:', descuentoTotal, 'Neto:', neto);
+
     document.querySelectorAll('.btn-descuento-linea').forEach(btn => {
         btn.addEventListener('click', function() {
             const index = parseInt(this.dataset.index);

@@ -843,17 +843,18 @@ app.put('/pedidos/:pedidoId/producto-descuento', async (req, res) => {
         const descuento = parseFloat(descuentoPorcentaje) || 0;
         const precioConDescuento = precioOriginal - (precioOriginal * descuento / 100);
         
-        // Guardar el descuento en el producto
+        // Guardar el descuento en el producto sin tocar el precio original
+        producto.PrecioOriginal = precioOriginal;
+        producto.PrecioConDescuento = precioConDescuento;
         producto.DescuentoPorcentajePedido = descuento;
-        producto.Precio = precioConDescuento;
-        
+
         // Recalcular total del pedido considerando todos los descuentos por línea
         let nuevoTotal = 0;
         for (let item of productos) {
-            const desc = parseFloat(item.DescuentoPorcentajePedido || 0) || 0;
-            const precioOrigItem = parseFloat(item.PrecioOriginal || item.Precio) || 0;
-            const precioFinal = precioOrigItem - (precioOrigItem * desc / 100);
-            nuevoTotal += precioFinal * item.cantidad;
+            const precioBase = parseFloat(item.PrecioOriginal || item.Precio) || 0;
+            const descuentoItem = parseFloat(item.DescuentoPorcentajePedido || 0) || 0;
+            const precioFinalItem = precioBase - (precioBase * descuentoItem / 100);
+            nuevoTotal += precioFinalItem * (parseInt(item.cantidad) || 0);
         }
         
         // Guardar cambios
