@@ -108,8 +108,9 @@ listaPedidos.addEventListener('click', async e => {
     const pedidoRow = e.target.closest('.pedido-row, .table-row-main, .pedido-card');
     if (pedidoRow && !e.target.closest('button')) {
         const pedidoId = pedidoRow.dataset.pedidoId;
+        const pedidoNumero = pedidoRow.dataset.pedidoNumero;
         if (pedidoId) {
-            await mostrarDetallesPedido(pedidoId);
+            await mostrarDetallesPedido(pedidoId, pedidoNumero);
         }
         return;
     }
@@ -320,7 +321,7 @@ function renderPedidos(peds, container, preserveCollapsed = false) {
         const btnText = p.Estado === 'Completado' ? 'Pendiente' : 'Completar';
 
         return `
-            <article class="pedido-card" data-pedido-id="${p.PedidoID}">
+            <article class="pedido-card" data-pedido-id="${p.PedidoID}" data-pedido-numero="${numeroVisual}">
                 <div class="pedido-card-header">
                     <div>
                         <h5 class="pedido-card-title">#${numeroVisual} - ${p.NombreCliente}</h5>
@@ -1014,9 +1015,9 @@ async function generarFacturaPDF(p, numeroPedido) {
 window.productosModalArr = []; // Global for discount updates
 window.pedidoModalData = null; // Global pedido data (con DescuentoPorcentaje)
 
-async function mostrarDetallesPedido(pedidoId) {
+async function mostrarDetallesPedido(pedidoId, pedidoNumeroVisual) {
     try {
-        console.log('🔍 Intentando cargar pedido ID:', pedidoId, 'desde BD');
+        console.log('🔍 Intentando cargar pedido ID:', pedidoId, 'desde BD', 'numero visual:', pedidoNumeroVisual);
         const res = await fetch(`/pedidos/${pedidoId}`);
         console.log('Respuesta servidor:', res.status, res.statusText);
         if (!res.ok) {
@@ -1053,8 +1054,9 @@ async function mostrarDetallesPedido(pedidoId) {
         const elDireccion = document.getElementById('modalDireccion');
         const elBtnFactura = document.getElementById('modalBtnFactura');
         
-        if (elNum) elNum.textContent = `#${p.NumeroDisplay || p.PedidoID}`;
-        if (elNum2) elNum2.textContent = `#${p.NumeroDisplay || p.PedidoID}`;
+        const numeroVisual = pedidoNumeroVisual ? `#${pedidoNumeroVisual}` : `#${p.NumeroDisplay || p.PedidoID}`;
+        if (elNum) elNum.textContent = numeroVisual;
+        if (elNum2) elNum2.textContent = numeroVisual;
         if (elCliente) elCliente.textContent = p.NombreCliente || 'N/A';
         if (elFecha) elFecha.textContent = new Date(p.Fecha || Date.now()).toLocaleString('es-ES');
         if (elEstado) elEstado.textContent = p.Estado || 'N/A';
