@@ -1044,6 +1044,7 @@ async function mostrarDetallesPedido(pedidoId) {
         
         // All details (DOM safe check)
         const elNum = document.getElementById('modalPedidoNum');
+        const elNum2 = document.getElementById('modalPedidoNum2');
         const elCliente = document.getElementById('modalCliente');
         const elFecha = document.getElementById('modalFecha');
         const elEstado = document.getElementById('modalEstado');
@@ -1053,6 +1054,7 @@ async function mostrarDetallesPedido(pedidoId) {
         const elBtnFactura = document.getElementById('modalBtnFactura');
         
         if (elNum) elNum.textContent = `#${p.NumeroDisplay || p.PedidoID}`;
+        if (elNum2) elNum2.textContent = `#${p.NumeroDisplay || p.PedidoID}`;
         if (elCliente) elCliente.textContent = p.NombreCliente || 'N/A';
         if (elFecha) elFecha.textContent = new Date(p.Fecha || Date.now()).toLocaleString('es-ES');
         if (elEstado) elEstado.textContent = p.Estado || 'N/A';
