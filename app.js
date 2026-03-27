@@ -758,10 +758,10 @@ app.put('/pedidos/:id/descuento', async (req, res) => {
     try {
         const pool = await poolPromise;
         
-        // Get current Total (original/base)
+        // Get current pedido data including Productos
         const pedido = await pool.request()
             .input('id', sql.Int, id)
-            .query('SELECT Total as totalBase FROM Pedidos WHERE PedidoID = @id');
+            .query('SELECT Total as totalBase, Productos FROM Pedidos WHERE PedidoID = @id');
             
         if (pedido.recordset.length === 0) {
             return res.status(404).json({ error: 'Pedido no encontrado' });
@@ -771,11 +771,27 @@ app.put('/pedidos/:id/descuento', async (req, res) => {
         const descuento = parseFloat(descuentoPorcentaje) || 0;
         const totalManual = totalBase * (1 - descuento / 100);
         
+        // Update products JSON to set PrecioOriginal if not set (for card display consistency)
+        let productos = pedido.recordset[0].Productos;
+        if (productos) {
+            if (typeof productos === 'string') {
+                productos = JSON.parse(productos);
+            }
+            // Set PrecioOriginal for all products if not already set
+            productos.forEach(item => {
+                if (!item.PrecioOriginal) {
+                    item.PrecioOriginal = item.Precio;
+                }
+            });
+            productos = JSON.stringify(productos);
+        }
+        
         await pool.request()
             .input('id', sql.Int, id)
             .input('desc', sql.Decimal(5,2), descuento)
             .input('totalManual', sql.Decimal(18,2), totalManual)
-            .query('UPDATE Pedidos SET DescuentoPorcentaje = @desc, TotalManual = @totalManual WHERE PedidoID = @id');
+            .input('productos', sql.NVarChar, productos)
+            .query('UPDATE Pedidos SET DescuentoPorcentaje = @desc, TotalManual = @totalManual, Productos = @productos WHERE PedidoID = @id');
             
         // Update /pedidos to show TotalManual if exists
         console.log(`💰 Pedido ${id}: ${descuento}% → TotalManual $${totalManual.toLocaleString()} (persists!)`);

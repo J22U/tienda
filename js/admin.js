@@ -320,25 +320,36 @@ function renderPedidos(peds, container, preserveCollapsed = false) {
         const btnClass = p.Estado === 'Completado' ? 'success' : 'warning';
         const btnText = p.Estado === 'Completado' ? 'Pendiente' : 'Completar';
 
-        // Si fue descuento por producto en el pedido, calcular con productos para mostrar precio tachado en card
+        // Calcular totales para mostrar descuento en card
         let totalOriginal = Number(p.Total) || 0;
         let totalFinal = Number(p.TotalManual || p.Total) || 0;
+        let hasProductDiscounts = false;
         try {
             const prodArr = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos;
             if (Array.isArray(prodArr) && prodArr.length) {
-                const orig = prodArr.reduce((sum, item) => {
-                    const cant = Number(item.cantidad) || 0;
-                    const priceOrig = Number(item.PrecioOriginal || item.Precio || 0);
-                    return sum + (priceOrig * cant);
-                }, 0);
-                const final = prodArr.reduce((sum, item) => {
-                    const cant = Number(item.cantidad) || 0;
-                    const priceFinal = Number(item.PrecioConDescuento || item.Precio || item.PrecioOriginal || 0);
-                    return sum + (priceFinal * cant);
-                }, 0);
-                if (orig > 0) {
+                hasProductDiscounts = prodArr.some(item => (item.DescuentoPorcentajePedido > 0) || (item.PrecioConDescuento && item.PrecioConDescuento !== item.PrecioOriginal && item.PrecioConDescuento !== item.Precio));
+                
+                if (hasProductDiscounts) {
+                    // Si hay descuentos por producto, calcular desde productos
+                    const orig = prodArr.reduce((sum, item) => {
+                        const cant = Number(item.cantidad) || 0;
+                        const priceOrig = Number(item.PrecioOriginal || item.Precio || 0);
+                        return sum + (priceOrig * cant);
+                    }, 0);
+                    const final = prodArr.reduce((sum, item) => {
+                        const cant = Number(item.cantidad) || 0;
+                        const priceFinal = Number(item.PrecioConDescuento || item.Precio || item.PrecioOriginal || 0);
+                        return sum + (priceFinal * cant);
+                    }, 0);
                     totalOriginal = orig;
                     totalFinal = final;
+                } else if (p.DescuentoPorcentaje > 0) {
+                    // Si hay descuento de pedido pero no de productos, usar Total y TotalManual
+                    totalOriginal = Number(p.Total) || 0;
+                    totalFinal = Number(p.TotalManual || p.Total) || 0;
+                } else {
+                    // Sin descuentos
+                    totalOriginal = totalFinal;
                 }
             }
         } catch (e) {
@@ -1104,7 +1115,6 @@ async function mostrarDetallesPedido(pedidoId, pedidoNumeroVisual) {
         modalTotalEl.innerHTML = `<strong>$${formattedTotal}</strong>${descuentoBadge}`;
         
         descuentoInput.value = p.DescuentoPorcentaje || '';
-        descuentoInput.disabled = p.DescuentoPorcentaje > 0;
         renderModalItems();
         descuentoInput.addEventListener('input', livePreviewTotal);
         
@@ -1239,9 +1249,8 @@ window.aplicarDescuentoModal = async function() {
         
         // ✅ Update modal total (clean)
         const formattedManual = Number(data.totalManual || data.Total).toLocaleString();
-        document.getElementById('modalTotal').innerHTML = `<strong>$${formattedManual}</strong>`;
-        
-        input.disabled = true; // Lock after persist
+        const descuentoBadge = descuento > 0 ? `<span style="background:#27ae60; color:white; padding:2px 6px; border-radius:4px; font-size:0.8em; margin-left:10px;">Dto. ${descuento}%</span>` : '';
+        document.getElementById('modalTotal').innerHTML = `<strong>$${formattedManual}</strong>${descuentoBadge}`;
         
         // ✅ Auto-refresh main pedidos table
         await cargarPedidos();
