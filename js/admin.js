@@ -1463,7 +1463,7 @@ document.addEventListener('click', function(e) {
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 return res.json();
             })
-            .then(data => {
+            .then(async data => {
                 forzarCierreModal();
                 window.productosModalArr = data.productos;
                 
@@ -1480,6 +1480,10 @@ document.addEventListener('click', function(e) {
                 totalEl.innerHTML = `<strong>$${totalFinal.toLocaleString()}</strong>${descuentoBadge}`;
                 
                 renderModalItems();
+
+                // ✅ Sync card list
+                await cargarPedidos();
+
                 Swal.fire('Descuento aplicado', `Nuevo total: $${totalFinal.toLocaleString()}`, 'success');
                 descuentoEl.value = '';
                 btn.dataset.productoIndex = '';
