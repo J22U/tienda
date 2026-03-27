@@ -108,7 +108,7 @@ listaPedidos.addEventListener('click', async e => {
     const pedidoRow = e.target.closest('.pedido-row, .table-row-main, .pedido-card');
     if (pedidoRow && !e.target.closest('button')) {
         const pedidoId = pedidoRow.dataset.pedidoId;
-        const pedidoNumero = pedidoRow.dataset.pedidoNumero;
+        const pedidoNumero = pedidoRow.dataset.pedidoNumero || pedidoRow.dataset.numeroVisual;
         if (pedidoId) {
             await mostrarDetallesPedido(pedidoId, pedidoNumero);
         }
@@ -324,7 +324,7 @@ function renderPedidos(peds, container, preserveCollapsed = false) {
             <article class="pedido-card" data-pedido-id="${p.PedidoID}" data-pedido-numero="${numeroVisual}">
                 <div class="pedido-card-header">
                     <div>
-                        <h5 class="pedido-card-title">#${numeroVisual} - ${p.NombreCliente}</h5>
+                        <h5 class="pedido-card-title">${numeroVisual} - ${p.NombreCliente}</h5>
                         <small class="text-muted">${new Date(p.Fecha).toLocaleString('es-ES')}</small>
                     </div>
                     <div class="text-end">
