@@ -1043,7 +1043,6 @@ async function mostrarDetallesPedido(pedidoId) {
         }
         
         // All details (DOM safe check)
-        const numeroVisualPedido = obtenerNumeroVisualActual(pedidoId);
         const elNum = document.getElementById('modalPedidoNum');
         const elCliente = document.getElementById('modalCliente');
         const elFecha = document.getElementById('modalFecha');
@@ -1053,7 +1052,7 @@ async function mostrarDetallesPedido(pedidoId) {
         const elDireccion = document.getElementById('modalDireccion');
         const elBtnFactura = document.getElementById('modalBtnFactura');
         
-        if (elNum) elNum.textContent = `#${p.PedidoID}`;
+        if (elNum) elNum.textContent = `#${p.NumeroDisplay || p.PedidoID}`;
         if (elCliente) elCliente.textContent = p.NombreCliente || 'N/A';
         if (elFecha) elFecha.textContent = new Date(p.Fecha || Date.now()).toLocaleString('es-ES');
         if (elEstado) elEstado.textContent = p.Estado || 'N/A';
@@ -1101,16 +1100,16 @@ function renderModalItems() {
         const item = productosArr[idx];
         const subtotal = item.cantidad * item.Precio;
         const dtoProducto = item.DescuentoPorcentajePedido || 0;
-        const badgeDescuento = dtoProducto > 0 ? `<span style="background:#ff9800; color:white; padding:2px 4px; border-radius:3px; font-size:0.7em;">Dto. ${dtoProducto}%</span>` : '';
+        const badgeDescuento = dtoProducto > 0 ? `<span style="background:#ff9800; color:white; padding:2px 4px; border-radius:3px; font-size:0.7em;">-${dtoProducto}%</span>` : '';
         
         html += `<tr>
             <td>${item.Nombre}</td>
             <td>${item.cantidad}</td>
             <td>$${Number(item.Precio).toLocaleString()}</td>
             <td style="text-align:right;"><strong>$${Number(subtotal).toLocaleString()}</strong></td>
-            <td style="text-align: center; min-width: 120px;">
-                <button class="btn btn-sm btn-outline-warning btn-descuento-linea" data-index="${idx}" title="Aplicar descuento a esta línea">
-                    <i class="bi bi-tag"></i> Descuento
+            <td style="text-align: center; min-width: 80px;">
+                <button class="btn btn-sm btn-outline-warning btn-descuento-linea" data-index="${idx}" title="Aplicar descuento" style="padding:3px 6px; font-size:0.7rem;">
+                    <i class="bi bi-tag"></i>
                 </button>
                 ${badgeDescuento}
             </td>

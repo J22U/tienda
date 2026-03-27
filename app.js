@@ -580,7 +580,9 @@ app.get('/pedidos/:id', async (req, res) => {
     try {
         const pool = await poolPromise;
         const { id } = req.params;
-        const result = await pool.request().input('id', sql.Int, id).query('SELECT * FROM Pedidos WHERE PedidoID = @id');
+        const result = await pool.request()
+            .input('id', sql.Int, id)
+            .query('SELECT *, (SELECT COUNT(*) FROM Pedidos p2 WHERE p2.Fecha >= Pedidos.Fecha) as NumeroDisplay FROM Pedidos WHERE PedidoID = @id');
         if (!result.recordset || result.recordset.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
         res.json(result.recordset[0]);
     } catch (err) { res.status(500).json({ error: err.message }); }
