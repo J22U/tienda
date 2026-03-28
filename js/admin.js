@@ -1178,18 +1178,17 @@ function renderModalItems(descuentoPedidoOverride = null) {
         bruto += subtotalOriginal;
         neto += subtotalDescontado;
 
-        const pctLinea = Number(descuentoLinea) || 0;
-        const badgeDescuento = pctLinea > 0 ? `<span style="background:#ff9800; color:white; padding:2px 4px; border-radius:3px; font-size:0.7em;">-${pctLinea.toFixed(1)}%</span>` : '';
+        const pctLinea = precioOriginal > 0 ? ((precioOriginal - precioConDescuento) / precioOriginal * 100) : 0;
+        const badgeDescuento = pctLinea > 0 ? `<span style="background:#ff9800; color:white; padding:2px 4px; border-radius:3px; font-size:0.7em;">${pctLinea.toFixed(1)}%</span>` : '';
 
-        const precioDisplay = pctLinea > 0 ?
-            `<div><span style="text-decoration:line-through; color:#999; font-size:0.85em;">$${precioOriginal.toLocaleString()}</span><br><strong>$${precioConDescuento.toLocaleString()}</strong></div>` :
-            `$${precioOriginal.toLocaleString()}`;
+        // Precio siempre original (el descuento queda en subtotal / resumen)
+        const precioDisplay = `$${precioOriginal.toLocaleString()}`;
 
         html += `<tr>
             <td>${item.Nombre}</td>
             <td>${cantidad}</td>
             <td>${precioDisplay}</td>
-            <td style="text-align:right;"><strong>$${subtotalDescontado.toLocaleString()}</strong></td>
+            <td style="text-align:right;"><input type="number" class="form-control form-control-sm item-subtotal" data-index="${idx}" value="${subtotalDescontado.toFixed(2)}" min="0" step="0.01" /></td>
             <td style="text-align: center; min-width: 80px;">
                 <button class="btn btn-sm btn-outline-warning btn-descuento-linea" data-index="${idx}" title="Aplicar descuento" style="padding:3px 6px; font-size:0.7rem;">
                     <i class="bi bi-tag"></i>
@@ -1236,6 +1235,24 @@ function renderModalItems(descuentoPedidoOverride = null) {
         btn.addEventListener('click', function() {
             const index = parseInt(this.dataset.index);
             abrirModalDescuentoLinea(index);
+        });
+    });
+
+    document.querySelectorAll('.item-subtotal').forEach(input => {
+        input.addEventListener('input', function() {
+            const index = parseInt(this.dataset.index, 10);
+            const item = productosArr[index];
+            const cantidad = Number(item.cantidad || 0);
+            const value = Number(this.value) || 0;
+            const nuevoPrecio = cantidad > 0 ? value / cantidad : 0;
+
+            item.PrecioConDescuento = nuevoPrecio;
+            if (Number(item.PrecioOriginal || item.Precio) > 0) {
+                item.DescuentoPorcentajePedido = ((Number(item.PrecioOriginal || item.Precio) - nuevoPrecio) / Number(item.PrecioOriginal || item.Precio) * 100);
+                if (item.DescuentoPorcentajePedido < 0) item.DescuentoPorcentajePedido = 0;
+            }
+
+            renderModalItems(descuentoPedido);
         });
     });
 }
