@@ -1151,19 +1151,7 @@ function renderModalItems(descuentoPedidoOverride = null) {
     let bruto = 0;
     let neto = 0;
 
-    let descuentoPedido = 0;
-    if (typeof descuentoPedidoOverride === 'number' && !isNaN(descuentoPedidoOverride)) {
-        descuentoPedido = descuentoPedidoOverride;
-    } else if (window.pedidoModalData && Number(window.pedidoModalData.DescuentoPorcentaje) > 0) {
-        descuentoPedido = Number(window.pedidoModalData.DescuentoPorcentaje);
-    } else {
-        const input = document.getElementById('modalDescuentoInput');
-        if (input) {
-            const val = parseFloat(input.value);
-            if (!isNaN(val) && val > 0) descuentoPedido = val;
-        }
-    }
-
+    // NOCH, calcular primero bruto/neto y luego aplicar descuento pedido (valor objetivo o %)
     for (let idx = 0; idx < productosArr.length; idx++) {
         const item = productosArr[idx];
         const cantidad = Number(item.cantidad || 0);
@@ -1200,7 +1188,31 @@ function renderModalItems(descuentoPedidoOverride = null) {
         </tr>`;
     }
 
-    const netoConPedido = neto * (1 - descuentoPedido / 100);
+    // Calcula descuento de pedido desde input total/porcentaje
+    const inputPedido = document.getElementById('modalDescuentoInput');
+    let valorPedido = Number(inputPedido?.value || 0);
+    let descuentoPedido = 0;
+
+    if (valorPedido > 0) {
+        if (valorPedido <= 100) {
+            // modo porcentaje legacy
+            descuentoPedido = valorPedido;
+        } else if (neto > 0) {
+            const targetFinal = valorPedido;
+            descuentoPedido = ((neto - targetFinal) / neto) * 100;
+            descuentoPedido = Math.max(0, Math.min(100, descuentoPedido));
+        }
+    } else if (window.pedidoModalData && Number(window.pedidoModalData.DescuentoPorcentaje) > 0) {
+        descuentoPedido = Number(window.pedidoModalData.DescuentoPorcentaje);
+    }
+
+    window.pedidoModalData = window.pedidoModalData || {};
+    window.pedidoModalData.NetoSubtotal = neto;
+    window.pedidoModalData.DescuentoPedidoActual = descuentoPedido;
+
+    const netoConPedido = (valorPedido > 0 && valorPedido > 100 && neto > 0)
+        ? Math.max(0, valorPedido)
+        : neto * (1 - descuentoPedido / 100);
     const descuentoTotal = bruto - netoConPedido;
     const descuentoPctPromedio = bruto > 0 ? (descuentoTotal / bruto * 100) : 0;
 
@@ -1295,9 +1307,7 @@ function recalcularModalTotal() {
 
 // 🆕 Live preview for discount input (non-persisted)
 function livePreviewTotal() {
-    const input = document.getElementById('modalDescuentoInput');
-    const descuentoPedido = parseFloat(input.value) || 0;
-    renderModalItems(descuentoPedido);
+    renderModalItems();
 }
 
 window.aplicarDescuentoModal = async function() {
