@@ -1415,8 +1415,8 @@ function renderPedidos(peds, container) {
         const btnText = p.Estado === 'Completado' ? 'Pendiente' : 'Completar';
         const numeroVisual = peds.length - index;
 
-        let totalOriginal = Number(p.Total || 0);
-        let totalFinal = Number(p.TotalManual || p.Total || 0);
+        let totalOriginal = Number(p.Total || p.TotalDisplay || 0);
+        let totalFinal = Number(p.TotalManual || p.TotalDisplay || p.Total || 0);
 
         try {
             const prodArr = typeof p.Productos === 'string' ? JSON.parse(p.Productos) : p.Productos;
@@ -1426,20 +1426,33 @@ function renderPedidos(peds, container) {
                     const price = Number(item.PrecioOriginal || item.Precio || 0);
                     return sum + price * cant;
                 }, 0);
+
                 const final = prodArr.reduce((sum, item) => {
                     const cant = Number(item.cantidad || 0);
                     let price = Number(item.PrecioConDescuento || 0);
-                    if (!price) {
+                    if (!price && Number(item.DescuentoPorcentajePedido || 0) > 0) {
                         const pOrig = Number(item.PrecioOriginal || item.Precio || 0);
                         const dlinea = Number(item.DescuentoPorcentajePedido || 0);
                         price = pOrig * (1 - dlinea / 100);
                     }
+                    if (!price) {
+                        price = Number(item.PrecioOriginal || item.Precio || 0);
+                    }
                     return sum + price * cant;
                 }, 0);
 
-                if (orig > 0) {
+                const hasProductDiscounts = prodArr.some(item =>
+                    Number(item.DescuentoPorcentajePedido || 0) > 0 ||
+                    (item.PrecioConDescuento && Number(item.PrecioConDescuento) !== Number(item.PrecioOriginal || item.Precio || 0))
+                );
+
+                if (hasProductDiscounts) {
                     totalOriginal = orig;
                     totalFinal = final;
+                } else if (Number(p.DescuentoPorcentaje) > 0 && Number(p.TotalManual) > 0) {
+                    // Si el pedido tiene descuento de pedido aplicado en TotalManual, respetarlo.
+                    totalOriginal = orig > 0 ? orig : totalOriginal;
+                    totalFinal = Number(p.TotalManual);
                 }
             }
         } catch (e) {
