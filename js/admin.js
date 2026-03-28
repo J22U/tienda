@@ -1189,12 +1189,7 @@ function renderModalItems(descuentoPedidoOverride = null) {
             <td>${cantidad}</td>
             <td>${precioDisplay}</td>
             <td style="text-align:right;"><input type="number" class="form-control form-control-sm item-subtotal" data-index="${idx}" value="${subtotalDescontado.toFixed(2)}" min="0" step="0.01" /></td>
-            <td style="text-align: center; min-width: 80px;">
-                <button class="btn btn-sm btn-outline-warning btn-descuento-linea" data-index="${idx}" title="Aplicar descuento" style="padding:3px 6px; font-size:0.7rem;">
-                    <i class="bi bi-tag"></i>
-                </button>
-                ${badgeDescuento}
-            </td>
+            <td style="text-align: center; min-width: 80px;">${badgeDescuento}</td>
         </tr>`;
     }
 
@@ -1231,28 +1226,53 @@ function renderModalItems(descuentoPedidoOverride = null) {
 
     console.log('Tabla brutos + resumen:', productosArr.length, 'items | Bruto:', bruto, 'Dto:', descuentoTotal, 'Neto:', neto);
 
-    document.querySelectorAll('.btn-descuento-linea').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const index = parseInt(this.dataset.index);
-            abrirModalDescuentoLinea(index);
-        });
-    });
-
     document.querySelectorAll('.item-subtotal').forEach(input => {
-        input.addEventListener('input', function() {
+        input.addEventListener('change', async function() {
             const index = parseInt(this.dataset.index, 10);
             const item = productosArr[index];
             const cantidad = Number(item.cantidad || 0);
             const value = Number(this.value) || 0;
             const nuevoPrecio = cantidad > 0 ? value / cantidad : 0;
+            const precioOriginal = Number(item.PrecioOriginal || item.Precio || 0);
+            const nuevoPct = precioOriginal > 0 ? ((precioOriginal - nuevoPrecio) / precioOriginal * 100) : 0;
+
+            const result = await Swal.fire({
+                title: 'Confirmar cambio',
+                html: `Nuevo subtotal: <strong>$${value.toLocaleString()}</strong><br>Descuento en el producto: <strong>${nuevoPct.toFixed(2)}%</strong>`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Guardar',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if (!result.isConfirmed) {
+                const oldSubtotal = (item.PrecioConDescuento || precioOriginal) * cantidad;
+                this.value = oldSubtotal.toFixed(2);
+                return;
+            }
 
             item.PrecioConDescuento = nuevoPrecio;
-            if (Number(item.PrecioOriginal || item.Precio) > 0) {
-                item.DescuentoPorcentajePedido = ((Number(item.PrecioOriginal || item.Precio) - nuevoPrecio) / Number(item.PrecioOriginal || item.Precio) * 100);
-                if (item.DescuentoPorcentajePedido < 0) item.DescuentoPorcentajePedido = 0;
+            item.DescuentoPorcentajePedido = nuevoPct < 0 ? 0 : nuevoPct;
+
+            const pedidoId = window.pedidoModalData?.PedidoID;
+            if (pedidoId) {
+                try {
+                    const resp = await fetch(`/pedidos/${pedidoId}/producto-descuento`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ productoIndex: index, descuentoPorcentaje: item.DescuentoPorcentajePedido })
+                    });
+                    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                    await resp.json();
+                    mostrarNotificacion('Descuento guardado en BD');
+                } catch (err) {
+                    console.error('Error guardando descuento producto:', err);
+                    Swal.fire('Error', 'No se pudo guardar el descuento en BD', 'error');
+                }
             }
 
             renderModalItems(descuentoPedido);
+            await cargarPedidos();
         });
     });
 }
