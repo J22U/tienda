@@ -911,12 +911,19 @@ async function generarFacturaPDF(p, numeroPedido) {
         const pOriginal = Number(item.PrecioOriginal || item.Precio);
         return acc + (pOriginal * Number(item.cantidad));
     }, 0);
-    
+
+    let subtotalLineas = productosArr.reduce((acc, item) => {
+        const cantidad = Number(item.cantidad || 0);
+        const pOriginal = Number(item.PrecioOriginal || item.Precio || 0);
+        const pVenta = Number(item.PrecioConDescuento || item.Precio || pOriginal);
+        return acc + (pVenta * cantidad);
+    }, 0);
+
     const descuentoPctExplicit = parseFloat(p.DescuentoPorcentaje) || 0;
-    const dtoPesosExplicit = subtotalBruto * (descuentoPctExplicit / 100);
-    const totalNetoReal = Math.round(subtotalBruto - dtoPesosExplicit);
-    const ahorroCalculado = dtoPesosExplicit; 
-    const porcentajeDescGlobal = descuentoPctExplicit > 0 ? descuentoPctExplicit : (subtotalBruto > 0 ? Math.round((ahorroCalculado / subtotalBruto) * 100) : 0);
+    const descuentoPedidoPesos = subtotalLineas * (descuentoPctExplicit / 100);
+    const totalNetoReal = Math.round(subtotalLineas - descuentoPedidoPesos);
+    const ahorroCalculado = subtotalBruto - totalNetoReal;
+    const porcentajeDescGlobal = subtotalBruto > 0 ? Math.round((ahorroCalculado / subtotalBruto) * 100) : 0;
 
     // 3. CONFIGURACIÓN ESTÉTICA
     const primaryColor = [34, 74, 43]; // Verde Trébol
@@ -980,14 +987,14 @@ async function generarFacturaPDF(p, numeroPedido) {
 
     // 4. TABLA DE PRODUCTOS
     const rows = productosArr.map(item => {
-        const pOriginal = Number(item.PrecioOriginal || item.Precio);
-        const pVenta = Number(item.Precio);
+        const pOriginal = Number(item.PrecioOriginal || item.Precio || 0);
+        const pVenta = Number(item.PrecioConDescuento || item.Precio || pOriginal);
         const descItem = pOriginal > 0 ? Math.round(((pOriginal - pVenta) / pOriginal) * 100) : 0;
         return [
             item.cantidad,
             { content: `${item.Nombre}${descItem > 0 ? ` (-${descItem}%)` : ''}`, styles: { fontStyle: 'bold' } },
             `$ ${pOriginal.toLocaleString()}`,
-            `$ ${(item.cantidad * pVenta).toLocaleString()}`
+            `$ ${(pVenta * Number(item.cantidad || 0)).toLocaleString()}`
         ];
     });
 
