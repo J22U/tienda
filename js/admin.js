@@ -1313,14 +1313,42 @@ function livePreviewTotal() {
 window.aplicarDescuentoModal = async function() {
     const input = document.getElementById('modalDescuentoInput');
     const pedidoId = document.querySelector('#modalBtnFactura')?.dataset.pedidoId;
-    
+
     if (!pedidoId) return Swal.fire('Error', 'Pedido no encontrado', 'warning');
-    
-    const descuento = parseFloat(input.value) || 0;
-    if (isNaN(descuento) || descuento < 0 || descuento > 100) {
-        return Swal.fire('Error', 'Descuento 0-100%', 'warning');
+
+    const rawValue = (input.value || '').toString().trim().replace(',', '.');
+    if (!rawValue) {
+        return Swal.fire('Error', 'Ingresa un valor de descuento o total válido', 'warning');
     }
-    
+
+    const inputNum = Number(rawValue);
+    if (Number.isNaN(inputNum) || inputNum < 0) {
+        return Swal.fire('Error', 'Ingresa un número válido mayor o igual a 0', 'warning');
+    }
+
+    let descuentoFinal;
+
+    if (inputNum <= 100) {
+        descuentoFinal = inputNum;
+    } else {
+        // Si el usuario ingresa el total del pedido, convertir a porcentaje automáticamente
+        const pedidoData = window.pedidoModalData || null;
+        const totalBase = Number(pedidoData?.Total || pedidoData?.TotalManual || 0);
+        if (!totalBase || totalBase <= 0) {
+            return Swal.fire('Error', 'No se pudo calcular descuento: total base inválido', 'error');
+        }
+        if (inputNum > totalBase) {
+            return Swal.fire('Error', 'El total ingresado no puede ser mayor al total base', 'warning');
+        }
+
+        descuentoFinal = ((totalBase - inputNum) / totalBase) * 100;
+        descuentoFinal = Math.max(0, Math.min(100, Number(descuentoFinal.toFixed(2))));
+    }
+
+    if (descuentoFinal < 0 || descuentoFinal > 100) {
+        return Swal.fire('Error', 'Descuento debe estar entre 0 y 100%', 'warning');
+    }
+
     try {
         const res = await fetch(`/pedidos/${pedidoId}/descuento`, {
             method: 'PUT',
