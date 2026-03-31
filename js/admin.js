@@ -950,7 +950,7 @@ async function generarFacturaPDF(p, numeroPedido) {
     doc.setFont("helvetica", "normal");
     doc.text("Luis David Rojas", 20, 32);
     doc.text("Cc 1038415279", 20, 37);
-    doc.text("El Peñol, Antioquia | Cel: 320 6313259", 20, 42);
+    doc.text("El Peñol, Antioquia | Cel: 322 9568362", 20, 42);
     doc.text("trebol@gmail.com", 20, 47);
 
     // CUADRO DE ORDEN
