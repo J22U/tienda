@@ -14,6 +14,17 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
+    // 🔍 Check if running from file:// protocol
+    if (window.location.protocol === 'file:') {
+        Swal.fire({
+            title: '⚠️ Servidor requerido',
+            text: 'La aplicación debe ejecutarse desde el servidor. Ve a http://localhost:3000/admin.html',
+            icon: 'warning',
+            confirmButtonText: 'Entendido'
+        });
+        return;
+    }
+
     // 🌐 Socket.io real-time (CSP/SIMPLE AUTH FIX) - FIXED GLOBAL SCOPE
     window.socket = io({
         auth: {
@@ -1903,18 +1914,40 @@ document.addEventListener('DOMContentLoaded', function() {
 window.exportarInventario = async function() {
     try {
         const token = localStorage.getItem('admin_token') || localStorage.getItem('token') || localStorage.getItem('admin_session');
+        console.log('DEBUG - Token retrieved:', token ? 'YES (' + token.substring(0, 20) + '...)' : 'NO');
+        
         if (!token) {
             Swal.fire('Error', 'Tu sesión expiró. Por favor inicia sesión de nuevo.', 'error');
             return;
         }
         
+        console.log('DEBUG - Making fetch to /backup');
         const response = await fetch('/backup', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         });
+        console.log('DEBUG - Response status:', response.status, response.statusText);
+        
         if (!response.ok) {
-            throw new Error(`Error al descargar backup: ${response.status}`);
+            const errorText = await response.text();
+            console.log('DEBUG - Error response:', errorText);
+            
+            if (response.status === 401 || response.status === 403) {
+                Swal.fire({
+                    title: 'Sesión expirada',
+                    text: 'Tu sesión ha expirado. Por favor inicia sesión de nuevo.',
+                    icon: 'warning',
+                    confirmButtonText: 'Ir al login'
+                }).then(() => {
+                    localStorage.removeItem('admin_token');
+                    localStorage.removeItem('admin_logged');
+                    window.location.replace('tienda.html');
+                });
+                return;
+            }
+            
+            throw new Error(`Error al descargar backup: ${response.status} - ${errorText}`);
         }
         
         const blob = await response.blob();
@@ -2040,6 +2073,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (!productosResponse.ok) {
                     const error = await productosResponse.json().catch(() => ({error: 'Error desconocido'}));
+                    
+                    if (productosResponse.status === 401 || productosResponse.status === 403) {
+                        Swal.fire({
+                            title: 'Sesión expirada',
+                            text: 'Tu sesión ha expirado. Por favor inicia sesión de nuevo.',
+                            icon: 'warning',
+                            confirmButtonText: 'Ir al login'
+                        }).then(() => {
+                            localStorage.removeItem('admin_token');
+                            localStorage.removeItem('admin_logged');
+                            window.location.replace('tienda.html');
+                        });
+                        return;
+                    }
+                    
                     throw new Error(error.error || 'Error al restaurar productos');
                 }
                 
@@ -2060,6 +2108,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (!pedidosResponse.ok) {
                         const error = await pedidosResponse.json().catch(() => ({error: 'Error desconocido'}));
                         console.warn('Error al restaurar pedidos:', error);
+                        
+                        if (pedidosResponse.status === 401 || pedidosResponse.status === 403) {
+                            Swal.fire({
+                                title: 'Sesión expirada',
+                                text: 'Tu sesión ha expirado. Por favor inicia sesión de nuevo.',
+                                icon: 'warning',
+                                confirmButtonText: 'Ir al login'
+                            }).then(() => {
+                                localStorage.removeItem('admin_token');
+                                localStorage.removeItem('admin_logged');
+                                window.location.replace('tienda.html');
+                            });
+                            return;
+                        }
+                        
                         pedidosResult = { error: error.error };
                     } else {
                         pedidosResult = await pedidosResponse.json();
