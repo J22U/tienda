@@ -364,7 +364,7 @@ document.addEventListener('click', function(e) {
   if(e.target.matches('#btn-importar, [data-action="importar"]')) return document.getElementById('inputImportar').click();
   const tabTarget = e.target.closest('[data-tab="Pendiente"], [data-tab="Completado"], [data-tab="Cancelado"], [data-tab="Todos"]');
   if(tabTarget && window.filtrarPedidos) {
-    const currentActive = document.querySelector('.d-flex.gap-2 button.active-filter');
+    const currentActive = document.querySelector('.tab-pedidos-filters button.active-filter');
     if (currentActive) currentActive.classList.remove('active-filter');
     tabTarget.classList.add('active-filter');
     return window.filtrarPedidos(tabTarget.dataset.tab);
