@@ -222,7 +222,8 @@ function compartirProducto(producto) {
     const urlProducto = `${window.location.origin}${window.location.pathname}?producto=${encodeURIComponent(producto.ProductoID)}`;
     const nombre = producto.Nombre || 'Producto';
     const precio = Number(producto.Precio || 0).toLocaleString();
-    const texto = `Mira este producto en Trébol:\n${nombre}\nPrecio: $${precio}\n${urlProducto}`;
+    const texto = `Mira este producto en Trébol:\n${nombre}\nPrecio: $${precio}`;
+    const textoConUrl = `${texto}\n${urlProducto}`; // fallback para copiar manual
 
     if (navigator.share) {
         return navigator.share({
@@ -237,7 +238,7 @@ function compartirProducto(producto) {
     }
 
     if (navigator.clipboard && window.isSecureContext) {
-        return navigator.clipboard.writeText(texto).then(() => {
+        return navigator.clipboard.writeText(textoConUrl).then(() => {
             Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Enlace copiado al portapapeles', timer: 1500 });
         }).catch(err => {
             console.warn('No se pudo copiar al portapapeles:', err);
