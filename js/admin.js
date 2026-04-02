@@ -533,7 +533,7 @@ function renderPedidos(peds, container, preserveCollapsed = false) {
     }
 
     const cardsHTML = peds.map((p, index) => {
-        const numeroVisual = peds.length - index;
+        const numeroVisual = p.NumeroDisplay || (peds.length - index);
         const estadoClass = p.Estado === 'Completado' ? 'success' : p.Estado === 'Pendiente' ? 'warning' : p.Estado === 'Cancelado' ? 'danger' : 'secondary';
         const newEstado = p.Estado === 'Completado' ? 'Pendiente' : 'Completado';
         const btnClass = p.Estado === 'Completado' ? 'success' : 'warning';
@@ -1337,7 +1337,7 @@ async function mostrarDetallesPedido(pedidoId, pedidoNumeroVisual) {
         const elDireccion = document.getElementById('modalDireccion');
         const elBtnFactura = document.getElementById('modalBtnFactura');
         
-        const numeroVisual = pedidoNumeroVisual ? `#${pedidoNumeroVisual}` : `#${p.NumeroDisplay || p.PedidoID}`;
+        const numeroVisual = `#${p.NumeroDisplay || pedidoNumeroVisual || p.PedidoID}`;
         if (elNum) elNum.textContent = numeroVisual;
         if (elNum2) elNum2.textContent = numeroVisual;
         if (elCliente) elCliente.textContent = p.NombreCliente || 'N/A';
@@ -1688,7 +1688,7 @@ function renderPedidos(peds, container) {
         const newEstado = p.Estado === 'Completado' ? 'Pendiente' : 'Completado';
         const btnClass = p.Estado === 'Completado' ? 'success' : 'warning';
         const btnText = p.Estado === 'Completado' ? 'Pendiente' : 'Completar';
-        const numeroVisual = peds.length - index;
+        const numeroVisual = p.NumeroDisplay || (peds.length - index);
 
         let totalOriginal = Number(p.Total || p.TotalDisplay || 0);
         let totalFinal = Number(p.TotalManual || p.TotalDisplay || p.Total || 0);
