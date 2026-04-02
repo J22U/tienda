@@ -189,10 +189,33 @@ async function cargarProductos() {
         }).join('');
 
         contenedor.innerHTML = htmlProductos;
+
+        // Si el usuario llegó con ?producto=ID, abrir detalle del producto
+        abrirProductoPorQuery();
     } catch (error) {
         console.error("Error cargando productos:", error);
         Swal.fire('Error', 'No se pudieron cargar los productos. Verifique su conexión.', 'error');
     }
+}
+
+function abrirProductoPorQuery() {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('producto');
+    if (!id) return;
+
+    const producto = productosData.find(item => item.ProductoID == id);
+    if (!producto) {
+        console.warn('No se encontró producto en query:', id);
+        return;
+    }
+
+    // Scroll to el producto para orientación UX (si está visible después del render)
+    const card = document.querySelector(`#contenedor-productos [data-id='${id}']`);
+    if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    verDetalle(id);
 }
 
 function compartirProducto(producto) {
