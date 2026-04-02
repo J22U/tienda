@@ -245,7 +245,7 @@ id="btn-importar" data-action="importar"
                             </div>
 
                             <div class="tab-pedidos-filters bg-light rounded-4 shadow-sm">
-                                <button class="btn btn-sm btn-dark rounded-pill px-3 fw-bold" id="btn-filtro-Todos" data-tab="Todos">
+                                <button class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold" id="btn-filtro-Todos" data-tab="Todos">
                                     TODOS
                                 </button>
                                 <button class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-bold" data-tab="Pendiente">
@@ -359,6 +359,12 @@ id="btn-importar" data-action="importar"
     
     <!-- CSP Event Delegation -->
     <script>
+// Inicializar filtro Todos como activo al cargar
+window.addEventListener('DOMContentLoaded', function() {
+  const inicial = document.querySelector('[data-tab="Todos"]');
+  if (inicial) inicial.classList.add('active-filter');
+});
+
 document.addEventListener('click', function(e) {
   if(e.target.matches('#btn-backup, [data-action="exportar"]')) return window.exportarInventario();
   if(e.target.matches('#btn-importar, [data-action="importar"]')) return document.getElementById('inputImportar').click();
