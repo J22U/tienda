@@ -117,6 +117,42 @@
                         <button type="submit" class="btn-main w-100" id="btn-guardar">GUARDAR PRODUCTO</button>
                     </form>
                 </div>
+
+                <div class="bento-card mt-4">
+                    <h4 class="fw-bold mb-3">Registrar Promoción</h4>
+                    <form id="form-promocion">
+                        <input type="hidden" id="promo-id" value="">
+                        <div class="mb-2">
+                            <label class="form-label">Título</label>
+                            <input type="text" id="promo-titulo" class="form-control" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Descripción</label>
+                            <textarea id="promo-descripcion" class="form-control" rows="3"></textarea>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Imagen</label>
+                            <input type="file" id="promo-imagen" class="form-control" accept="image/*">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="promo-activa">
+                                <span class="form-check-label">Activa</span>
+                            </label>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label">Inicio</label>
+                                <input type="date" id="promo-inicio" class="form-control">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Fin</label>
+                                <input type="date" id="promo-fin" class="form-control">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Guardar promoción</button>
+                    </form>
+                </div>
             </div>
 
             <!-- GESTIÓN DE PRODUCTOS -->
@@ -190,50 +226,9 @@ id="btn-importar" data-action="importar"
 
                         <!-- TAB: PROMOCIONES -->
                         <div class="tab-pane fade" id="tab-promociones">
-                            <div class="row g-4">
-                                <div class="col-md-6">
-                                    <div class="p-3 bg-white rounded shadow-sm">
-                                        <h5>Registrar Promoción</h5>
-                                        <form id="form-promocion">
-                                            <input type="hidden" id="promo-id" value="">
-                                            <div class="mb-2">
-                                                <label class="form-label">Título</label>
-                                                <input type="text" id="promo-titulo" class="form-control" required>
-                                            </div>
-                                            <div class="mb-2">
-                                                <label class="form-label">Descripción</label>
-                                                <textarea id="promo-descripcion" class="form-control" rows="3"></textarea>
-                                            </div>
-                                            <div class="mb-2">
-                                                <label class="form-label">Imagen</label>
-                                                <input type="file" id="promo-imagen" class="form-control" accept="image/*">
-                                            </div>
-                                            <div class="mb-2">
-                                                <label class="form-check form-switch">
-                                                    <input class="form-check-input" type="checkbox" id="promo-activa">
-                                                    <span class="form-check-label">Activa</span>
-                                                </label>
-                                            </div>
-                                            <div class="row g-2 mb-3">
-                                                <div class="col-6">
-                                                    <label class="form-label">Inicio</label>
-                                                    <input type="date" id="promo-inicio" class="form-control">
-                                                </div>
-                                                <div class="col-6">
-                                                    <label class="form-label">Fin</label>
-                                                    <input type="date" id="promo-fin" class="form-control">
-                                                </div>
-                                            </div>
-                                            <button type="submit" class="btn btn-success w-100">Guardar promoción</button>
-                                        </form>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="p-3 bg-white rounded shadow-sm">
-                                        <h5>Lista de promociones</h5>
-                                        <div id="lista-promociones"></div>
-                                    </div>
-                                </div>
+                            <div class="p-3 bg-white rounded shadow-sm">
+                                <h5>Lista de promociones</h5>
+                                <div id="lista-promociones"></div>
                             </div>
                         </div>
 
