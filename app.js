@@ -703,7 +703,8 @@ app.get('/pedidos', async (req, res) => {
         const pool = await poolPromise;
         const result = await pool.request().query(`
             SELECT *, 
-            (SELECT COUNT(*) FROM Pedidos p2 WHERE p2.Fecha >= p1.Fecha) as NumeroDisplay
+            -- Queremos numero histórico: pedido más antiguo = 1, más reciente = N
+            (SELECT COUNT(*) FROM Pedidos p2 WHERE p2.Fecha <= p1.Fecha) as NumeroDisplay
             FROM Pedidos p1 
             ORDER BY Fecha DESC
         `);
