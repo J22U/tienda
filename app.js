@@ -953,13 +953,14 @@ app.get('/pedidos', async (req, res) => {
                 WHEN TotalManual IS NOT NULL AND TotalManual > 0 THEN TotalManual 
                 ELSE Total 
             END as TotalDisplay,
-            (SELECT COUNT(*) FROM Pedidos p2 WHERE p2.Fecha >= p1.Fecha) as NumeroDisplay
+            -- El pedido MÁS ANTIGUO = 1, el más reciente = mayor valor
+            (SELECT COUNT(*) FROM Pedidos p2 WHERE p2.Fecha <= p1.Fecha) as NumeroDisplay
             FROM Pedidos p1 
             ORDER BY Fecha DESC
         `);
         res.json(result.recordset);
     } catch (err) { res.status(500).json({ error: err.message }); }
-});
+} );
 
 // 🎯 DESCUENTO POR PRODUCTO EN PEDIDO - Aplica descuento a una línea específica
 app.put('/pedidos/:pedidoId/producto-descuento', async (req, res) => {
