@@ -179,6 +179,10 @@ async function cargarProductos() {
                                     ${estaAgotado ? 'disabled' : ''}>
                                 ${estaAgotado ? 'AGOTADO' : '<i class="bi bi-cart-plus me-2"></i>AÑADIR'}
                             </button>
+                            <button class="btn btn-outline-primary w-100 fw-bold rounded-pill mt-2 btn-compartir" 
+                                    data-id="${p.ProductoID}">
+                                <i class="bi bi-share-fill me-2"></i>Compartir
+                            </button>
                         </div>
                     </div>
                 </div>`;
@@ -189,6 +193,36 @@ async function cargarProductos() {
         console.error("Error cargando productos:", error);
         Swal.fire('Error', 'No se pudieron cargar los productos. Verifique su conexión.', 'error');
     }
+}
+
+function compartirProducto(producto) {
+    const urlProducto = `${window.location.origin}${window.location.pathname}?producto=${encodeURIComponent(producto.ProductoID)}`;
+    const nombre = producto.Nombre || 'Producto';
+    const precio = Number(producto.Precio || 0).toLocaleString();
+    const texto = `Mira este producto en Trébol:\n${nombre}\nPrecio: $${precio}\n${urlProducto}`;
+
+    if (navigator.share) {
+        return navigator.share({
+            title: `Repuesto: ${nombre}`,
+            text: texto,
+            url: urlProducto
+        }).then(() => {
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Producto compartido correctamente', timer: 1500 });
+        }).catch(err => {
+            console.warn('Compartir cancelado o falló:', err);
+        });
+    }
+
+    if (navigator.clipboard && window.isSecureContext) {
+        return navigator.clipboard.writeText(texto).then(() => {
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Enlace copiado al portapapeles', timer: 1500 });
+        }).catch(err => {
+            console.warn('No se pudo copiar al portapapeles:', err);
+            prompt('Copia el enlace para compartir:', urlProducto);
+        });
+    }
+
+    prompt('Copia el enlace para compartir:', urlProducto);
 }
 
 /* ============================================================================
@@ -567,6 +601,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target.matches('.img-producto')) {
             const id = e.target.dataset.id;
             if (id) verDetalle(id);
+        }
+        if (e.target.matches('.btn-compartir')) {
+            const id = e.target.dataset.id;
+            if (id) {
+                const producto = productosData.find(p => p.ProductoID == id);
+                if (producto) {
+                    compartirProducto(producto);
+                }
+            }
+            return; // evita que el evento siga y haga otras acciones
         }
         if (e.target.matches('.btn-añadir')) {
             const id = e.target.dataset.id;
