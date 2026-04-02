@@ -670,15 +670,17 @@ body {
 
 .tab-pane > #lista-productos,
 .tab-pane > #lista-agotados,
-.tab-pane > #lista-pedidos {
+.tab-pane > #lista-pedidos,
+.tab-pane > #lista-promociones {
     flex: 1;
     min-height: 0;
 }
 
-/* Contenedor scroll interno para inventario / agotados / pedidos */
+/* Contenedor scroll interno para inventario / agotados / pedidos / promociones */
 #lista-productos,
 #lista-agotados,
-#lista-pedidos {
+#lista-pedidos,
+#lista-promociones {
     max-height: calc(100vh - 360px);
     overflow-y: auto;
     overflow-x: hidden;
@@ -690,20 +692,23 @@ body {
 
 #lista-productos::-webkit-scrollbar,
 #lista-agotados::-webkit-scrollbar,
-#lista-pedidos::-webkit-scrollbar {
+#lista-pedidos::-webkit-scrollbar,
+#lista-promociones::-webkit-scrollbar {
     width: 7px;
 }
 
 #lista-productos::-webkit-scrollbar-thumb,
 #lista-agotados::-webkit-scrollbar-thumb,
-#lista-pedidos::-webkit-scrollbar-thumb {
+#lista-pedidos::-webkit-scrollbar-thumb,
+#lista-promociones::-webkit-scrollbar-thumb {
     background: rgba(108,92,231,0.35);
     border-radius: 999px;
 }
 
 #lista-productos::-webkit-scrollbar-track,
 #lista-agotados::-webkit-scrollbar-track,
-#lista-pedidos::-webkit-scrollbar-track {
+#lista-pedidos::-webkit-scrollbar-track,
+#lista-promociones::-webkit-scrollbar-track {
     background: transparent;
 }
 
