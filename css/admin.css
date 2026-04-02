@@ -677,6 +677,22 @@ body {
     font-weight: 800;
 }
 
+/* Filtros pedidos responsivos */
+.tab-pedidos-filters {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.25rem;
+    margin-bottom: 1rem;
+}
+
+.tab-pedidos-filters button {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
 .active-filter {
     color: white !important;
     background-color: #222 !important;
