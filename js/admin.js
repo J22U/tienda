@@ -806,6 +806,24 @@ function prepararEdicion(prod) {
     document.getElementById('precio').value = prod.Precio;
     document.getElementById('stock').value = prod.Stock;
     document.getElementById('caracteristicas').value = prod.Caracteristicas;
+    // Asegurarnos de que el modo producto está activo y visible
+    const productoCard = document.getElementById('producto-card');
+    const promoCard = document.getElementById('promo-card');
+    const switches = document.querySelectorAll('[data-action="switch-form"]');
+
+    if (productoCard) productoCard.classList.remove('d-none');
+    if (promoCard) promoCard.classList.add('d-none');
+
+    switches.forEach(btn => {
+        if (btn.dataset.form === 'producto') {
+            btn.classList.add('btn-primary');
+            btn.classList.remove('btn-outline-secondary', 'btn-outline-primary');
+        } else {
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-outline-secondary', 'btn-outline-primary');
+        }
+    });
+
     document.getElementById('titulo-form').textContent = 'Editar Producto';
     
     // 🔄 Update button for edit mode (blue)

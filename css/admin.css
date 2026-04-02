@@ -512,8 +512,24 @@ body {
     margin-top: auto;
     padding-top: 12px;
     border-top: 1px solid rgba(0,0,0,0.05);
-    margin-left: 100px;
-    flex-shrink: 0;
+    margin-left: auto;
+    min-width: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+/* Botones de acción siempre visibles en dispositivos pequeños */
+@media (max-width: 768px) {
+    .actions-card {
+        gap: 6px;
+        padding-top: 8px;
+    }
+
+    .action-btn {
+        width: auto;
+        min-width: 40px;
+        flex: 0 0 auto;
+    }
 }
 
 .action-btn {
