@@ -66,7 +66,37 @@ document.addEventListener('DOMContentLoaded', function() {
     const formPromocion = document.getElementById('form-promocion');
     if (formPromocion) formPromocion.addEventListener('submit', guardarPromocion);
 
-    // 🚪 Logout
+    // � Alternar formularios (producto / promoción)
+    document.addEventListener('click', (e) => {
+        const switchBtn = e.target.closest('[data-action="switch-form"]');
+        if (!switchBtn) return;
+
+        const selected = switchBtn.dataset.form;
+        const productoCard = document.getElementById('producto-card');
+        const promoCard = document.getElementById('promo-card');
+
+        if (selected === 'producto') {
+            productoCard?.classList.remove('d-none');
+            promoCard?.classList.add('d-none');
+        } else if (selected === 'promocion') {
+            promoCard?.classList.remove('d-none');
+            productoCard?.classList.add('d-none');
+        }
+
+        document.querySelectorAll('[data-action="switch-form"]').forEach(el => {
+            if (el === switchBtn) {
+                el.classList.remove('btn-outline-secondary');
+                el.classList.add('btn-primary');
+                el.classList.remove('btn-outline-primary');
+            } else {
+                el.classList.remove('btn-primary');
+                el.classList.add('btn-outline-secondary');
+                el.classList.add('btn-outline-primary');
+            }
+        });
+    });
+
+    // �🚪 Logout
 document.getElementById('btn-logout').addEventListener('click', async () => {
         const result = await Swal.fire({
             title: '¿Cerrar sesión?',
