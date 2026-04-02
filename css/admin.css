@@ -246,6 +246,29 @@ body {
     margin-right: auto;
 }
 
+#lista-promociones {
+    max-height: 420px;
+    overflow-y: auto;
+    padding-right: 6px;
+    margin-top: 8px;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 12px;
+    background: #fff;
+}
+
+#lista-promociones::-webkit-scrollbar {
+    width: 8px;
+}
+
+#lista-promociones::-webkit-scrollbar-thumb {
+    background: rgba(0, 123, 255, 0.45);
+    border-radius: 8px;
+}
+
+#lista-promociones::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.03);
+}
+
 .product-card {
     background: rgba(255, 255, 255, 0.95);
     border-radius: 20px;
