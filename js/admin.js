@@ -498,12 +498,8 @@ async function cargarPedidos(preserveCollapsed = true) {
         const res = await fetch('/pedidos');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         let allPedidos = await res.json();
-        // 🔄 Sort newest first (Fecha DESC) + highest # stable
+        // 🔄 Sort by NumeroDisplay DESC (highest number first)
         allPedidos.sort((a, b) => {
-            const dateA = new Date(a.Fecha);
-            const dateB = new Date(b.Fecha);
-            if (dateB > dateA) return 1;
-            if (dateA > dateB) return -1;
             const numA = parseInt(a.NumeroDisplay || '0');
             const numB = parseInt(b.NumeroDisplay || '0');
             return numB - numA;
