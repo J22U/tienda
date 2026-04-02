@@ -1899,3 +1899,198 @@ document.addEventListener('DOMContentLoaded', function() {
     if (btnClose) btnClose.onclick = forzarCierreModal;
 });
 
+// 🗂️ BACKUP FUNCTIONS
+window.exportarInventario = async function() {
+    try {
+        const token = localStorage.getItem('admin_token') || localStorage.getItem('token') || localStorage.getItem('admin_session');
+        if (!token) {
+            Swal.fire('Error', 'Tu sesión expiró. Por favor inicia sesión de nuevo.', 'error');
+            return;
+        }
+        
+        const response = await fetch('/backup', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        if (!response.ok) {
+            throw new Error(`Error al descargar backup: ${response.status}`);
+        }
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `backup_trebol_${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        Swal.fire('✅ Backup descargado', 'El archivo se ha descargado correctamente.', 'success');
+    } catch (error) {
+        console.error('Error en exportarInventario:', error);
+        Swal.fire('Error', `No se pudo descargar el backup: ${error.message}`, 'error');
+    }
+};
+
+// Event listener for restore file input
+document.addEventListener('DOMContentLoaded', function() {
+    const inputImportar = document.getElementById('inputImportar');
+    if (inputImportar) {
+        inputImportar.addEventListener('change', async function(e) {
+            const token = localStorage.getItem('admin_token') || localStorage.getItem('token') || localStorage.getItem('admin_session');
+            if (!token) {
+                Swal.fire('Error', 'Tu sesión expiró. Por favor inicia sesión de nuevo.', 'error');
+                e.target.value = '';
+                return;
+            }
+            
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            if (!file.name.endsWith('.json')) {
+                Swal.fire('Error', 'Solo se permiten archivos .json', 'error');
+                return;
+            }
+            
+            try {
+                const text = await file.text();
+                const backupData = JSON.parse(text);
+                
+                if (!backupData.productos || !Array.isArray(backupData.productos)) {
+                    throw new Error('El archivo no contiene datos válidos de productos');
+                }
+                
+                // Show options modal
+                const { value: opciones } = await Swal.fire({
+                    title: 'Opciones de restauración',
+                    html: `
+                        <div class="text-start">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="actualizarExistentes" checked>
+                                <label class="form-check-label" for="actualizarExistentes">
+                                    Actualizar productos existentes
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="actualizarSoloStock">
+                                <label class="form-check-label" for="actualizarSoloStock">
+                                    Solo actualizar stock (no precios ni nombres)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="reemplazarPedidos">
+                                <label class="form-check-label" for="reemplazarPedidos">
+                                    Reemplazar todos los pedidos existentes
+                                </label>
+                            </div>
+                        </div>
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: 'Restaurar',
+                    cancelButtonText: 'Cancelar',
+                    preConfirm: () => {
+                        return {
+                            actualizarExistentes: document.getElementById('actualizarExistentes').checked,
+                            actualizarSoloStock: document.getElementById('actualizarSoloStock').checked,
+                            reemplazarExistentes: document.getElementById('reemplazarPedidos').checked
+                        };
+                    }
+                });
+                
+                if (!opciones) return;
+                
+                // Confirm restoration
+                const { isConfirmed } = await Swal.fire({
+                    title: '¿Restaurar backup?',
+                    html: `
+                        <strong>Productos:</strong> ${backupData.productos.length}<br>
+                        <strong>Pedidos:</strong> ${backupData.pedidos ? backupData.pedidos.length : 0}<br><br>
+                        <span class="text-danger">Esta acción modificará la base de datos. ¿Continuar?</span>
+                    `,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, restaurar',
+                    cancelButtonText: 'Cancelar'
+                });
+                
+                if (!isConfirmed) return;
+                
+                // Show loading
+                Swal.fire({
+                    title: 'Restaurando...',
+                    text: 'Por favor espera, esto puede tomar unos minutos.',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    willOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                
+                // Restore products
+                const productosResponse = await fetch('/restore', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ productos: backupData.productos, opciones })
+                });
+                
+                if (!productosResponse.ok) {
+                    const error = await productosResponse.json().catch(() => ({error: 'Error desconocido'}));
+                    throw new Error(error.error || 'Error al restaurar productos');
+                }
+                
+                const productosResult = await productosResponse.json();
+                
+                // Restore orders if present
+                let pedidosResult = null;
+                if (backupData.pedidos && backupData.pedidos.length > 0) {
+                    const pedidosResponse = await fetch('/restore-pedidos', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ pedidos: backupData.pedidos, opciones })
+                    });
+                    
+                    if (!pedidosResponse.ok) {
+                        const error = await pedidosResponse.json().catch(() => ({error: 'Error desconocido'}));
+                        console.warn('Error al restaurar pedidos:', error);
+                        pedidosResult = { error: error.error };
+                    } else {
+                        pedidosResult = await pedidosResponse.json();
+                    }
+                }
+                
+                // Clear file input
+                e.target.value = '';
+                
+                // Show result
+                let message = productosResult.message || 'Productos restaurados';
+                if (pedidosResult) {
+                    if (pedidosResult.error) {
+                        message += `\n\nPedidos: Error - ${pedidosResult.error}`;
+                    } else {
+                        message += `\n\nPedidos: ${pedidosResult.message || 'Restaurados'}`;
+                    }
+                }
+                
+                Swal.fire('✅ Restauración completada', message, 'success');
+                
+                // Refresh data
+                await cargarProductos();
+                await cargarPedidos();
+                
+            } catch (error) {
+                console.error('Error en restauración:', error);
+                Swal.fire('Error', `No se pudo restaurar el backup: ${error.message}`, 'error');
+                e.target.value = '';
+            }
+        });
+    }
+});
+
