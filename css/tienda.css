@@ -212,6 +212,10 @@ body {
    BUSCADOR
    ============================================================================ */
 
+.search-container {
+    position: relative;
+}
+
 .search-container .input-group {
     border-radius: 50px;
     overflow: hidden;
@@ -222,6 +226,41 @@ body {
 .search-container input:focus {
     box-shadow: none;
     border: none;
+}
+
+.search-suggestions {
+    position: absolute;
+    width: 100%;
+    top: 100%;
+    left: 0;
+    z-index: 999;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    max-height: 280px;
+    overflow-y: auto;
+    margin-top: 8px;
+}
+
+.suggestion-item {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f1f1f1;
+    cursor: pointer;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover,
+.suggestion-item.active {
+    background-color: #f3f7f6;
+}
+
+.suggestion-empty {
+    padding: 10px 14px;
+    color: #777;
 }
 
 /* ============================================================================

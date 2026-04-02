@@ -604,24 +604,120 @@ function actualizarTotalSolo() {
 }
 
 /* ============================================================================
-   BÚSQUEDA
+   BÚSQUEDA INTELIGENTE + AUTOCOMPLETE
    ============================================================================ */
 
 const buscador = document.getElementById('buscador');
-if(buscador) {
-    buscador.addEventListener('input', (e) => {
-        const termino = e.target.value.toLowerCase();
-        const productosCards = document.querySelectorAll('#contenedor-productos > div');
+const sugerencias = document.getElementById('search-suggestions');
+let sugerenciaActivaIndex = -1;
 
-        productosCards.forEach(card => {
-            const nombreElement = card.querySelector('h5');
-            const marcaElement = card.querySelector('small');
-            if(nombreElement && marcaElement) {
-                const nombreProducto = nombreElement.textContent.toLowerCase();
-                const marcaProducto = marcaElement.textContent.toLowerCase();
-                card.style.display = (nombreProducto.includes(termino) || marcaProducto.includes(termino)) ? 'block' : 'none';
-            }
-        });
+function ocultarSugerencias() {
+    if(sugerencias) {
+        sugerencias.classList.add('d-none');
+        sugerencias.innerHTML = '';
+        sugerenciaActivaIndex = -1;
+    }
+}
+
+function mostrarSugerencias(items) {
+    if(!sugerencias) return;
+    if(!items || items.length === 0) {
+        sugerencias.innerHTML = '<div class="suggestion-item suggestion-empty">No se encontraron productos.</div>';
+        sugerencias.classList.remove('d-none');
+        return;
+    }
+
+    sugerencias.innerHTML = items.map((p, idx) => `
+        <div class="suggestion-item" data-id="${p.ProductoID}" data-index="${idx}">
+            <strong>${p.Nombre}</strong> <small class="text-muted">${p.Marca || ''}</small>
+        </div>
+    `).join('');
+    sugerencias.classList.remove('d-none');
+}
+
+function actualizarResultadosBusqueda(texto) {
+    const termino = texto.trim().toLowerCase();
+
+    if(!termino) {
+        productosFiltrados = [...productosData];
+        paginaActual = 1;
+        renderizarProductos();
+        renderizarPaginacion();
+        ocultarSugerencias();
+        return;
+    }
+
+    const coincidentes = productosData
+        .map(p => ({
+            producto: p,
+            score: ((p.Nombre || '').toLowerCase().includes(termino) ? 10 : 0) +
+                   ((p.Marca || '').toLowerCase().includes(termino) ? 6 : 0) +
+                   ((p.Categoria || '').toLowerCase().includes(termino) ? 4 : 0)
+        }))
+        .filter(r => r.score > 0)
+        .sort((a,b) => b.score - a.score)
+        .map(r => r.producto);
+
+    productosFiltrados = coincidentes;
+    paginaActual = 1;
+    renderizarProductos();
+    renderizarPaginacion();
+    mostrarSugerencias(coincidentes.slice(0, 7));
+}
+
+if (buscador) {
+    buscador.addEventListener('input', (e) => {
+        sugerenciaActivaIndex = -1;
+        actualizarResultadosBusqueda(e.target.value);
+    });
+
+    buscador.addEventListener('keydown', (e) => {
+        const items = sugerencias ? sugerencias.querySelectorAll('.suggestion-item') : [];
+        if (!items || items.length === 0) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            sugerenciaActivaIndex = Math.min(items.length - 1, sugerenciaActivaIndex + 1);
+            items.forEach((item, i) => item.classList.toggle('active', i === sugerenciaActivaIndex));
+            return;
+        }
+
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            sugerenciaActivaIndex = Math.max(0, sugerenciaActivaIndex - 1);
+            items.forEach((item, i) => item.classList.toggle('active', i === sugerenciaActivaIndex));
+            return;
+        }
+
+        if (e.key === 'Enter' && sugerenciaActivaIndex >= 0 && sugerenciaActivaIndex < items.length) {
+            e.preventDefault();
+            items[sugerenciaActivaIndex].click();
+        }
+    });
+}
+
+if (sugerencias) {
+    sugerencias.addEventListener('click', (e) => {
+        const item = e.target.closest('.suggestion-item');
+        if (!item || !item.dataset.id) return;
+
+        const id = item.dataset.id;
+        const productoSeleccionado = productosData.find(p => p.ProductoID == id);
+        if (!productoSeleccionado) return;
+
+        buscador.value = productoSeleccionado.Nombre || '';
+        productosFiltrados = [productoSeleccionado];
+        paginaActual = 1;
+        renderizarProductos();
+        renderizarPaginacion();
+        ocultarSugerencias();
+        verDetalle(id);
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.search-container')) {
+            ocultarSugerencias();
+        }
     });
 }
 
