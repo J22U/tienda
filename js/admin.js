@@ -1,4 +1,9 @@
 // js/admin.js - Panel Admin Completo (CSP-safe) - filtroEstado FIXED ✅
+// Global state shared across callbacks
+let productos = [];
+let pedidos = [];
+let promociones = [];
+
 // Global filter state for pedidos (fixes ReferenceError)
 window.filtroEstado = 'Todos';
 
@@ -40,8 +45,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const listaProductos = document.getElementById('lista-productos');
     const formProducto = document.getElementById('form-producto');
     const buscarProd = document.getElementById('buscar-prod');
-
-    let productos = [], pedidos = [], promociones = [];
 
     // 🎛️ Tabs
     document.querySelectorAll('[data-bs-toggle="pill"]').forEach(btn => {
@@ -421,8 +424,12 @@ document.addEventListener('click', async function(e) {
     }
 
     if (action === 'editar-promo') {
-        const promo = promociones.find(p => p.PromocionID == id);
-        if (!promo) return;
+        const storedPromos = Array.isArray(promociones) ? promociones : [];
+        const promo = storedPromos.find(p => p.PromocionID == id);
+        if (!promo) {
+            console.warn('Promoción no encontrada para editar:', id, storedPromos);
+            return;
+        }
         document.getElementById('promo-id').value = promo.PromocionID;
         document.getElementById('promo-titulo').value = promo.Titulo;
         document.getElementById('promo-descripcion').value = promo.Descripcion || '';

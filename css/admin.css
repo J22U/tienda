@@ -246,10 +246,16 @@ body {
     margin-right: auto;
 }
 
+#tab-promociones .col-md-6 > .p-3 {
+    display: flex;
+    flex-direction: column;
+    min-height: 540px;
+}
+
 #lista-promociones {
-    max-height: 420px;
+    max-height: 410px;
     overflow-y: auto;
-    padding-right: 6px;
+    padding-right: 8px;
     margin-top: 8px;
     border: 1px solid rgba(0,0,0,0.08);
     border-radius: 12px;
@@ -258,6 +264,25 @@ body {
     flex-direction: column;
     gap: 8px;
 }
+
+#lista-promociones .card {
+    min-height: 112px;
+}
+
+/* Estilo de scrollbar similar inventario */
+#lista-promociones::-webkit-scrollbar {
+    width: 8px;
+}
+
+#lista-promociones::-webkit-scrollbar-thumb {
+    background-color: rgba(108, 92, 231, 0.5);
+    border-radius: 999px;
+}
+
+#lista-promociones::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.04);
+}
+
 
 #lista-promociones .card {
     width: calc(100% - 0px) !important;
