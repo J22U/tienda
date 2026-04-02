@@ -1,5 +1,8 @@
 let carrito = [];
 let productosData = [];
+let productosFiltrados = [];
+let paginaActual = 1;
+const productosPorPagina = 16;
 const BASE_URL = 'https://tienda-1vps.onrender.com';
 
 /* ============================================================================
@@ -123,72 +126,13 @@ async function cargarProductos() {
             console.error('Productos fetch failed:', res.status, errText);
             throw new Error(`Error ${res.status}: ${errText.substring(0,100)}`);
         }
+
         productosData = await res.json();
-        const contenedor = document.getElementById('contenedor-productos');
-        
-        if (!contenedor) return;
+        productosFiltrados = [...productosData];
+        paginaActual = 1;
 
-        contenedor.innerHTML = ""; 
-
-        const htmlProductos = productosData.map(p => {
-            let fotoPrincipal = '';
-            
-            if (p.ImagenURL) {
-                fotoPrincipal = p.ImagenURL;
-            } else if (p.Galeria && p.Galeria.length > 0) {
-                fotoPrincipal = p.Galeria[0].ImagenURL;
-            }
-            
-            const srcFinal = (fotoPrincipal && fotoPrincipal.startsWith('http')) 
-                ? fotoPrincipal 
-                : (fotoPrincipal ? `${BASE_URL}${fotoPrincipal}` : 'https://placehold.co/250x250?text=Sin+Imagen');
-
-            const estaAgotado = p.Stock <= 0;
-            const claseAgotado = estaAgotado ? 'product-out-of-stock' : ''; 
-            const stockColor = estaAgotado ? 'text-danger' : 'text-success';
-            const stockTexto = estaAgotado ? '¡SIN EXISTENCIAS!' : `${p.Stock} disponibles`;
-
-            // Calcular precio con descuento
-            const descuento = parseFloat(p.DescuentoPorcentaje) || 0;
-            const precioBase = Number(p.Precio) || 0;
-            const precioConDescuento = precioBase - (precioBase * descuento / 100);
-            const tieneOferta = descuento > 0;
-
-            return `
-                <div class="col-md-4 col-lg-3">
-                    <div class="card product-card ${claseAgotado} h-100">
-                        <div class="img-container position-relative">
-                            ${tieneOferta ? `<div class="position-absolute top-0 end-0 bg-danger text-white px-2 py-1 rounded-start fw-bold" style="font-size: 0.8rem; z-index: 10;">-${descuento}%</div>` : ''}
-                            <img src="${srcFinal}" class="img-producto" data-id="${p.ProductoID}" onerror="this.src='https://placehold.co/250x250/e74c3c/white?text=Error+al+cargar'"
-                                 style="${estaAgotado ? 'filter: grayscale(1); opacity: 0.6; cursor: not-allowed; pointer-events: none;' : ''}">
-                        </div>
-                        <div class="p-4 text-center">
-                            <small class="text-uppercase fw-bold text-muted">${p.Marca || 'Genérico'}</small>
-                            <h5 class="fw-bold mb-1 ${estaAgotado ? 'text-muted' : ''}">${p.Nombre}</h5>
-                            ${tieneOferta ? 
-                            `<div class="price-tag mb-1 text-decoration-line-through text-muted" style="font-size: 0.9rem;">$${precioBase.toLocaleString()}</div>
-                            <div class="price-tag mb-1" style="background: #e74c3c; display: inline-block; padding: 4px 12px; border-radius: 20px; color: white; font-weight: bold;">$${precioConDescuento.toLocaleString()}</div>` : 
-                            `<div class="price-tag mb-1">$${precioBase.toLocaleString()}</div>`}
-                            
-                            <div class="small fw-bold ${stockColor} mb-3">
-                                <i class="bi ${estaAgotado ? 'bi-x-circle' : 'bi-box-seam'} me-1"></i>${stockTexto}
-                            </div>
-
-                            <button class="btn ${estaAgotado ? 'btn-secondary' : 'btn-añadir btn-success'} w-100 fw-bold rounded-pill" 
-                                    data-id="${p.ProductoID}"
-                                    ${estaAgotado ? 'disabled' : ''}>
-                                ${estaAgotado ? 'AGOTADO' : '<i class="bi bi-cart-plus me-2"></i>AÑADIR'}
-                            </button>
-                            <button class="btn btn-outline-primary w-100 fw-bold rounded-pill mt-2 btn-compartir" 
-                                    data-id="${p.ProductoID}">
-                                <i class="bi bi-share-fill me-2"></i>Compartir
-                            </button>
-                        </div>
-                    </div>
-                </div>`;
-        }).join('');
-
-        contenedor.innerHTML = htmlProductos;
+        renderizarProductos();
+        renderizarPaginacion();
 
         // Si el usuario llegó con ?producto=ID, abrir detalle del producto
         abrirProductoPorQuery();
@@ -196,6 +140,107 @@ async function cargarProductos() {
         console.error("Error cargando productos:", error);
         Swal.fire('Error', 'No se pudieron cargar los productos. Verifique su conexión.', 'error');
     }
+}
+
+function armarHtmlProducto(p) {
+    let fotoPrincipal = '';
+    if (p.ImagenURL) {
+        fotoPrincipal = p.ImagenURL;
+    } else if (p.Galeria && p.Galeria.length > 0) {
+        fotoPrincipal = p.Galeria[0].ImagenURL;
+    }
+
+    const srcFinal = (fotoPrincipal && fotoPrincipal.startsWith('http'))
+        ? fotoPrincipal
+        : (fotoPrincipal ? `${BASE_URL}${fotoPrincipal}` : 'https://placehold.co/250x250?text=Sin+Imagen');
+
+    const estaAgotado = p.Stock <= 0;
+    const claseAgotado = estaAgotado ? 'product-out-of-stock' : '';
+    const stockColor = estaAgotado ? 'text-danger' : 'text-success';
+    const stockTexto = estaAgotado ? '¡SIN EXISTENCIAS!' : `${p.Stock} disponibles`;
+
+    const descuento = parseFloat(p.DescuentoPorcentaje) || 0;
+    const precioBase = Number(p.Precio) || 0;
+    const precioConDescuento = precioBase - (precioBase * descuento / 100);
+    const tieneOferta = descuento > 0;
+
+    return `
+        <div class="col-md-4 col-lg-3">
+            <div class="card product-card ${claseAgotado} h-100">
+                <div class="img-container position-relative">
+                    ${tieneOferta ? `<div class="position-absolute top-0 end-0 bg-danger text-white px-2 py-1 rounded-start fw-bold" style="font-size: 0.8rem; z-index: 10;">-${descuento}%</div>` : ''}
+                    <img src="${srcFinal}" class="img-producto" data-id="${p.ProductoID}" onerror="this.src='https://placehold.co/250x250/e74c3c/white?text=Error+al+cargar'" style="${estaAgotado ? 'filter: grayscale(1); opacity: 0.6; cursor: not-allowed; pointer-events: none;' : ''}">
+                </div>
+                <div class="p-4 text-center">
+                    <small class="text-uppercase fw-bold text-muted">${p.Marca || 'Genérico'}</small>
+                    <h5 class="fw-bold mb-1 ${estaAgotado ? 'text-muted' : ''}">${p.Nombre}</h5>
+                    ${tieneOferta ?
+                        `<div class="price-tag mb-1 text-decoration-line-through text-muted" style="font-size: 0.9rem;">$${precioBase.toLocaleString()}</div>
+                         <div class="price-tag mb-1" style="background: #e74c3c; display: inline-block; padding: 4px 12px; border-radius: 20px; color: white; font-weight: bold;">$${precioConDescuento.toLocaleString()}</div>`
+                        : `<div class="price-tag mb-1">$${precioBase.toLocaleString()}</div>`}
+                    <div class="small fw-bold ${stockColor} mb-3">
+                        <i class="bi ${estaAgotado ? 'bi-x-circle' : 'bi-box-seam'} me-1"></i>${stockTexto}
+                    </div>
+
+                    <button class="btn ${estaAgotado ? 'btn-secondary' : 'btn-añadir btn-success'} w-100 fw-bold rounded-pill" data-id="${p.ProductoID}" ${estaAgotado ? 'disabled' : ''}>
+                        ${estaAgotado ? 'AGOTADO' : '<i class="bi bi-cart-plus me-2"></i>AÑADIR'}
+                    </button>
+                    <button class="btn btn-outline-primary w-100 fw-bold rounded-pill mt-2 btn-compartir" data-id="${p.ProductoID}">
+                        <i class="bi bi-share-fill me-2"></i>Compartir
+                    </button>
+                </div>
+            </div>
+        </div>`;
+}
+
+function renderizarProductos() {
+    const contenedor = document.getElementById('contenedor-productos');
+    if (!contenedor) return;
+
+    const inicio = (paginaActual - 1) * productosPorPagina;
+    const fin = inicio + productosPorPagina;
+    const paginaProductos = productosFiltrados.slice(inicio, fin);
+
+    contenedor.innerHTML = paginaProductos.map(p => armarHtmlProducto(p)).join('');
+}
+
+function renderizarPaginacion() {
+    const paginacionEl = document.getElementById('paginacion-productos');
+    if (!paginacionEl) return;
+
+    const totalPaginas = Math.ceil(productosFiltrados.length / productosPorPagina) || 1;
+    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+
+    let html = '';
+    const rango = 2;
+    const inicio = Math.max(1, paginaActual - rango);
+    const fin = Math.min(totalPaginas, paginaActual + rango);
+
+    if (paginaActual > 1) {
+        html += `<li class="page-item"><button class="page-link" data-page="${paginaActual - 1}">Anterior</button></li>`;
+    } else {
+        html += `<li class="page-item disabled"><span class="page-link">Anterior</span></li>`;
+    }
+
+    for (let i = inicio; i <= fin; i++) {
+        html += `<li class="page-item ${i === paginaActual ? 'active' : ''}"><button class="page-link" data-page="${i}">${i}</button></li>`;
+    }
+
+    if (paginaActual < totalPaginas) {
+        html += `<li class="page-item"><button class="page-link" data-page="${paginaActual + 1}">Siguiente</button></li>`;
+    } else {
+        html += `<li class="page-item disabled"><span class="page-link">Siguiente</span></li>`;
+    }
+
+    paginacionEl.innerHTML = html;
+}
+
+function cambiarPagina(nuevaPagina) {
+    const totalPaginas = Math.ceil(productosFiltrados.length / productosPorPagina) || 1;
+    if (nuevaPagina < 1 || nuevaPagina > totalPaginas) return;
+    paginaActual = nuevaPagina;
+    renderizarProductos();
+    renderizarPaginacion();
 }
 
 function abrirProductoPorQuery() {
