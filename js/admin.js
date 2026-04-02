@@ -460,6 +460,26 @@ document.addEventListener('click', async function(e) {
             console.warn('Promoción no encontrada para editar:', id, storedPromos);
             return;
         }
+
+        const productoCard = document.getElementById('producto-card');
+        const promoCard = document.getElementById('promo-card');
+        const switches = document.querySelectorAll('[data-action="switch-form"]');
+
+        if (promoCard && productoCard) {
+            productoCard.classList.add('d-none');
+            promoCard.classList.remove('d-none');
+        }
+
+        switches.forEach(btn => {
+            if (btn.dataset.form === 'promocion') {
+                btn.classList.add('btn-primary');
+                btn.classList.remove('btn-outline-secondary', 'btn-outline-primary');
+            } else {
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-outline-secondary', 'btn-outline-primary');
+            }
+        });
+
         document.getElementById('promo-id').value = promo.PromocionID;
         document.getElementById('promo-titulo').value = promo.Titulo;
         document.getElementById('promo-descripcion').value = promo.Descripcion || '';
