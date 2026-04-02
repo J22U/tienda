@@ -382,10 +382,13 @@ async function guardarPromocion(e) {
 
 // Delegación de acciones en promociones (editar/activar/eliminar)
 document.addEventListener('click', async function(e) {
-    const el = e.target.closest('[data-action^="promo"]');
+    const el = e.target.closest('[data-action]');
     if (!el) return;
     const action = el.dataset.action;
     const id = el.dataset.id;
+
+    // Solo manejar acciones de promo en esta sección
+    if (!action || !action.endsWith('-promo')) return;
 
     if (action === 'toggle-promo') {
         try {
