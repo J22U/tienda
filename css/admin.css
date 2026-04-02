@@ -302,6 +302,47 @@ body {
     background: rgba(0,0,0,0.03);
 }
 
+@media (max-width: 768px) {
+    #tab-promociones .col-md-6 > .p-3 {
+        min-height: auto;
+    }
+
+    #lista-promociones {
+        max-height: 60vh;
+    }
+
+    #lista-promociones .card {
+        min-height: auto;
+    }
+
+    #lista-promociones .card .row {
+        display: flex;
+        flex-direction: column;
+    }
+
+    #lista-promociones .card .col-4,
+    #lista-promociones .card .col-8 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    #lista-promociones .card img {
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+        border-radius: 10px 10px 0 0;
+    }
+
+    #lista-promociones .card-body {
+        padding: 0.85rem 0.9rem;
+    }
+
+    #lista-promociones .card-body .btn {
+        margin-bottom: 4px;
+        width: 100%;
+    }
+}
+
 .product-card {
     background: rgba(255, 255, 255, 0.95);
     border-radius: 20px;
