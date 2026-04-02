@@ -135,6 +135,11 @@
                             </button>
                         </li>
                         <li class="nav-item">
+                            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-promociones" type="button" data-tab="promociones">
+                                <i class="bi bi-tag me-2"></i>Promociones
+                            </button>
+                        </li>
+                        <li class="nav-item">
                             <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-pedidos" type="button" data-tab="pedidos">
                                 <i class="bi bi-cart-check me-2"></i>Pedidos
                             </button>
@@ -181,6 +186,55 @@ id="btn-importar" data-action="importar"
                                 <span class="badge bg-danger rounded-pill" id="agotados-count">0 alertas</span>
                             </div>
                             <div id="lista-agotados"></div>
+                        </div>
+
+                        <!-- TAB: PROMOCIONES -->
+                        <div class="tab-pane fade" id="tab-promociones">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-white rounded shadow-sm">
+                                        <h5>Registrar Promoción</h5>
+                                        <form id="form-promocion">
+                                            <input type="hidden" id="promo-id" value="">
+                                            <div class="mb-2">
+                                                <label class="form-label">Título</label>
+                                                <input type="text" id="promo-titulo" class="form-control" required>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="form-label">Descripción</label>
+                                                <textarea id="promo-descripcion" class="form-control" rows="3"></textarea>
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="form-label">Imagen</label>
+                                                <input type="file" id="promo-imagen" class="form-control" accept="image/*">
+                                            </div>
+                                            <div class="mb-2">
+                                                <label class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="promo-activa">
+                                                    <span class="form-check-label">Activa</span>
+                                                </label>
+                                            </div>
+                                            <div class="row g-2 mb-3">
+                                                <div class="col-6">
+                                                    <label class="form-label">Inicio</label>
+                                                    <input type="date" id="promo-inicio" class="form-control">
+                                                </div>
+                                                <div class="col-6">
+                                                    <label class="form-label">Fin</label>
+                                                    <input type="date" id="promo-fin" class="form-control">
+                                                </div>
+                                            </div>
+                                            <button type="submit" class="btn btn-success w-100">Guardar promoción</button>
+                                        </form>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-3 bg-white rounded shadow-sm">
+                                        <h5>Lista de promociones</h5>
+                                        <div id="lista-promociones"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- TAB: PEDIDOS -->

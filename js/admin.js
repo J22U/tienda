@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const formProducto = document.getElementById('form-producto');
     const buscarProd = document.getElementById('buscar-prod');
 
-    let productos = [], pedidos = [];
+    let productos = [], pedidos = [], promociones = [];
 
     // 🎛️ Tabs
     document.querySelectorAll('[data-bs-toggle="pill"]').forEach(btn => {
@@ -58,6 +58,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 📝 Form submit
     formProducto.addEventListener('submit', guardarProducto);
+
+    // 🏷️ Form promociones
+    const formPromocion = document.getElementById('form-promocion');
+    if (formPromocion) formPromocion.addEventListener('submit', guardarPromocion);
 
     // 🚪 Logout
 document.getElementById('btn-logout').addEventListener('click', async () => {
@@ -192,6 +196,7 @@ listaPedidos.addEventListener('click', async e => {
     // 🎯 Inicializar
     cargarProductos();
     cargarPedidos();
+    cargarPromociones();
 
     // Global functions
     window.cargarPedidos = cargarPedidos;
@@ -270,6 +275,159 @@ function renderProductos(prods, container) {
         </div>`;
     }).join('');
 }
+
+async function cargarPromociones() {
+    const lista = document.getElementById('lista-promociones');
+    if (!lista) return;
+    lista.innerHTML = '<div class="text-center py-3 text-muted">Cargando promociones...</div>';
+
+    try {
+        const res = await fetch('/promociones');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        promociones = await res.json();
+        renderPromociones(promociones);
+    } catch (err) {
+        lista.innerHTML = `<div class="alert alert-warning text-center">❌ ${err.message}</div>`;
+        console.error('Error cargando promociones:', err);
+    }
+}
+
+function renderPromociones(promos) {
+    const lista = document.getElementById('lista-promociones');
+    if (!lista) return;
+
+    if (!promos || promos.length === 0) {
+        lista.innerHTML = '<div class="text-center py-4 text-muted">No hay promociones registradas.</div>';
+        return;
+    }
+
+    lista.innerHTML = promos.map(p => {
+        const img = p.ImagenURL || 'https://placehold.co/300x150?text=No+image';
+        const fecha = p.FechaInicio && p.FechaFin ? `${new Date(p.FechaInicio).toLocaleDateString()} - ${new Date(p.FechaFin).toLocaleDateString()}` : '';
+        return `
+            <div class="card mb-2">
+                <div class="row g-0 align-items-center">
+                    <div class="col-4">
+                        <img src="${img}" class="img-fluid rounded-start" alt="${p.Titulo}" onerror="this.src='https://placehold.co/300x150?text=Error'">
+                    </div>
+                    <div class="col-8">
+                        <div class="card-body p-2">
+                            <h6 class="card-title mb-1">${p.Titulo}</h6>
+                            <p class="card-text small mb-1">${p.Descripcion || ''}</p>
+                            ${fecha ? `<p class="text-muted small mb-1">${fecha}</p>` : ''}
+                            <span class="badge bg-${p.Activa ? 'success' : 'secondary'} me-2">${p.Activa ? 'Activa' : 'Inactiva'}</span>
+                            <button class="btn btn-sm btn-outline-primary me-1" data-action="editar-promo" data-id="${p.PromocionID}">Editar</button>
+                            <button class="btn btn-sm btn-outline-${p.Activa ? 'warning' : 'success'} me-1" data-action="toggle-promo" data-id="${p.PromocionID}" data-activa="${p.Activa ? '0' : '1'}">${p.Activa ? 'Desactivar' : 'Activar'}</button>
+                            <button class="btn btn-sm btn-outline-danger" data-action="eliminar-promo" data-id="${p.PromocionID}">Eliminar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+    }).join('');
+}
+
+function limpiarFormPromocion() {
+    document.getElementById('promo-id').value = '';
+    document.getElementById('promo-titulo').value = '';
+    document.getElementById('promo-descripcion').value = '';
+    document.getElementById('promo-imagen').value = '';
+    document.getElementById('promo-activa').checked = false;
+    document.getElementById('promo-inicio').value = '';
+    document.getElementById('promo-fin').value = '';
+}
+
+async function guardarPromocion(e) {
+    e.preventDefault();
+    const id = document.getElementById('promo-id').value;
+    const titulo = document.getElementById('promo-titulo').value.trim();
+    const descripcion = document.getElementById('promo-descripcion').value.trim();
+    const activa = document.getElementById('promo-activa').checked;
+    const fechaInicio = document.getElementById('promo-inicio').value;
+    const fechaFin = document.getElementById('promo-fin').value;
+    const imagenInput = document.getElementById('promo-imagen');
+
+    if (!titulo) {
+        Swal.fire('Error', 'El título es obligatorio.', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('Titulo', titulo);
+    formData.append('Descripcion', descripcion);
+    formData.append('Activa', activa ? 'true' : 'false');
+    if (fechaInicio) formData.append('FechaInicio', fechaInicio);
+    if (fechaFin) formData.append('FechaFin', fechaFin);
+    if (imagenInput && imagenInput.files[0]) {
+        formData.append('imagen', imagenInput.files[0]);
+    }
+
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `/promociones/${id}` : '/promociones';
+
+    try {
+        const res = await fetch(url, { method, body: formData });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({ error: 'Error desconocido' }));
+            throw new Error(err.error || 'Error servidor');
+        }
+
+        await res.json();
+        Swal.fire('¡Listo!', `Promoción ${id ? 'actualizada' : 'creada'} con éxito.`, 'success');
+        limpiarFormPromocion();
+        cargarPromociones();
+    } catch (err) {
+        Swal.fire('Error', err.message, 'error');
+    }
+}
+
+// Delegación de acciones en promociones (editar/activar/eliminar)
+document.addEventListener('click', async function(e) {
+    if (!e.target.matches('[data-action^="promo"]')) return;
+    const action = e.target.dataset.action;
+    const id = e.target.dataset.id;
+
+    if (action === 'toggle-promo') {
+        try {
+            const activa = e.target.dataset.activa;
+            const res = await fetch(`/promociones/${id}/activar`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ activa })
+            });
+            if (!res.ok) throw new Error('No se pudo cambiar estado');
+            await cargarPromociones();
+            Swal.fire('✓', 'Estado de promoción actualizado', 'success');
+        } catch (err) {
+            Swal.fire('Error', err.message, 'error');
+        }
+        return;
+    }
+
+    if (action === 'eliminar-promo') {
+        if (!confirm('¿Seguro que quieres eliminar esta promoción?')) return;
+        try {
+            const res = await fetch(`/promociones/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Error eliminando promoción');
+            await cargarPromociones();
+            Swal.fire('✓', 'Promoción eliminada', 'success');
+        } catch (err) {
+            Swal.fire('Error', err.message, 'error');
+        }
+        return;
+    }
+
+    if (action === 'editar-promo') {
+        const promo = promociones.find(p => p.PromocionID == id);
+        if (!promo) return;
+        document.getElementById('promo-id').value = promo.PromocionID;
+        document.getElementById('promo-titulo').value = promo.Titulo;
+        document.getElementById('promo-descripcion').value = promo.Descripcion || '';
+        document.getElementById('promo-activa').checked = !!promo.Activa;
+        document.getElementById('promo-inicio').value = promo.FechaInicio ? new Date(promo.FechaInicio).toISOString().split('T')[0] : '';
+        document.getElementById('promo-fin').value = promo.FechaFin ? new Date(promo.FechaFin).toISOString().split('T')[0] : '';
+        return;
+    }
+});
 
 // 📋 Cargar Pedidos - Preserve collapsed states ✅
 async function cargarPedidos(preserveCollapsed = true) {

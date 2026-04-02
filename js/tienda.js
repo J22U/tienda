@@ -142,6 +142,46 @@ async function cargarProductos() {
     }
 }
 
+async function cargarPromociones() {
+    try {
+        const res = await fetch(`${BASE_URL}/promociones?activa=true`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const promocionesActivas = await res.json();
+        renderPromociones(promocionesActivas);
+    } catch (error) {
+        console.error('Error cargando promociones:', error);
+        const cont = document.getElementById('contenedor-promociones');
+        if (cont) cont.innerHTML = '<div class="text-center py-4 text-muted">No hay promociones disponibles.</div>';
+    }
+}
+
+function renderPromociones(promocionesActivas) {
+    const cont = document.getElementById('contenedor-promociones');
+    if (!cont) return;
+
+    if (!promocionesActivas || promocionesActivas.length === 0) {
+        cont.innerHTML = '<div class="text-center py-4 text-muted">No hay promociones activas en este momento.</div>';
+        return;
+    }
+
+    cont.innerHTML = promocionesActivas.map(p => {
+        const img = p.ImagenURL || 'https://placehold.co/600x350?text=Sin+imagen';
+        const fecha = p.FechaInicio && p.FechaFin ? `${new Date(p.FechaInicio).toLocaleDateString()} - ${new Date(p.FechaFin).toLocaleDateString()}` : '';
+        return `
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <img src="${img}" class="card-img-top" alt="${p.Titulo}" onerror="this.src='https://placehold.co/600x350?text=Error+imagen'">
+                    <div class="card-body">
+                        <h5 class="card-title">${p.Titulo}</h5>
+                        <p class="card-text">${p.Descripcion || ''}</p>
+                        ${fecha ? `<p class="text-muted small mb-1">${fecha}</p>` : ''}
+                        <span class="badge bg-success">Activa</span>
+                    </div>
+                </div>
+            </div>`;
+    }).join('');
+}
+
 function armarHtmlProducto(p) {
     let fotoPrincipal = '';
     if (p.ImagenURL) {
@@ -835,6 +875,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check if user explicitly wants to view the store (via ?view=store parameter)
     const urlParams = new URLSearchParams(window.location.search);
     const viewStore = urlParams.get('view');
+
+    // Cargar promociones siempre (antes de navegación de productos)
+    cargarPromociones();
     const productoParam = urlParams.get('producto');
 
     // Prevent infinite loop: Check BOTH conditions

@@ -203,6 +203,28 @@ const poolPromise = new sql.ConnectionPool(config)
         } catch (err) {
             console.warn('Nota: No se pudo verificar columna DescuentoPorcentaje:', err.message);
         }
+
+        // Verificar y crear tabla Promociones si no existe
+        try {
+            await pool.request().query(`
+                IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Promociones]') AND type in (N'U'))
+                BEGIN
+                    CREATE TABLE Promociones (
+                        PromocionID INT IDENTITY(1,1) PRIMARY KEY,
+                        Titulo NVARCHAR(255) NOT NULL,
+                        Descripcion NVARCHAR(MAX) NULL,
+                        ImagenURL NVARCHAR(500) NULL,
+                        Activa BIT NOT NULL DEFAULT 0,
+                        FechaInicio DATETIME NULL,
+                        FechaFin DATETIME NULL,
+                        CreatedAt DATETIME NOT NULL DEFAULT GETDATE()
+                    );
+                END
+            `);
+            console.log('Tabla Promociones verificada/creada');
+        } catch (err) {
+            console.warn('Nota: No se pudo verificar o crear tabla Promociones:', err.message);
+        }
         
         return pool;
     })
@@ -463,6 +485,119 @@ app.delete('/productos/:id', async (req, res) => {
         await pool.request().input('id', sql.Int, req.params.id).query('DELETE FROM Productos WHERE ProductoID=@id');
         res.json({ success: true });
     } catch (err) { res.status(500).send(err.message); }
+});
+
+// ==========================================
+// RUTAS DE PROMOCIONES
+// ==========================================
+
+app.get('/promociones', async (req, res) => {
+    try {
+        const pool = await poolPromise;
+        let query = 'SELECT * FROM Promociones ORDER BY CreatedAt DESC';
+        const activa = req.query.activa;
+        if (activa !== undefined) {
+            if (activa === 'true' || activa === '1') {
+                query = 'SELECT * FROM Promociones WHERE Activa = 1 ORDER BY CreatedAt DESC';
+            } else if (activa === 'false' || activa === '0') {
+                query = 'SELECT * FROM Promociones WHERE Activa = 0 ORDER BY CreatedAt DESC';
+            }
+        }
+        const result = await pool.request().query(query);
+        res.json(result.recordset);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/promociones', upload.single('imagen'), async (req, res) => {
+    try {
+        const { Titulo, Descripcion, Activa, FechaInicio, FechaFin } = req.body;
+        if (!Titulo) {
+            return res.status(400).json({ error: 'Titulo requerido' });
+        }
+
+        const imagen = req.file ? req.file.path : null;
+
+        const pool = await poolPromise;
+        const insertResult = await pool.request()
+            .input('titulo', sql.NVarChar(255), Titulo)
+            .input('descripcion', sql.NVarChar(sql.MAX), Descripcion || '')
+            .input('imagen', sql.NVarChar(500), imagen)
+            .input('activa', sql.Bit, Activa === 'true' || Activa === '1' ? 1 : 0)
+            .input('fechaInicio', sql.DateTime, FechaInicio ? new Date(FechaInicio) : null)
+            .input('fechaFin', sql.DateTime, FechaFin ? new Date(FechaFin) : null)
+            .query(`INSERT INTO Promociones (Titulo, Descripcion, ImagenURL, Activa, FechaInicio, FechaFin)
+                    VALUES (@titulo, @descripcion, @imagen, @activa, @fechaInicio, @fechaFin);
+                    SELECT SCOPE_IDENTITY() AS PromocionID;`);
+
+        res.json({ success: true, id: insertResult.recordset[0].PromocionID });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/promociones/:id', upload.single('imagen'), async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { Titulo, Descripcion, Activa, FechaInicio, FechaFin } = req.body;
+        if (!Titulo) {
+            return res.status(400).json({ error: 'Titulo requerido' });
+        }
+
+        const imagen = req.file ? req.file.path : null;
+
+        const pool = await poolPromise;
+        let queryString = `UPDATE Promociones SET Titulo=@titulo, Descripcion=@descripcion, Activa=@activa, FechaInicio=@fechaInicio, FechaFin=@fechaFin`;
+        if (imagen) {
+            queryString += ', ImagenURL=@imagen';
+        }
+        queryString += ' WHERE PromocionID=@id';
+
+        const request = pool.request()
+            .input('id', sql.Int, parseInt(id))
+            .input('titulo', sql.NVarChar(255), Titulo)
+            .input('descripcion', sql.NVarChar(sql.MAX), Descripcion || '')
+            .input('activa', sql.Bit, Activa === 'true' || Activa === '1' ? 1 : 0)
+            .input('fechaInicio', sql.DateTime, FechaInicio ? new Date(FechaInicio) : null)
+            .input('fechaFin', sql.DateTime, FechaFin ? new Date(FechaFin) : null);
+
+        if (imagen) {
+            request.input('imagen', sql.NVarChar(500), imagen);
+        }
+
+        await request.query(queryString);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.patch('/promociones/:id/activar', async (req, res) => {
+    const { id } = req.params;
+    const { activa } = req.body;
+    if (activa === undefined) return res.status(400).json({ error: 'activa requerido' });
+
+    try {
+        const pool = await poolPromise;
+        await pool.request()
+            .input('id', sql.Int, parseInt(id))
+            .input('activa', sql.Bit, activa === true || activa === 'true' || activa === '1' ? 1 : 0)
+            .query('UPDATE Promociones SET Activa=@activa WHERE PromocionID=@id');
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/promociones/:id', async (req, res) => {
+    try {
+        const pool = await poolPromise;
+        await pool.request().input('id', sql.Int, parseInt(req.params.id)).query('DELETE FROM Promociones WHERE PromocionID=@id');
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // ==========================================
