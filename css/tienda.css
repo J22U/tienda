@@ -123,6 +123,32 @@ body {
    PRODUCTOS
    ============================================================================ */
 
+.promo-carousel .carousel-item {
+    min-height: 280px;
+}
+
+.promo-card {
+    border-radius: 15px;
+    overflow: hidden;
+    max-width: 280px;
+    margin: 0 auto;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.promo-card .card-body {
+    padding: 0.9rem;
+}
+
+.promo-card .card-title {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.promo-card .card-text {
+    font-size: 0.85rem;
+    min-height: 45px;
+}
+
 .product-card {
     border: none;
     border-radius: 25px;

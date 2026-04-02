@@ -156,30 +156,49 @@ async function cargarPromociones() {
 }
 
 function renderPromociones(promocionesActivas) {
+    const seccionPromos = document.getElementById('promociones');
     const cont = document.getElementById('contenedor-promociones');
-    if (!cont) return;
+    if (!cont || !seccionPromos) return;
 
     if (!promocionesActivas || promocionesActivas.length === 0) {
-        cont.innerHTML = '<div class="text-center py-4 text-muted">No hay promociones activas en este momento.</div>';
+        seccionPromos.style.display = 'none';
+        cont.innerHTML = '';
         return;
     }
 
-    cont.innerHTML = promocionesActivas.map(p => {
+    seccionPromos.style.display = 'block';
+
+    const slideItems = promocionesActivas.map((p, index) => {
         const img = p.ImagenURL || 'https://placehold.co/600x350?text=Sin+imagen';
         const fecha = p.FechaInicio && p.FechaFin ? `${new Date(p.FechaInicio).toLocaleDateString()} - ${new Date(p.FechaFin).toLocaleDateString()}` : '';
         return `
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100">
-                    <img src="${img}" class="card-img-top" alt="${p.Titulo}" onerror="this.src='https://placehold.co/600x350?text=Error+imagen'">
-                    <div class="card-body">
-                        <h5 class="card-title">${p.Titulo}</h5>
-                        <p class="card-text">${p.Descripcion || ''}</p>
-                        ${fecha ? `<p class="text-muted small mb-1">${fecha}</p>` : ''}
-                        <span class="badge bg-success">Activa</span>
+            <div class="carousel-item ${index === 0 ? 'active' : ''}">
+                <div class="d-flex justify-content-center">
+                    <div class="card promo-card text-center shadow-sm" style="width: 280px;">
+                        <img src="${img}" class="card-img-top" alt="${p.Titulo}" onerror="this.src='https://placehold.co/600x350?text=Error+imagen'" style="height: 170px; object-fit: cover;">
+                        <div class="card-body">
+                            <h6 class="card-title mb-1">${p.Titulo}</h6>
+                            <p class="card-text small mb-2">${p.Descripcion || ''}</p>
+                            ${fecha ? `<p class="text-muted small mb-2">${fecha}</p>` : ''}
+                            <span class="badge bg-success">Activa</span>
+                        </div>
                     </div>
                 </div>
             </div>`;
     }).join('');
+
+    cont.innerHTML = `
+        <div id="carouselPromociones" class="carousel slide promo-carousel" data-bs-ride="carousel" data-bs-interval="4000">
+            <div class="carousel-inner">${slideItems}</div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#carouselPromociones" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Anterior</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#carouselPromociones" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Siguiente</span>
+            </button>
+        </div>`;
 }
 
 function armarHtmlProducto(p) {
