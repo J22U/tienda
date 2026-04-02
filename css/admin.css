@@ -677,6 +677,12 @@ body {
     font-weight: 800;
 }
 
+.active-filter {
+    color: white !important;
+    background-color: #222 !important;
+    border-color: #222 !important;
+}
+
 /* ============================================================================
    TABLAS COLAPSABLES - Nueva implementación
    ============================================================================ */

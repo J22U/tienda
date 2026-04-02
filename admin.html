@@ -254,6 +254,9 @@ id="btn-importar" data-action="importar"
                                 <button class="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold" data-tab="Completado">
                                     COMPLETADOS
                                 </button>
+                                <button class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" data-tab="Cancelado">
+                                    CANCELADOS
+                                </button>
                             </div>
 
                             <div id="lista-pedidos"></div>
@@ -359,8 +362,13 @@ id="btn-importar" data-action="importar"
 document.addEventListener('click', function(e) {
   if(e.target.matches('#btn-backup, [data-action="exportar"]')) return window.exportarInventario();
   if(e.target.matches('#btn-importar, [data-action="importar"]')) return document.getElementById('inputImportar').click();
-  const tabTarget = e.target.closest('[data-tab="Pendiente"], [data-tab="Completado"], [data-tab="Todos"]');
-  if(tabTarget && window.filtrarPedidos) return window.filtrarPedidos(tabTarget.dataset.tab);
+  const tabTarget = e.target.closest('[data-tab="Pendiente"], [data-tab="Completado"], [data-tab="Cancelado"], [data-tab="Todos"]');
+  if(tabTarget && window.filtrarPedidos) {
+    const currentActive = document.querySelector('.d-flex.gap-2 button.active-filter');
+    if (currentActive) currentActive.classList.remove('active-filter');
+    tabTarget.classList.add('active-filter');
+    return window.filtrarPedidos(tabTarget.dataset.tab);
+  }
 });
     </script>
     <script src="js/product-delegation.js" defer></script>
