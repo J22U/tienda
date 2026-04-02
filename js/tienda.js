@@ -203,6 +203,12 @@ function abrirProductoPorQuery() {
     const id = params.get('producto');
     if (!id) return;
 
+    // Si abrimos desde /?producto=ID o ruta distinta, redirigimos a tienda.html para asegurar carga correcta (móvil/servidor)
+    if (!window.location.pathname.endsWith('tienda.html')) {
+        window.location.replace(`/tienda.html?producto=${encodeURIComponent(id)}`);
+        return;
+    }
+
     const producto = productosData.find(item => item.ProductoID == id);
     if (!producto) {
         console.warn('No se encontró producto en query:', id);
@@ -216,10 +222,14 @@ function abrirProductoPorQuery() {
     }
 
     verDetalle(id);
+
+    // Limpia query de URL para evitar reapertura al refrescar o volver atrás
+    window.history.replaceState({}, document.title, window.location.pathname);
 }
 
 function compartirProducto(producto) {
-    const urlProducto = `${window.location.origin}${window.location.pathname}?producto=${encodeURIComponent(producto.ProductoID)}`;
+    const rutaTienda = window.location.pathname.endsWith('tienda.html') ? window.location.pathname : '/tienda.html';
+    const urlProducto = `${window.location.origin}${rutaTienda}?producto=${encodeURIComponent(producto.ProductoID)}`;
     const nombre = producto.Nombre || 'Producto';
     const precio = Number(producto.Precio || 0).toLocaleString();
     const texto = `Mira este producto en Trébol:\n${nombre}\nPrecio: $${precio}`;
@@ -780,10 +790,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check if user explicitly wants to view the store (via ?view=store parameter)
     const urlParams = new URLSearchParams(window.location.search);
     const viewStore = urlParams.get('view');
+    const productoParam = urlParams.get('producto');
 
     // Prevent infinite loop: Check BOTH conditions
-    // Skip auto-login if: ?view=store OR no valid admin session
-    if (viewStore !== 'store' && localStorage.getItem('admin_logged') === 'true') {
+    // Skip auto-login if: ?view=store OR ?producto=ID OR no valid admin session
+    if (viewStore !== 'store' && !productoParam && localStorage.getItem('admin_logged') === 'true') {
         if (isSessionValid()) {
             console.log('[Session] Valid admin session - redirecting to admin.html');
             window.location.replace('admin.html');
