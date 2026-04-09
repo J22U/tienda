@@ -854,8 +854,10 @@ function setupClientAutofill() {
         if (nombre.length < 3) return;
         
         autofillTimeout = setTimeout(async () => {
+            console.log('🔍 Buscando cliente:', `"${nombre}"`);
             const client = await loadClientData(nombre);
-            if (client && client.ClienteID) {
+            console.log('🔍 Raw response:', client);
+            if (client && client.ClienteID && client.Nombre.toLowerCase().startsWith(nombre.toLowerCase())) {
                 document.getElementById('fac-correo').value = client.Correo || '';
                 document.getElementById('fac-tel').value = client.Telefono || '';
                 document.getElementById('fac-doc').value = client.Documento || '';

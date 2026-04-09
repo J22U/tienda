@@ -1148,8 +1148,8 @@ app.get('/clientes/:nombre', async (req, res) => {
         SELECT TOP 1 ClienteID, Nombre, Correo, Telefono, Documento, Direccion, 
                FechaUltimoUso, Usos 
         FROM Clientes 
-        WHERE LOWER(Nombre) LIKE LOWER(@nombre) + '%'
-        ORDER BY FechaUltimoUso DESC
+        WHERE LOWER(Nombre) LIKE '%' + LOWER(@nombre) + '%'
+        ORDER BY Usos DESC, FechaUltimoUso DESC
       `);
     
     const client = result.recordset[0] || {};
