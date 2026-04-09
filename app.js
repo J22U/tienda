@@ -1093,20 +1093,26 @@ app.post('/clientes', async (req, res) => {
 app.get('/clientes/:nombre', async (req, res) => {
   try {
     const { nombre } = req.params;
+    console.log('🔍 GET /clientes/', nombre);
     if (!nombre?.trim()) return res.json({});
-
+    
     const pool = await poolPromise;
     const result = await pool.request()
-      .input('nombre', sql.NVarChar(200), `%${nombre.trim()}%`)
+      .input('nombre', sql.NVarChar(200), nombre.trim())
       .query(`
         SELECT TOP 1 * FROM Clientes 
-        WHERE LOWER(Nombre) LIKE LOWER(@nombre) 
+        WHERE LOWER(Nombre) = LOWER(@nombre) 
         ORDER BY FechaUltimoUso DESC
       `);
+    console.log('✅ Cliente query:', result.recordset.length ? 'FOUND' : 'NONE');
     res.json(result.recordset[0] || {});
   } catch (err) {
-    console.error('Error /clientes GET:', err);
-    res.status(500).json({});
+    console.error('💥 /clientes GET ERROR:', {
+      nombre: req.params.nombre,
+      message: err.message,
+      stack: err.stack
+    });
+    res.status(500).json({ error: 'Server error - check logs' });
   }
 });
 

@@ -829,9 +829,15 @@ document.addEventListener('DOMContentLoaded', function() {
 async function loadClientData(nombre) {
     try {
         const response = await fetch(`${BASE_URL}/clientes/${encodeURIComponent(nombre)}`);
+        if (!response.ok) {
+            console.warn('Cliente no encontrado:', response.status);
+            return null;
+        }
         const client = await response.json();
-        return client.ClienteID ? client : null;
-    } catch {
+        console.log('Cliente loaded:', client);
+        return client;
+    } catch (err) {
+        console.error('Autofill error:', err);
         return null;
     }
 }
@@ -849,7 +855,7 @@ function setupClientAutofill() {
         
         autofillTimeout = setTimeout(async () => {
             const client = await loadClientData(nombre);
-            if (client) {
+            if (client && client.ClienteID) {
                 document.getElementById('fac-correo').value = client.Correo || '';
                 document.getElementById('fac-tel').value = client.Telefono || '';
                 document.getElementById('fac-doc').value = client.Documento || '';
@@ -867,6 +873,7 @@ function setupClientAutofill() {
         }, 600); // Debounce 600ms
     });
 }
+
 
 // Separate input event for real-time manual quantity updates
     document.addEventListener('input', function(e) {
