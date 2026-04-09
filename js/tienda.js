@@ -1125,4 +1125,7 @@ formLogin.addEventListener('submit', async (e) => {
         });
     }
 
+    // ✅ CLIENT AUTOFILL - Initialize after DOM ready
+    setupClientAutofill();
+
 });
