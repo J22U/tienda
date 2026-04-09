@@ -1091,28 +1091,47 @@ app.post('/clientes', async (req, res) => {
 });
 
 app.get('/clientes/:nombre', async (req, res) => {
+  const { nombre } = req.params;
+  console.log('🔍 GET /clientes/', nombre);
+  
+  if (!nombre?.trim()) {
+    return res.json({});
+  }
+  
   try {
-    const { nombre } = req.params;
-    console.log('🔍 GET /clientes/', nombre);
-    if (!nombre?.trim()) return res.json({});
-    
     const pool = await poolPromise;
+    // Check table exists first
+    const tableCheck = await pool.request().query(`
+      SELECT COUNT(*) as tableCount FROM INFORMATION_SCHEMA.TABLES 
+      WHERE TABLE_NAME = 'Clientes'
+    `);
+    
+    if (tableCheck.recordset[0].tableCount === 0) {
+      console.log('📭 No Clientes table - returning empty');
+      return res.json({});
+    }
+    
     const result = await pool.request()
       .input('nombre', sql.NVarChar(200), nombre.trim())
       .query(`
-        SELECT TOP 1 c.* FROM Clientes c 
-        WHERE LOWER(c.Nombre) = LOWER(@nombre) 
-        ORDER BY c.FechaUltimoUso DESC
+        SELECT TOP 1 ClienteID, Nombre, Correo, Telefono, Documento, Direccion, 
+               FechaUltimoUso, Usos 
+        FROM Clientes 
+        WHERE LOWER(Nombre) LIKE LOWER(@nombre) + '%'
+        ORDER BY FechaUltimoUso DESC
       `);
-    console.log('✅ Cliente query:', result.recordset.length ? 'FOUND' : 'NONE');
-    res.json(result.recordset[0] || {});
+    
+    const client = result.recordset[0] || {};
+    console.log('✅ Cliente:', client.ClienteID ? 'FOUND' : 'NONE');
+    res.json(client);
   } catch (err) {
     console.error('💥 /clientes GET ERROR:', {
       nombre: req.params.nombre,
-      message: err.message,
-      stack: err.stack
+      message: err.message?.substring(0, 200),
+      code: err.code
     });
-    res.status(500).json({ error: 'Server error - check logs' });
+    // NEVER 500 - always return {} for frontend resilience
+    res.json({});
   }
 });
 
