@@ -1100,9 +1100,9 @@ app.get('/clientes/:nombre', async (req, res) => {
     const result = await pool.request()
       .input('nombre', sql.NVarChar(200), nombre.trim())
       .query(`
-        SELECT TOP 1 * FROM Clientes 
-        WHERE LOWER(Nombre) = LOWER(@nombre) 
-        ORDER BY FechaUltimoUso DESC
+        SELECT TOP 1 c.* FROM Clientes c 
+        WHERE LOWER(c.Nombre) = LOWER(@nombre) 
+        ORDER BY c.FechaUltimoUso DESC
       `);
     console.log('✅ Cliente query:', result.recordset.length ? 'FOUND' : 'NONE');
     res.json(result.recordset[0] || {});
