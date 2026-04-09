@@ -738,6 +738,21 @@ async function procesarPago() {
         return Swal.fire('Campos incompletos', 'Por favor llena todos los campos de envío', 'error');
     }
 
+    // 💾 SAVE CLIENT DATA FIRST (non-blocking)
+    try {
+        await fetch(`${BASE_URL}/clientes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                nombre,
+                correo,
+                telefono,
+                documento: documento || null,
+                direccion
+            })
+        }).catch(saveErr => console.warn('Client save failed:', saveErr));
+    } catch {}
+
     const datosPedido = {
         nombre, correo, telefono,
         documento: documento || "No proporcionado",
@@ -764,6 +779,7 @@ async function procesarPago() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(datosPedido)
         });
+
 
         const result = await response.json();
 
@@ -809,7 +825,50 @@ document.addEventListener('DOMContentLoaded', function() {
         if (plusBtn) plusBtn.disabled = qty >= stock || stock <= 0;
     };
 
-    // Separate input event for real-time manual quantity updates
+// CLIENT AUTOFILL SYSTEM
+async function loadClientData(nombre) {
+    try {
+        const response = await fetch(`${BASE_URL}/clientes/${encodeURIComponent(nombre)}`);
+        const client = await response.json();
+        return client.ClienteID ? client : null;
+    } catch {
+        return null;
+    }
+}
+
+// Debounced autofill
+let autofillTimeout;
+function setupClientAutofill() {
+    const nombreInput = document.getElementById('fac-nombre');
+    if (!nombreInput) return;
+    
+    nombreInput.addEventListener('input', async (e) => {
+        clearTimeout(autofillTimeout);
+        const nombre = e.target.value.trim();
+        if (nombre.length < 3) return;
+        
+        autofillTimeout = setTimeout(async () => {
+            const client = await loadClientData(nombre);
+            if (client) {
+                document.getElementById('fac-correo').value = client.Correo || '';
+                document.getElementById('fac-tel').value = client.Telefono || '';
+                document.getElementById('fac-doc').value = client.Documento || '';
+                document.getElementById('fac-dir').value = client.Direccion || '';
+                
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'info',
+                    title: `Datos cargados para ${client.Nombre}`,
+                    showConfirmButton: false,
+                    timer: 2500
+                });
+            }
+        }, 600); // Debounce 600ms
+    });
+}
+
+// Separate input event for real-time manual quantity updates
     document.addEventListener('input', function(e) {
         if (e.target.matches('.qty-input')) {
             const index = parseInt(e.target.dataset.index);
@@ -830,6 +889,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+
     
     document.addEventListener('click', function(e) {
         if (e.target.matches('.img-producto')) {

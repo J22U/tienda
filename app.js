@@ -204,6 +204,34 @@ const poolPromise = new sql.ConnectionPool(config)
             console.warn('Nota: No se pudo verificar columna DescuentoPorcentaje:', err.message);
         }
 
+// ✅ AUTO-CREATE CLIENTES TABLE (Deploy-safe)
+        try {
+            await pool.request().query(`
+                IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Clientes' AND xtype='U')
+                BEGIN
+                    CREATE TABLE Clientes (
+                        ClienteID INT IDENTITY(1,1) PRIMARY KEY,
+                        Nombre NVARCHAR(200) NOT NULL,
+                        Correo NVARCHAR(200),
+                        Telefono NVARCHAR(50),
+                        Documento NVARCHAR(50),
+                        Direccion NVARCHAR(500),
+                        FechaCreacion DATETIME DEFAULT GETDATE(),
+                        FechaUltimoUso DATETIME DEFAULT GETDATE(),
+                        Usos INT DEFAULT 1
+                    );
+                    CREATE NONCLUSTERED INDEX IX_Clientes_Nombre ON Clientes(Nombre);
+                    PRINT '✅ Clientes table + index created';
+                    console.log('✅ Clientes table auto-created');
+                END
+                ELSE
+                    PRINT 'ℹ️ Clientes table exists';
+            `);
+            console.log('✅ Clientes table verified/auto-created');
+        } catch (err) {
+            console.warn('Tabla Clientes:', err.message);
+        }
+
         // Verificar y crear tabla Promociones si no existe
         try {
             await pool.request().query(`
@@ -1032,23 +1060,75 @@ app.put('/pedidos/:pedidoId/producto-descuento', async (req, res) => {
 });
 
 // ===== BADGE SUPPORT - Unread Count Endpoint =====
-app.get('/unread-count', async (req, res) => {
-    try {
-        const pool = await poolPromise;
-        const result = await pool.request().query(`
-            SELECT COUNT(*) as unread 
-            FROM Pedidos 
-            WHERE Estado = 'Pendiente' 
-              AND Fecha > DATEADD(day, -1, GETDATE())
-        `);
-        res.json({ 
-            unread: result.recordset[0].unread || 0 
-        });
-    } catch (err) {
-        console.error('Badge count error:', err);
-        res.status(500).json({ unread: 0 });
-    }
+// ===== CLIENTES AUTOFILL ENDPOINTS =====
+app.post('/clientes', async (req, res) => {
+  try {
+    const { nombre, correo, telefono, documento, direccion } = req.body;
+    if (!nombre?.trim()) return res.status(400).json({ error: 'Nombre requerido' });
+
+    const pool = await poolPromise;
+    await pool.request()
+      .input('nombre', sql.NVarChar(200), nombre.trim())
+      .input('correo', sql.NVarChar(200), correo || null)
+      .input('telefono', sql.NVarChar(50), telefono || null)
+      .input('documento', sql.NVarChar(50), documento || null)
+      .input('direccion', sql.NVarChar(500), direccion || null)
+      .query(`
+        IF EXISTS (SELECT 1 FROM Clientes WHERE LOWER(Nombre) = LOWER(@nombre))
+          UPDATE Clientes SET 
+            Correo = @correo, Telefono = @telefono, Documento = @documento, Direccion = @direccion,
+            FechaUltimoUso = GETDATE(), Usos = Usos + 1
+          WHERE LOWER(Nombre) = LOWER(@nombre)
+        ELSE
+          INSERT INTO Clientes (Nombre, Correo, Telefono, Documento, Direccion) 
+          VALUES (@nombre, @correo, @telefono, @documento, @direccion);
+      `);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error /clientes POST:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
+
+app.get('/clientes/:nombre', async (req, res) => {
+  try {
+    const { nombre } = req.params;
+    if (!nombre?.trim()) return res.json({});
+
+    const pool = await poolPromise;
+    const result = await pool.request()
+      .input('nombre', sql.NVarChar(200), `%${nombre.trim()}%`)
+      .query(`
+        SELECT TOP 1 * FROM Clientes 
+        WHERE LOWER(Nombre) LIKE LOWER(@nombre) 
+        ORDER BY FechaUltimoUso DESC
+      `);
+    res.json(result.recordset[0] || {});
+  } catch (err) {
+    console.error('Error /clientes GET:', err);
+    res.status(500).json({});
+  }
+});
+
+// ===== BADGE SUPPORT - Unread Count Endpoint =====
+app.get('/unread-count', async (req, res) => {
+  try {
+    const pool = await poolPromise;
+    const result = await pool.request().query(`
+      SELECT COUNT(*) as unread 
+      FROM Pedidos 
+      WHERE Estado = 'Pendiente' 
+        AND Fecha > DATEADD(day, -1, GETDATE())
+    `);
+    res.json({ 
+      unread: result.recordset[0].unread || 0 
+    });
+  } catch (err) {
+    console.error('Badge count error:', err);
+    res.status(500).json({ unread: 0 });
+  }
+});
+
 
 
 
