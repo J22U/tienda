@@ -1062,11 +1062,40 @@ app.put('/pedidos/:pedidoId/producto-descuento', async (req, res) => {
 // ===== BADGE SUPPORT - Unread Count Endpoint =====
 // ===== CLIENTES AUTOFILL ENDPOINTS =====
 app.post('/clientes', async (req, res) => {
+  const { nombre, correo, telefono, documento, direccion } = req.body;
+  console.log('💾 POST /clientes:', nombre);
+  
+  if (!nombre?.trim()) {
+    return res.status(400).json({ error: 'Nombre requerido' });
+  }
+  
   try {
-    const { nombre, correo, telefono, documento, direccion } = req.body;
-    if (!nombre?.trim()) return res.status(400).json({ error: 'Nombre requerido' });
-
     const pool = await poolPromise;
+    
+    // Ensure table exists
+    const tableCheck = await pool.request().query(`
+      SELECT COUNT(*) as tableCount FROM INFORMATION_SCHEMA.TABLES 
+      WHERE TABLE_NAME = 'Clientes'
+    `);
+    
+    if (tableCheck.recordset[0].tableCount === 0) {
+      await pool.request().query(`
+        CREATE TABLE Clientes (
+          ClienteID INT IDENTITY(1,1) PRIMARY KEY,
+          Nombre NVARCHAR(200) NOT NULL,
+          Correo NVARCHAR(200),
+          Telefono NVARCHAR(50),
+          Documento NVARCHAR(50),
+          Direccion NVARCHAR(500),
+          FechaCreacion DATETIME DEFAULT GETDATE(),
+          FechaUltimoUso DATETIME DEFAULT GETDATE(),
+          Usos INT DEFAULT 1
+        );
+        CREATE NONCLUSTERED INDEX IX_Clientes_Nombre ON Clientes(Nombre);
+      `);
+      console.log('✅ Clientes table created in POST');
+    }
+    
     await pool.request()
       .input('nombre', sql.NVarChar(200), nombre.trim())
       .input('correo', sql.NVarChar(200), correo || null)
@@ -1083,10 +1112,12 @@ app.post('/clientes', async (req, res) => {
           INSERT INTO Clientes (Nombre, Correo, Telefono, Documento, Direccion) 
           VALUES (@nombre, @correo, @telefono, @documento, @direccion);
       `);
+    
+    console.log('✅ Cliente saved:', nombre);
     res.json({ success: true });
   } catch (err) {
-    console.error('Error /clientes POST:', err);
-    res.status(500).json({ error: err.message });
+    console.error('💥 /clientes POST ERROR:', err.message);
+    res.json({ success: false, error: 'Save failed (check logs)' }); // Graceful 200
   }
 });
 
