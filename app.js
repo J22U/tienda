@@ -1143,13 +1143,13 @@ app.get('/clientes', async (req, res) => {
     }
     
     const result = await pool.request()
-      .input('nombre', sql.NVarChar(200), nombre.trim())
+      .input('cedula', sql.NVarChar(50), cedula.trim())
       .query(`
         SELECT TOP 1 ClienteID, Nombre, Correo, Telefono, Documento, Direccion, 
                FechaUltimoUso, Usos 
         FROM Clientes 
-        WHERE LOWER(Nombre) LIKE '%' + LOWER(@nombre) + '%'
-        ORDER BY Usos DESC, FechaUltimoUso DESC
+        WHERE Documento = @cedula OR LOWER(Documento) LIKE '%' + LOWER(@cedula) + '%'
+        ORDER BY FechaUltimoUso DESC
       `);
     
     const client = result.recordset[0] || {};
