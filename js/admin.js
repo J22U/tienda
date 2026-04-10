@@ -155,11 +155,11 @@ listaPedidos.addEventListener('click', async e => {
     // 1. Mostrar detalles en modal al hacer click en fila (sin botón)
     const pedidoRow = e.target.closest('.pedido-row, .table-row-main, .pedido-card');
     if (pedidoRow && !e.target.closest('button')) {
-        const pedidoId = pedidoRow.dataset.pedidoId;
-        const pedidoNumero = pedidoRow.dataset.pedidoNumero || pedidoRow.dataset.numeroVisual;
-        if (pedidoId) {
-            await mostrarDetallesPedido(pedidoId, pedidoNumero);
-        }
+    const pedidoId = pedidoRow.dataset.pedidoId;
+    const pedidoNumero = pedidoRow.dataset.pedidoNumero || pedidoRow.dataset.numeroVisual;
+    if (pedidoId) {
+        await mostrarDetallesPedido(pedidoId, pedidoNumero);
+    }
         return;
     }
 
@@ -204,23 +204,26 @@ listaPedidos.addEventListener('click', async e => {
 
 
     // NEW: Dedicated toggle function
-    async function togglePedidoDetails(pedidoId, row) {
+window.populatePedidoDetails = populatePedidoDetails; // Global para onclick
+
+async function togglePedidoDetails(pedidoId, row) {
         const detailsRow = row.nextElementSibling;
         if (!detailsRow) return;
         
         const isCurrentlyCollapsed = !detailsRow.classList.contains('show');
         console.log(`Toggle pedido ${pedidoId}: ${isCurrentlyCollapsed ? 'expand' : 'collapse'}`);
         
-        if (isCurrentlyCollapsed) {
-            // Show loading
-            detailsRow.innerHTML = '<td colspan="6" class="text-center p-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div></td>';
-            detailsRow.classList.add('show');
-            row.querySelector('.row-toggle')?.classList.add('rotated');
-            collapsedStates.set(pedidoId, false);
-            
-            try {
-                await populatePedidoDetails(pedidoId);
-            } catch (err) {
+    if (isCurrentlyCollapsed) {
+        // Show loading
+        detailsRow.innerHTML = '<td colspan="6" class="text-center p-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div></td>';
+        detailsRow.classList.add('show');
+        row.querySelector('.row-toggle')?.classList.add('rotated');
+        collapsedStates.set(pedidoId, false);
+        
+        const numeroVisual = row.closest('.pedido-card')?.dataset.pedidoNumero;
+        try {
+            await populatePedidoDetails(pedidoId, numeroVisual);
+        } catch (err) {
                 console.error('Toggle failed:', err);
                 detailsRow.innerHTML = `<td colspan="6" class="text-center p-4 text-danger">
                     <i class="bi bi-exclamation-triangle fs-1 mb-2"></i>
@@ -683,12 +686,12 @@ window.cancelarPedido = async function(id, btn) {
 };
 
 // Helper to populate details row/card (reuse mostrarDetallesPedido logic)
-async function populatePedidoDetails(pedidoId, cardElement = null) {
+async function populatePedidoDetails(pedidoId, numeroVisual = null, cardElement = null) {
     console.group(`🔍 Loading details for pedido ${pedidoId}`);
     const detailsContainer = cardElement ? (cardElement.querySelector('.pedido-card-details') || cardElement.querySelector('.pedido-row-details')) : null;
     const detailsBody = detailsContainer ? detailsContainer.querySelector('.pedido-details-body') : null;
     try {
-        console.log('Fetching /pedidos/' + pedidoId);
+        console.log('Fetching /pedidos/' + pedidoId, 'NumeroVisual:', numeroVisual);
         const res = await fetch(`/pedidos/${pedidoId}`);
         console.log('Fetch response:', res.status, res.statusText);
         
@@ -716,7 +719,8 @@ async function populatePedidoDetails(pedidoId, cardElement = null) {
 
         // Si estamos en card mode, mostramos detalles en el cuerpo de card
         if (cardElement && detailsBody) {
-            const itemsHtml = Array.isArray(p.Items) && p.Items.length > 0
+                const numeroDisplay = numeroVisual || p.NumeroDisplay || 'N/A';
+                const itemsHtml = Array.isArray(p.Items) && p.Items.length > 0
                 ? p.Items.map(item => {
                     if (!item || !item.Nombre) return '';
                     return `<tr>
@@ -729,9 +733,9 @@ async function populatePedidoDetails(pedidoId, cardElement = null) {
                 : '<tr><td colspan="4" class="text-center text-muted py-3">Sin items en este pedido</td></tr>';
 
 detailsBody.innerHTML = `
-                <div class="mb-3">
-                    <strong>📧 Correo:</strong> <span class="text-muted">${p.Correo || 'No registrado'}</span>
-
+                <div class="mb-3 border-bottom pb-2">
+                    <h6 class="text-primary mb-2">Pedido <strong>#${numeroDisplay}</strong></h6>
+                    <strong>📧 Correo:</strong> <span class="text-muted">${p.Correo || 'Sin correo registrado'}</span>
                 </div>
                 <div class="table-responsive mb-3">
                     <table class="table table-sm table-hover">
