@@ -735,6 +735,7 @@ async function populatePedidoDetails(pedidoId, numeroVisual = null, cardElement 
 detailsBody.innerHTML = `
                 <div class="mb-3 border-bottom pb-2">
                     <h6 class="text-primary mb-2">Pedido <strong>#${numeroDisplay}</strong></h6>
+                    <strong>👤 Cliente:</strong> <span class="text-muted">${p.NombreCliente || 'Sin cliente registrado'}</span><br>
                     <strong>📧 Correo:</strong> <span class="text-muted">${p.Correo || 'Sin correo registrado'}</span>
                 </div>
                 <div class="table-responsive mb-3">

@@ -1,39 +1,26 @@
-# Ferreteria Admin - Fix Pedido Details (Número + Correo)
+# ✅ TODO - FIX PEDIDO #15 + CORREO CLIENTE
+## Status: [2/6] 🚀 Backend fixed
 
-**Task**: Asegurar que:
-1. Número del pedido en detalles = Número visual en lista (NumeroDisplay)
-2. Correo del cliente SIEMPRE visible en detalles expandidos
+### 🔧 PASOS:
 
-## ✅ PLAN APROBADO (Solo js/admin.js)
+✅ **1. [HECHO] Crear TODO.md** ✓
 
-### Pasos:
+✅ **2. [HECHO] app.js** - `/pedidos/:id` → `WHERE p2.Fecha <= p1.Fecha` ✓
 
-#### 1. [PENDIENTE] ✅ Editar js/admin.js
-```
-- renderPedidos(): Ya OK - cards usan NumeroDisplay
-- mostrarDetallesPedido(id, numeroVisual): Pasar numeroVisual AL populatePedidoDetails
-- populatePedidoDetails(id, numeroVisual): 
-  * Recibir numeroVisual
-  * Mostrar "#${numeroVisual}" en header
-  * ✅ MOSTRAR CORREO: Verificar p.Correo existe → mostrar siempre
-  * Si !p.Correo → mostrar 'Sin correo registrado'
-```
+**3. [PENDIENTE ⏳] Test backend**
+   ```
+   curl http://localhost:3000/pedidos/15
+   # Verificar "NumeroDisplay": 15
+   ```
 
-#### 2. [PENDIENTE] 🔄 Test Local
-```
-cd c:/Users/johnr/Ferreteria
-# Asegurar servidor corriendo
-node app.js  (o npm start)
-Abrir http://localhost:3000/admin.html → Pestaña Pedidos
-→ Expandir pedidos → verificar:
-  ✓ Número = el mismo de la lista  
-  ✓ Correo visible (incluso si vacío)
-```
+**4. [PENDIENTE] js/admin.js** - Añadir correo en detalles card
 
-#### 3. [PENDIENTE] 🎉 Completar
-```
-attempt_completion()
-```
+**5. [PENDIENTE] js/admin.js** - Llenar modal fields (Cliente/Tel)
 
-**Estado**: Listo para editar js/admin.js → test → ✅ DONE
+**6. [PENDIENTE] Test completo** - Admin → Pedido 15 → #15 + correo
 
+**7. [PENDIENTE] ✅ attempt_completion**
+
+---
+
+*Últ. update: Backend fix completado*
