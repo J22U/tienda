@@ -1121,11 +1121,11 @@ app.post('/clientes', async (req, res) => {
   }
 });
 
-app.get('/clientes/:nombre', async (req, res) => {
-  const { nombre } = req.params;
-  console.log('🔍 GET /clientes/', nombre);
+app.get('/clientes', async (req, res) => {
+  const { cedula } = req.query;
+  console.log('🔍 GET /clientes por cédula:', cedula);
   
-  if (!nombre?.trim()) {
+  if (!cedula?.trim()) {
     return res.json({});
   }
   

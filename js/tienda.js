@@ -826,9 +826,10 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
 // CLIENT AUTOFILL SYSTEM
-async function loadClientData(nombre) {
+async function loadClientData(cedula) {
     try {
-        const response = await fetch(`${BASE_URL}/clientes/${encodeURIComponent(nombre)}`);
+        console.log('🔍 API call:', `${BASE_URL}/clientes?cedula=${encodeURIComponent(cedula)}`);
+        const response = await fetch(`${BASE_URL}/clientes?cedula=${encodeURIComponent(cedula)}`);
         if (!response.ok) {
             console.warn('Cliente no encontrado:', response.status);
             return null;
@@ -845,19 +846,20 @@ async function loadClientData(nombre) {
 // Debounced autofill
 let autofillTimeout;
 function setupClientAutofill() {
-    const nombreInput = document.getElementById('fac-nombre');
-    if (!nombreInput) return;
+    // Autofill por CÉDULA (#fac-doc)
+    const cedulaInput = document.getElementById('fac-doc');
+    if (!cedulaInput) return;
     
-    nombreInput.addEventListener('input', async (e) => {
+    cedulaInput.addEventListener('input', async (e) => {
         clearTimeout(autofillTimeout);
-        const nombre = e.target.value.trim();
-        if (nombre.length < 3) return;
+        const cedula = e.target.value.trim();
+        if (cedula.length < 5) return;
         
         autofillTimeout = setTimeout(async () => {
-            console.log('🔍 Buscando cliente:', `"${nombre}"`);
-            const client = await loadClientData(nombre);
+            console.log('🔍 Buscando cliente por cédula:', `"${cedula}"`);
+            const client = await loadClientData(cedula);
             console.log('🔍 Raw response:', client);
-            if (client && client.ClienteID && client.Nombre.toLowerCase().startsWith(nombre.toLowerCase())) {
+            if (client && client.ClienteID) {
                 document.getElementById('fac-correo').value = client.Correo || '';
                 document.getElementById('fac-tel').value = client.Telefono || '';
                 document.getElementById('fac-doc').value = client.Documento || '';
