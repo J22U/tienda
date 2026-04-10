@@ -1,1 +1,21 @@
-### 3. ✅ GET /clientes/:nombre (search) - app.js:~980&#10;### 4. ✅ procesarPago() saves client - js/tienda.js:~830&#10;### 5. ✅ Name autofill + setupClientAutofill() - js/tienda.js:~1050&#10;### 6. ✅ Test + COMPLETE&#10;&#10;✅ **TASK COMPLETE** - Run migration then `node app.js` to test.
+# TODO - Mostrar Correo Cliente en Detalles Pedido
+
+✅ **Plan Aprobado**: Editar **solo js/admin.js** (sin tocar HTML)
+
+## Pasos:
+
+### 1. [PENDIENTE] Editar js/admin.js
+- `renderPedidos()`: Agregar correo debajo nombre en cards
+- `populatePedidoDetails()`: Agregar párrafo correo en detalles expandidos
+
+### 2. [PENDIENTE] Testear
+```
+1. Abrir http://localhost:3000/admin.html → pestaña Pedidos
+2. Ver correo en cards principales 
+3. Click/expandir pedido → verificar correo en detalles
+```
+
+### 3. [PENDIENTE] Completar task
+
+**Estado**: Esperando edición → test → ✅
+
