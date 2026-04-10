@@ -588,8 +588,8 @@ function renderPedidos(peds, container, preserveCollapsed = false) {
             <article class="pedido-card" data-pedido-id="${p.PedidoID}" data-pedido-numero="${numeroVisual}">
                 <div class="pedido-card-header">
                     <div>
-<h5 class="pedido-card-title">${numeroVisual} - ${p.NombreCliente}</h5>
-<small class="text-muted d-block">${p.Correo || 'Sin correo'}</small>
+                        <h5 class="pedido-card-title">${numeroVisual} - ${p.NombreCliente}</h5>
+                        <small class="text-muted d-block">${p.Correo || 'Sin correo'}</small>
                         <small class="text-muted">${new Date(p.Fecha).toLocaleString('es-ES')}</small>
                     </div>
                     <div class="text-end">
@@ -731,6 +731,7 @@ async function populatePedidoDetails(pedidoId, cardElement = null) {
 detailsBody.innerHTML = `
                 <div class="mb-3">
                     <strong>📧 Correo:</strong> <span class="text-muted">${p.Correo || 'No registrado'}</span>
+
                 </div>
                 <div class="table-responsive mb-3">
                     <table class="table table-sm table-hover">
