@@ -860,6 +860,7 @@ function setupClientAutofill() {
             const client = await loadClientData(cedula);
             console.log('🔍 Raw response:', client);
             if (client && client.ClienteID) {
+                document.getElementById('fac-nombre').value = client.Nombre || '';
                 document.getElementById('fac-correo').value = client.Correo || '';
                 document.getElementById('fac-tel').value = client.Telefono || '';
                 document.getElementById('fac-doc').value = client.Documento || '';
