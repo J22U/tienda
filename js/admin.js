@@ -83,6 +83,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 📱 Elements
     const listaProductos = document.getElementById('lista-productos');
+    const listaAgotados = document.getElementById('lista-agotados');
     const formProducto = document.getElementById('form-producto');
     const buscarProd = document.getElementById('buscar-prod');
 
@@ -174,6 +175,32 @@ listaProductos.addEventListener('click', e => {
             Swal.fire('Error', 'Datos del producto corruptos. Recarga la página.', 'error');
         }
     });
+
+    if (listaAgotados) {
+        listaAgotados.addEventListener('click', e => {
+            const btn = e.target.closest('button[data-action]');
+            if (!btn) return;
+
+            const action = btn.dataset.action;
+            if (action === 'agotados-edit') {
+                const productEncoded = btn.dataset.producto;
+                try {
+                    const producto = JSON.parse(decodeURIComponent(productEncoded));
+                    prepararEdicion(producto);
+                } catch (err) {
+                    console.error('Error parsing producto desde Agotados:', err);
+                    Swal.fire('Error', 'No se pudo abrir el producto.', 'error');
+                }
+                return;
+            }
+
+            if (action === 'agotados-add-stock') {
+                const productoId = btn.dataset.productoId;
+                abrirAgregarStock(productoId);
+                return;
+            }
+        });
+    }
 
 
 
@@ -1864,8 +1891,8 @@ async function cargarAgotados() {
                         </div>
                     </div>
                     <div class="actions-card mt-3">
-                        <button class="btn btn-sm btn-outline-primary" type="button" onclick="prepararEdicionFromAgotados('${productoSafe}')">Ver / Editar</button>
-                        <button class="btn btn-sm btn-outline-success" type="button" onclick="abrirAgregarStock(${p.ProductoID})">Añadir stock</button>
+                        <button class="btn btn-sm btn-outline-primary" type="button" data-action="agotados-edit" data-producto="${productoSafe}">Ver / Editar</button>
+                        <button class="btn btn-sm btn-outline-success" type="button" data-action="agotados-add-stock" data-producto-id="${p.ProductoID}">Añadir stock</button>
                     </div>
                 </div>`;
         }).join('');

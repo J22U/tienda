@@ -168,6 +168,29 @@ body.dark-mode .modal-header .text-muted {
     color: rgba(255,255,255,0.68) !important;
 }
 
+body.dark-mode .product-name {
+    color: #f8fafc !important;
+}
+
+body.dark-mode .low-stock-card {
+    border: 1px solid rgba(255,255,255,0.12) !important;
+}
+
+body.dark-mode .low-stock-card .actions-card {
+    background: rgba(255,255,255,0.04) !important;
+}
+
+body.dark-mode .low-stock-card .btn-outline-primary,
+body.dark-mode .low-stock-card .btn-outline-success {
+    color: #f8fafc !important;
+    border-color: rgba(255,255,255,0.18) !important;
+}
+
+body.dark-mode .low-stock-card .btn-outline-primary:hover,
+body.dark-mode .low-stock-card .btn-outline-success:hover {
+    background: rgba(255,255,255,0.12) !important;
+}
+
 body.dark-mode .product-img-card {
     filter: brightness(1.1) contrast(1.05) !important;
 }
