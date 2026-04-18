@@ -561,6 +561,22 @@ body.dark-mode .logo-admin-container img {
     gap: 8px;
 }
 
+body.dark-mode #lista-promociones {
+    background: rgba(18, 24, 42, 0.95) !important;
+    border-color: rgba(255,255,255,0.12) !important;
+}
+
+body.dark-mode #lista-promociones .card,
+body.dark-mode #lista-promociones .card-body {
+    background: rgba(15, 22, 38, 0.96) !important;
+    color: #f5f7ff !important;
+    border-color: rgba(255,255,255,0.12) !important;
+}
+
+body.dark-mode #lista-promociones .card .btn {
+    color: #f5f7ff !important;
+}
+
 #lista-promociones .card {
     min-height: 112px;
 }
