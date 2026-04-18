@@ -164,6 +164,8 @@ body.dark-mode .pedido-card {
 }
 
 body.dark-mode .pedido-card:hover {
+    background: rgba(23, 32, 52, 0.95) !important;
+    border-color: rgba(108,92,231,0.24) !important;
     box-shadow: 0 18px 40px rgba(0,0,0,0.55) !important;
 }
 
@@ -198,7 +200,7 @@ body.dark-mode .logo-admin-container {
 }
 
 body.dark-mode .logo-admin-container img {
-    filter: brightness(1.15) contrast(1.05) !important;
+    filter: invert(1) brightness(1.55) contrast(1.25) !important;
 }
 
 /* ============================================================================
