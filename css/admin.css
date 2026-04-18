@@ -73,6 +73,33 @@ body.dark-mode .bg-light {
     color: var(--text) !important;
 }
 
+body.dark-mode .modal-header,
+body.dark-mode .modal-body,
+body.dark-mode .modal-footer,
+body.dark-mode #modalItemsTable,
+body.dark-mode #modalItemsTable th,
+body.dark-mode #modalItemsTable td {
+    background: transparent !important;
+    color: var(--text) !important;
+    border-color: rgba(255,255,255,0.12) !important;
+}
+
+body.dark-mode #modalItemsTable th {
+    color: rgba(237,241,255,0.9) !important;
+}
+
+body.dark-mode #modalItemsTable td {
+    color: rgba(237,241,255,0.8) !important;
+}
+
+body.dark-mode .modal-header {
+    border-bottom-color: rgba(255,255,255,0.12) !important;
+}
+
+body.dark-mode .modal-footer {
+    border-top-color: rgba(255,255,255,0.12) !important;
+}
+
 body.dark-mode .btn-light {
     background: #2a354c !important;
     color: #edf2ff !important;
@@ -163,10 +190,17 @@ body.dark-mode .pedido-card {
     box-shadow: 0 12px 28px rgba(0,0,0,0.45) !important;
 }
 
-body.dark-mode .pedido-card:hover {
+body.dark-mode .pedido-card:hover,
+body.dark-mode .pedido-row:hover,
+body.dark-mode .table-row-main:hover {
     background: rgba(23, 32, 52, 0.95) !important;
     border-color: rgba(108,92,231,0.24) !important;
     box-shadow: 0 18px 40px rgba(0,0,0,0.55) !important;
+}
+
+body.dark-mode .pedido-row,
+body.dark-mode .table-row-main {
+    background: rgba(21, 28, 45, 0.92) !important;
 }
 
 body.dark-mode .pedido-card-header,
