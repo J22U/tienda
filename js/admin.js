@@ -1187,15 +1187,21 @@ async function generarFacturaPDF(p, numeroPedido) {
     doc.setFillColor(34, 74, 43);
     doc.rect(0, 0, 5, 297, 'F');
     
-    // --- IMÁGENES (Uso de constantes Base64 directas) ---
+    // --- IMÁGENES (Uso de constantes Base64 directas o imagen estática) ---
     // Logo (Incrustado)
     if (typeof LOGO_BASE64 !== 'undefined') {
         doc.addImage(LOGO_BASE64, 'PNG', 20, 5, 25, 25);
     }
 
-    // QR (Incrustado)
-    if (typeof QR_BASE64 !== 'undefined') {
-        doc.addImage(QR_BASE64, 'JPEG', 80, 12, 25, 25);
+    // QR (Imagen estática desde uploads)
+    try {
+        const qrDataUrl = await window.canvasToDataURL('/uploads/qr-code.png', 25, 25);
+        doc.addImage(qrDataUrl, 'PNG', 80, 12, 25, 25);
+    } catch (err) {
+        console.warn('No se pudo cargar el QR desde uploads, usando fallback base64:', err);
+        if (typeof QR_BASE64 !== 'undefined') {
+            doc.addImage(QR_BASE64, 'JPEG', 80, 12, 25, 25);
+        }
     }
 
     // TEXTO CABECERA
