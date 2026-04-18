@@ -4,8 +4,16 @@
 
 :root {
     --glass-bg: rgba(255, 255, 255, 0.95);
+    --surface: #ffffff;
+    --surface-strong: rgba(255, 255, 255, 0.95);
     --accent: #6c5ce7; 
     --bg: #f0f2f5;
+    --text: #2d3436;
+    --muted: #4b4b4b;
+    --border: #eee;
+    --input-bg: #f8f9fa;
+    --input-border: #eee;
+    --shadow: 0 15px 35px rgba(0,0,0,0.05);
     --price-green: #27ae60;
     font-size: 16px;
 }
@@ -13,10 +21,107 @@
 body {
     font-family: 'Outfit', sans-serif;
     background: radial-gradient(circle at top right, #e0e0ff, var(--bg));
-    color: #2d3436;
+    color: var(--text);
     min-height: 100vh;
     padding-bottom: 50px;
     overflow-x: hidden;
+}
+
+body.dark-mode {
+    --glass-bg: rgba(18, 22, 35, 0.95);
+    --surface: #131826;
+    --surface-strong: rgba(18, 22, 35, 0.95);
+    --bg: #0b101c;
+    --text: #e9ecf8;
+    --muted: #b0b8d9;
+    --border: rgba(255,255,255,0.08);
+    --input-bg: #161f2f;
+    --input-border: #2b3549;
+    --shadow: 0 18px 40px rgba(0,0,0,0.55);
+    background: radial-gradient(circle at top right, #2b3251, #0b101c);
+}
+
+body.dark-mode .bento-card,
+body.dark-mode .header-section,
+body.dark-mode .modal-content {
+    background: var(--surface-strong) !important;
+    border-color: var(--border) !important;
+    box-shadow: var(--shadow) !important;
+}
+
+body.dark-mode .logo-admin-container {
+    background-color: rgba(255,255,255,0.06) !important;
+    border-color: rgba(255,255,255,0.12) !important;
+}
+
+body.dark-mode .form-label {
+    color: var(--muted) !important;
+}
+
+body.dark-mode .form-control {
+    background: var(--input-bg) !important;
+    border-color: var(--input-border) !important;
+    color: var(--text) !important;
+}
+
+body.dark-mode .form-control::placeholder {
+    color: rgba(255,255,255,0.55) !important;
+}
+
+body.dark-mode .bg-light {
+    background: rgba(255,255,255,0.08) !important;
+    color: var(--text) !important;
+}
+
+body.dark-mode .btn-light {
+    background: #2a354c !important;
+    color: #edf2ff !important;
+    border-color: rgba(255,255,255,0.12) !important;
+}
+
+body.dark-mode .btn-outline-secondary {
+    color: #d7dbe8 !important;
+    border-color: rgba(255,255,255,0.18) !important;
+}
+
+body.dark-mode .btn-outline-success {
+    color: #b9f2c0 !important;
+    border-color: rgba(185,242,192,0.35) !important;
+}
+
+body.dark-mode .btn-outline-primary {
+    color: #adc8ff !important;
+    border-color: rgba(173,200,255,0.35) !important;
+}
+
+body.dark-mode .nav-pills .nav-link.active,
+body.dark-mode .nav-pills .nav-link.show {
+    background-color: rgba(108, 92, 231, 0.9) !important;
+    color: #fff !important;
+}
+
+body.dark-mode .table,
+body.dark-mode .table th,
+body.dark-mode .table td {
+    color: var(--text) !important;
+    border-color: rgba(255,255,255,0.08) !important;
+}
+
+body.dark-mode .table-hover tbody tr:hover {
+    background: rgba(255,255,255,0.06) !important;
+}
+
+body.dark-mode .input-group-text {
+    background: rgba(255,255,255,0.08) !important;
+    border-color: rgba(255,255,255,0.12) !important;
+    color: var(--text) !important;
+}
+
+body.dark-mode .badge.bg-dark,
+body.dark-mode .badge.bg-success,
+body.dark-mode .badge.bg-warning,
+body.dark-mode .badge.bg-danger {
+    opacity: 0.95;
 }
 
 /* ============================================================================

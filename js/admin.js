@@ -52,6 +52,35 @@ document.addEventListener('DOMContentLoaded', function() {
         cargarPedidos(true); // Refresh preserving state
     });
 
+    // 🌓 Theme toggle
+    function aplicarTema(tema) {
+        const isDark = tema === 'dark';
+        document.body.classList.toggle('dark-mode', isDark);
+        const btn = document.getElementById('btn-theme-toggle');
+        if (!btn) return;
+        btn.innerHTML = isDark
+            ? '<i class="bi bi-sun-fill me-2"></i> Claro'
+            : '<i class="bi bi-moon-stars-fill me-2"></i> Oscuro';
+        btn.classList.toggle('btn-dark', !isDark);
+        btn.classList.toggle('btn-outline-light', isDark);
+        btn.classList.toggle('btn-outline-secondary', !isDark);
+    }
+
+    function cargarTema() {
+        const tema = localStorage.getItem('admin_theme') || 'light';
+        aplicarTema(tema);
+    }
+
+    const btnThemeToggle = document.getElementById('btn-theme-toggle');
+    if (btnThemeToggle) {
+        btnThemeToggle.addEventListener('click', () => {
+            const nuevoTema = document.body.classList.contains('dark-mode') ? 'light' : 'dark';
+            localStorage.setItem('admin_theme', nuevoTema);
+            aplicarTema(nuevoTema);
+        });
+    }
+    cargarTema();
+
     // 📱 Elements
     const listaProductos = document.getElementById('lista-productos');
     const formProducto = document.getElementById('form-producto');
