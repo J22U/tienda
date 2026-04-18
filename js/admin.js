@@ -1205,7 +1205,7 @@ async function generarFacturaPDF(p, numeroPedido) {
     doc.text("Luis David Rojas", 20, 32);
     doc.text("Cc 1038415279", 20, 37);
     doc.text("El Peñol, Antioquia | Cel: 322 9568362", 20, 42);
-    doc.text("trebol@gmail.com", 20, 47);
+    doc.text("trebolimportacionescol@gmail.com", 20, 47);
 
     // CUADRO DE ORDEN
     doc.setFillColor(248, 249, 250);
@@ -1347,6 +1347,7 @@ async function mostrarDetallesPedido(pedidoId, pedidoNumeroVisual) {
         const elNum = document.getElementById('modalPedidoNum');
         const elNum2 = document.getElementById('modalPedidoNum2');
         const elCliente = document.getElementById('modalCliente');
+        const elCorreo = document.getElementById('modalCorreo');
         const elFecha = document.getElementById('modalFecha');
         const elEstado = document.getElementById('modalEstado');
         const elTelefono = document.getElementById('modalTelefono');
@@ -1354,10 +1355,11 @@ async function mostrarDetallesPedido(pedidoId, pedidoNumeroVisual) {
         const elDireccion = document.getElementById('modalDireccion');
         const elBtnFactura = document.getElementById('modalBtnFactura');
         
-        const numeroVisual = `#${p.NumeroDisplay || pedidoNumeroVisual || p.PedidoID}`;
-        if (elNum) elNum.textContent = numeroVisual;
-        if (elNum2) elNum2.textContent = numeroVisual;
+        const numeroDisplay = p.NumeroDisplay || pedidoNumeroVisual || p.PedidoID;
+        if (elNum) elNum.textContent = `#${numeroDisplay}`;
+        if (elNum2) elNum2.textContent = numeroDisplay;
         if (elCliente) elCliente.textContent = p.NombreCliente || 'N/A';
+        if (elCorreo) elCorreo.textContent = p.Correo || 'N/A';
         if (elFecha) elFecha.textContent = new Date(p.Fecha || Date.now()).toLocaleString('es-ES');
         if (elEstado) elEstado.textContent = p.Estado || 'N/A';
         if (elTelefono) elTelefono.textContent = p.Telefono || 'N/A';
