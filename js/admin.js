@@ -1846,10 +1846,88 @@ async function cargarAgotados() {
     if (!bajos.length) {
         lista.innerHTML = '<p class="text-success text-center py-5">✅ Stock OK</p>';
     } else {
-        lista.innerHTML = bajos.map(p => `<div class="alert alert-warning"><strong>${p.Nombre}</strong> (${p.Stock} und)</div>`).join('');
+        lista.innerHTML = bajos.map(p => {
+            const productoSafe = encodeURIComponent(JSON.stringify(p));
+            return `
+                <div class="product-card low-stock-card mb-3" data-producto="${productoSafe}">
+                    <div class="d-flex gap-3 align-items-start">
+                        <img src="${p.ImagenURL || '/uploads/default.jpg'}" class="product-img-card" alt="${p.Nombre}" onerror="this.src='https://placehold.co/120x120?text=No+image'">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="product-name mb-1">${p.Nombre}</h6>
+                                    <small class="text-muted">${p.Marca} #${p.CodigoSKU || 'N/A'}</small>
+                                </div>
+                                <span class="badge stock-low">${p.Stock} und</span>
+                            </div>
+                            ${p.Caracteristicas ? `<p class="text-muted small mb-0">${p.Caracteristicas}</p>` : '<p class="text-muted small mb-0">Sin descripción</p>'}
+                        </div>
+                    </div>
+                    <div class="actions-card mt-3">
+                        <button class="btn btn-sm btn-outline-primary" type="button" onclick="prepararEdicionFromAgotados('${productoSafe}')">Ver / Editar</button>
+                        <button class="btn btn-sm btn-outline-success" type="button" onclick="abrirAgregarStock(${p.ProductoID})">Añadir stock</button>
+                    </div>
+                </div>`;
+        }).join('');
     }
     document.getElementById('agotados-count').textContent = `${bajos.length} en riesgo`;
 }
+
+window.prepararEdicionFromAgotados = function(productoEncoded) {
+    try {
+        const producto = JSON.parse(decodeURIComponent(productoEncoded));
+        prepararEdicion(producto);
+    } catch (err) {
+        console.error('Error al abrir producto desde Agotados:', err);
+        Swal.fire('Error', 'No se pudo abrir el producto.', 'error');
+    }
+};
+
+window.abrirAgregarStock = async function(productoId) {
+    const producto = productos.find(p => p.ProductoID == productoId);
+    if (!producto) {
+        Swal.fire('Error', 'Producto no encontrado.', 'error');
+        return;
+    }
+
+    const { value: cantidad } = await Swal.fire({
+        title: `Añadir stock a ${producto.Nombre}`,
+        input: 'number',
+        inputLabel: 'Cantidad adicional',
+        inputAttributes: { min: 1, step: 1 },
+        inputValue: 1,
+        showCancelButton: true,
+        confirmButtonText: 'Agregar',
+        cancelButtonText: 'Cancelar'
+    });
+
+    if (!cantidad) return;
+    const cantidadNum = parseInt(cantidad, 10);
+    if (isNaN(cantidadNum) || cantidadNum < 1) {
+        Swal.fire('Error', 'Ingresa una cantidad válida.', 'warning');
+        return;
+    }
+
+    const nuevoStock = Number(producto.Stock || 0) + cantidadNum;
+
+    try {
+        const res = await fetch(`/productos/${productoId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...producto, Stock: nuevoStock })
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({ message: 'No se pudo actualizar stock' }));
+            throw new Error(err.message || 'No se pudo actualizar stock');
+        }
+        Swal.fire('¡Listo!', `Stock actualizado a ${nuevoStock} unidades.`, 'success');
+        await cargarProductos();
+        await cargarAgotados();
+    } catch (err) {
+        console.error('Error al actualizar stock:', err);
+        Swal.fire('Error', err.message || 'No se pudo actualizar stock', 'error');
+    }
+};
 
 function forzarCierreModal() {
     // 1. Ocultar el modal

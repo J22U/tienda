@@ -144,9 +144,64 @@ body.dark-mode .input-group-text {
     color: var(--text) !important;
 }
 
-body.dark-mode .badge.bg-dark,
-body.dark-mode .badge.bg-success,
+body.dark-mode .card,
+body.dark-mode .product-card,
+body.dark-mode #lista-promociones .card,
+body.dark-mode .actions-card,
+body.dark-mode .alert {
+    background: rgba(18, 24, 42, 0.95) !important;
+    border-color: rgba(255,255,255,0.12) !important;
+    color: var(--text) !important;
+}
+
+body.dark-mode .product-card:hover,
+body.dark-mode #lista-promociones .card:hover,
+body.dark-mode .alert:hover {
+    background: rgba(255,255,255,0.08) !important;
+}
+
+body.dark-mode .product-card .text-muted,
+body.dark-mode .card-text,
+body.dark-mode .text-muted,
+body.dark-mode .modal-body .text-muted,
+body.dark-mode .modal-header .text-muted {
+    color: rgba(255,255,255,0.68) !important;
+}
+
+body.dark-mode .product-img-card {
+    filter: brightness(1.1) contrast(1.05) !important;
+}
+
+body.dark-mode #modalItemsTable tbody tr,
+body.dark-mode #modalItemsTable tbody tr:hover,
+body.dark-mode .table-hover tbody tr,
+body.dark-mode .table-hover tbody tr:hover {
+    background: rgba(255,255,255,0.03) !important;
+    color: var(--text) !important;
+}
+
+body.dark-mode .table-dark th {
+    background: rgba(255,255,255,0.08) !important;
+    color: #f5f7ff !important;
+}
+
+body.dark-mode .modal-body,
+body.dark-mode .modal-header,
+body.dark-mode .modal-footer {
+    background: var(--surface-strong) !important;
+    color: var(--text) !important;
+}
+
+body.dark-mode .modal-header.bg-success {
+    background: #1f6f47 !important;
+}
+
+body.dark-mode .btn-close-white {
+    filter: invert(1) brightness(1.5);
+}
+
 body.dark-mode .badge.bg-warning,
+body.dark-mode .badge.bg-success,
 body.dark-mode .badge.bg-danger {
     opacity: 0.95;
 }
