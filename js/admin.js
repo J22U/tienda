@@ -137,6 +137,25 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Handle other data-action buttons
+    const action = e.target.closest('[data-action]')?.dataset.action;
+    if (action) {
+        switch (action) {
+            case 'recargar-pedidos':
+                cargarPedidos(e.target.closest('[data-action]').dataset.force === 'true');
+                break;
+            case 'reintentar-productos':
+                cargarProductos();
+                break;
+            case 'reintentar-pedidos':
+                cargarPedidos();
+                break;
+            case 'reintentar-cambiar-estado':
+                cambiarEstado(e.target.closest('[data-action]').dataset.id, e.target.closest('[data-action]').dataset.nuevoEstado);
+                break;
+        }
+    }
+
     // �🚪 Logout
 document.getElementById('btn-logout').addEventListener('click', async () => {
         const result = await Swal.fire({
@@ -285,7 +304,7 @@ async function togglePedidoDetails(pedidoId, row) {
                     <i class="bi bi-exclamation-triangle fs-1 mb-2"></i>
                     <div>Error cargando detalles</div>
                     <small>${err.message}</small>
-                    <button class="btn btn-sm btn-outline-primary mt-2" onclick="cargarPedidos(true)">Recargar</button>
+                    <button class="btn btn-sm btn-outline-primary mt-2" data-action="recargar-pedidos" data-force="true">Recargar</button>
                 </td>`;
             }
         } else {
@@ -324,7 +343,7 @@ async function cargarProductos() {
         console.error('Error productos:', err);
         lista.innerHTML = `<div class="alert alert-warning text-center">
             ❌ ${err.message}<br>
-            <button class="btn btn-sm btn-warning mt-2" onclick="cargarProductos()">Reintentar</button>
+            <button class="btn btn-sm btn-warning mt-2" data-action="reintentar-productos">Reintentar</button>
         </div>`;
     } finally {
         mostrarLoader(lista, false);
@@ -581,7 +600,7 @@ async function cargarPedidos(preserveCollapsed = true) {
     } catch (err) {
         lista.innerHTML = `<div class="alert alert-danger text-center">
             ❌ ${err.message}<br>
-            <button class="btn btn-sm btn-warning mt-2" onclick="cargarPedidos()">Reintentar</button>
+            <button class="btn btn-sm btn-warning mt-2" data-action="reintentar-pedidos">Reintentar</button>
         </div>`;
     } finally {
         mostrarLoader(lista, false);
@@ -1140,8 +1159,8 @@ async function cambiarEstado(id, nuevoEstado) {
             title: 'No se pudo actualizar',
             text: errorMsg,
             footer: `<div class="mt-2">
-                <button class="btn btn-sm btn-outline-primary me-2" onclick="cargarPedidos(true)">🔄 Recargar</button>
-                <button class="btn btn-sm btn-outline-secondary" onclick="cambiarEstado(${id}, '${nuevoEstado}')">🔄 Reintentar</button>
+                <button class="btn btn-sm btn-outline-primary me-2" data-action="recargar-pedidos" data-force="true">🔄 Recargar</button>
+                <button class="btn btn-sm btn-outline-secondary" data-action="reintentar-cambiar-estado" data-id="${id}" data-nuevo-estado="${nuevoEstado}">🔄 Reintentar</button>
             </div>`
         });
     }
