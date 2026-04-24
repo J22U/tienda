@@ -364,7 +364,7 @@ function renderProductos(prods, container) {
         return `
         <div class="product-card" data-producto="${productoSafe}">
             <div class="d-flex gap-3">
-                <img src="${p.ImagenURL || '/uploads/default.jpg'}" class="product-img-card">
+                <img src="${p.ImagenURL || 'https://placehold.co/120x120?text=No+image'}" class="product-img-card" onerror="this.src='https://placehold.co/120x120?text=No+image'">
                 <div class="flex-grow-1">
                     <h6 class="product-name mb-1">${p.Nombre}</h6>
                     <small class="text-muted">${p.Marca} #${p.CodigoSKU || 'N/A'}</small>
