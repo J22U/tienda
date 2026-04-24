@@ -973,32 +973,36 @@ async function guardarProducto(e) {
         return;
     }
 
-    const formData = new FormData(e.target.form);
-    const productoData = {
-        Nombre: document.getElementById('nombre').value,
-        Marca: document.getElementById('marca').value,
-        CodigoSKU: document.getElementById('sku').value,
-        Precio: parseFloat(document.getElementById('precio').value),
-        Stock: parseInt(document.getElementById('stock').value),
-        Caracteristicas: document.getElementById('caracteristicas').value
-    };
+    const formData = new FormData();
+    formData.append('Nombre', document.getElementById('nombre').value);
+    formData.append('Marca', document.getElementById('marca').value);
+    formData.append('CodigoSKU', document.getElementById('sku').value);
+    formData.append('Precio', document.getElementById('precio').value);
+    formData.append('Stock', document.getElementById('stock').value);
+    formData.append('Caracteristicas', document.getElementById('caracteristicas').value);
 
-    const url = id ? `https://tienda-1vps.onrender.com/productos/${id}` : 'https://tienda-1vps.onrender.com/productos';
+    // Adjuntar imágenes con el nombre de campo que Multer espera: 'imagenes'
+    const imagenesInput = document.getElementById('imagenes');
+    if (imagenesInput && imagenesInput.files.length > 0) {
+        for (const file of imagenesInput.files) {
+            formData.append('imagenes', file);
+        }
+    }
+
+    const url = id ? `/productos/${id}` : '/productos';
     console.log('DEBUG - URL final:', url);
     console.log('Enviando Token:', token);
-    
+
     try {
         console.log('DEBUG - Headers enviados:', {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
         });
         const response = await fetch(url, {
             method: id ? 'PUT' : 'POST',
             headers: {
-                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify(productoData)
+            body: formData
         });
         console.log('DEBUG - Response status:', response.status, response.statusText);
 

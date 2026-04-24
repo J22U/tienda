@@ -1,26 +1,12 @@
-# ✅ TODO - FIX PEDIDO #15 + CORREO CLIENTE
-## Status: [2/6] 🚀 Backend fixed
+# TODO - Fix product image save/update
 
-### 🔧 PASOS:
+## Plan
+- [x] 1. Diagnose issue: `js/admin.js` sends JSON instead of FormData, so images never reach backend Multer.
+- [ ] 2. Edit `js/admin.js`:
+  - Build `FormData` manually with correct field names (`Nombre`, `Marca`, `CodigoSKU`, `Precio`, `Stock`, `Caracteristicas`).
+  - Append files from `#imagenes` input with field name `imagenes` (Multer expects this exact name).
+  - Remove `Content-Type: application/json` header so browser sets `multipart/form-data` automatically.
+  - Keep `Authorization: Bearer ...` header for JWT.
+  - Change hardcoded URL to relative `/productos`.
+- [ ] 3. Test: Create product with images and edit product with new images.
 
-✅ **1. [HECHO] Crear TODO.md** ✓
-
-✅ **2. [HECHO] app.js** - `/pedidos/:id` → `WHERE p2.Fecha <= p1.Fecha` ✓
-
-**3. [PENDIENTE ⏳] Test backend**
-   ```
-   curl http://localhost:3000/pedidos/15
-   # Verificar "NumeroDisplay": 15
-   ```
-
-**4. [PENDIENTE] js/admin.js** - Añadir correo en detalles card
-
-**5. [PENDIENTE] js/admin.js** - Llenar modal fields (Cliente/Tel)
-
-**6. [PENDIENTE] Test completo** - Admin → Pedido 15 → #15 + correo
-
-**7. [PENDIENTE] ✅ attempt_completion**
-
----
-
-*Últ. update: Backend fix completado*
