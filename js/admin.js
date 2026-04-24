@@ -110,52 +110,52 @@ document.addEventListener('DOMContentLoaded', function() {
     // � Alternar formularios (producto / promoción)
     document.addEventListener('click', (e) => {
         const switchBtn = e.target.closest('[data-action="switch-form"]');
-        if (!switchBtn) return;
+        if (switchBtn) {
+            const selected = switchBtn.dataset.form;
+            const productoCard = document.getElementById('producto-card');
+            const promoCard = document.getElementById('promo-card');
 
-        const selected = switchBtn.dataset.form;
-        const productoCard = document.getElementById('producto-card');
-        const promoCard = document.getElementById('promo-card');
-
-        if (selected === 'producto') {
-            productoCard?.classList.remove('d-none');
-            promoCard?.classList.add('d-none');
-        } else if (selected === 'promocion') {
-            promoCard?.classList.remove('d-none');
-            productoCard?.classList.add('d-none');
-        }
-
-        document.querySelectorAll('[data-action="switch-form"]').forEach(el => {
-            if (el === switchBtn) {
-                el.classList.remove('btn-outline-secondary');
-                el.classList.add('btn-primary');
-                el.classList.remove('btn-outline-primary');
-            } else {
-                el.classList.remove('btn-primary');
-                el.classList.add('btn-outline-secondary');
-                el.classList.add('btn-outline-primary');
+            if (selected === 'producto') {
+                productoCard?.classList.remove('d-none');
+                promoCard?.classList.add('d-none');
+            } else if (selected === 'promocion') {
+                promoCard?.classList.remove('d-none');
+                productoCard?.classList.add('d-none');
             }
-        });
-    });
 
-    // Handle other data-action buttons
-    const action = e.target.closest('[data-action]')?.dataset.action;
-    if (action) {
-        switch (action) {
-            case 'recargar-pedidos':
-                cargarPedidos(e.target.closest('[data-action]').dataset.force === 'true');
-                break;
-            case 'reintentar-productos':
-                cargarProductos();
-                break;
-            case 'reintentar-pedidos':
-                cargarPedidos();
-                break;
-            case 'reintentar-cambiar-estado':
-                cambiarEstado(e.target.closest('[data-action]').dataset.id, e.target.closest('[data-action]').dataset.nuevoEstado);
-                break;
+            document.querySelectorAll('[data-action="switch-form"]').forEach(el => {
+                if (el === switchBtn) {
+                    el.classList.remove('btn-outline-secondary');
+                    el.classList.add('btn-primary');
+                    el.classList.remove('btn-outline-primary');
+                } else {
+                    el.classList.remove('btn-primary');
+                    el.classList.add('btn-outline-secondary');
+                    el.classList.add('btn-outline-primary');
+                }
+            });
+            return;
         }
-    }
-});
+
+        const actionBtn = e.target.closest('[data-action]');
+        if (actionBtn) {
+            const action = actionBtn.dataset.action;
+            switch (action) {
+                case 'recargar-pedidos':
+                    cargarPedidos(actionBtn.dataset.force === 'true');
+                    break;
+                case 'reintentar-productos':
+                    cargarProductos();
+                    break;
+                case 'reintentar-pedidos':
+                    cargarPedidos();
+                    break;
+                case 'reintentar-cambiar-estado':
+                    cambiarEstado(actionBtn.dataset.id, actionBtn.dataset.nuevoEstado);
+                    break;
+            }
+        }
+    });
 document.getElementById('btn-logout').addEventListener('click', async () => {
         const result = await Swal.fire({
             title: '¿Cerrar sesión?',
