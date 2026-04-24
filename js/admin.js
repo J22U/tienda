@@ -155,8 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
         }
     }
-
-    // �🚪 Logout
+});
 document.getElementById('btn-logout').addEventListener('click', async () => {
         const result = await Swal.fire({
             title: '¿Cerrar sesión?',
