@@ -337,6 +337,7 @@ async function cargarProductos() {
         const res = await fetch('/productos');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         productos = await res.json();
+        productos.sort((a, b) => a.Nombre.localeCompare(b.Nombre));
         renderProductos(productos, lista);
         actualizarContadores();
     } catch (err) {

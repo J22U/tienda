@@ -128,6 +128,7 @@ async function cargarProductos() {
         }
 
         productosData = await res.json();
+        productosData.sort((a, b) => a.Nombre.localeCompare(b.Nombre));
         productosFiltrados = [...productosData];
         paginaActual = 1;
 
