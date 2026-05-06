@@ -214,13 +214,16 @@ function armarHtmlProducto(p) {
         ? fotoPrincipal
         : (fotoPrincipal ? `${BASE_URL}${fotoPrincipal}` : 'https://placehold.co/250x250?text=Sin+Imagen');
 
-    const estaAgotado = p.Stock <= 0;
+    const stockNum = Number(p.Stock) || 0;
+    const estaAgotado = stockNum <= 0;
+
     const claseAgotado = estaAgotado ? 'product-out-of-stock' : '';
     const stockColor = estaAgotado ? 'text-danger' : 'text-success';
-    const stockTexto = estaAgotado ? '¡SIN EXISTENCIAS!' : `${p.Stock} disponibles`;
+    const stockTexto = estaAgotado ? '¡SIN EXISTENCIAS!' : `${stockNum} disponibles`;
 
     const descuento = parseFloat(p.DescuentoPorcentaje) || 0;
     const precioBase = Number(p.Precio) || 0;
+
     const precioConDescuento = precioBase - (precioBase * descuento / 100);
     const tieneOferta = descuento > 0;
 
