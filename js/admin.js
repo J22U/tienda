@@ -1892,7 +1892,7 @@ function obtenerNumeroVisualActual(pedidoId) {
 // Low Stock
 async function cargarAgotados() {
     const lista = document.getElementById('lista-agotados');
-    const bajos = productos.filter(p => p.Stock <= 5 && p.Stock > 0);
+    const bajos = productos.filter(p => p.Stock <= 10 && p.Stock >= 0);
     if (!bajos.length) {
         lista.innerHTML = '<p class="text-success text-center py-5">✅ Stock OK</p>';
     } else {
