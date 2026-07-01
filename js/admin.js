@@ -7,6 +7,34 @@ let promociones = [];
 // Global filter state for pedidos (fixes ReferenceError)
 window.filtroEstado = 'Todos';
 
+function mostrarAlertaSuscripcion() {
+    Swal.fire({
+        title: '⚠️ Aviso importante',
+        html: `
+            <div class="subscription-alert-card">
+                <div class="subscription-alert-icon">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                </div>
+                <p class="subscription-alert-message">
+                    Tu suscripción está a punto de caducar. No pierdas el acceso a tus herramientas. Comunícate de inmediato con tu proveedor para renovar tu plan.
+                </p>
+            </div>
+        `,
+        icon: 'warning',
+        showCloseButton: true,
+        showConfirmButton: true,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#ff8f00',
+        buttonsStyling: false,
+        customClass: {
+            popup: 'subscription-alert-modal',
+            title: 'subscription-alert-title',
+            confirmButton: 'btn btn-warning px-4 rounded-pill fw-bold'
+        },
+        backdrop: true
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // 🔒 Session check
     if (!localStorage.getItem('admin_logged')) {
@@ -24,6 +52,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         return;
     }
+
+    mostrarAlertaSuscripcion();
 
     // 🌐 Socket.io real-time (CSP/SIMPLE AUTH FIX) - FIXED GLOBAL SCOPE
     window.socket = io({

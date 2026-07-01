@@ -258,6 +258,61 @@ body.dark-mode .nav-pills .nav-link:focus {
     color: #ffffff !important;
 }
 
+.subscription-alert-modal {
+    border-radius: 24px;
+    overflow: hidden;
+    width: min(92vw, 520px);
+    border: 1px solid rgba(255, 143, 0, 0.18);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.22);
+}
+
+.subscription-alert-title {
+    color: #7a4a00;
+    font-weight: 800;
+    font-size: 1.35rem;
+}
+
+.subscription-alert-card {
+    background: linear-gradient(135deg, #fff7e6 0%, #fff 100%);
+    border-radius: 18px;
+    padding: 1.1rem;
+    border: 1px solid rgba(255, 143, 0, 0.18);
+}
+
+.subscription-alert-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    margin: 0 auto 0.75rem;
+    display: grid;
+    place-items: center;
+    font-size: 1.6rem;
+    color: #fff;
+    background: linear-gradient(135deg, #ffb703, #ff8f00);
+    box-shadow: 0 10px 25px rgba(255, 143, 0, 0.25);
+}
+
+.subscription-alert-message {
+    margin: 0;
+    color: #5c3a00;
+    font-size: 1rem;
+    line-height: 1.6;
+    font-weight: 600;
+}
+
+body.dark-mode .subscription-alert-card {
+    background: linear-gradient(135deg, rgba(58, 33, 8, 0.95) 0%, rgba(24, 18, 10, 0.95) 100%);
+    border-color: rgba(255, 143, 0, 0.22);
+}
+
+body.dark-mode .subscription-alert-title {
+    color: #ffd28a;
+}
+
+body.dark-mode .subscription-alert-message {
+    color: #ffe2aa;
+}
+
 body.dark-mode .nav-pills .nav-link.active,
 body.dark-mode .nav-pills .nav-link.show {
     background-color: rgba(108,92,231,0.92) !important;
