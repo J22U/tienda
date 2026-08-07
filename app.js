@@ -189,6 +189,61 @@ cloudinary.config({
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// 🔐 JWT MIDDLEWARE DEFINITION - REQUIRED BEFORE ADMIN ROUTES
+const getTokenFromRequest = (req) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.split(' ')[1];
+  }
+
+  const cookieHeader = req.headers.cookie;
+  if (!cookieHeader) return null;
+
+  const cookies = cookieHeader.split(';').map(cookie => cookie.trim());
+  for (const cookie of cookies) {
+    const [name, ...val] = cookie.split('=');
+    if (name === 'admin_token') {
+      return decodeURIComponent(val.join('='));
+    }
+  }
+  return null;
+};
+
+const authJWT = (req, res, next) => {
+  const token = getTokenFromRequest(req);
+  
+  if (!token) {
+    console.log('🚫 NO TOKEN - 401');
+    return res.status(401).json({ error: 'Token requerido' });
+  }
+  
+  jwt.verify(token, process.env.JWT_SECRET || 'MiClaveSuperSecretaParaJWT_32charsMin', (err, user) => {
+    if (err) {
+      console.log('🚫 INVALID TOKEN - 403:', err.message);
+      return res.status(403).json({ error: 'Token inválido' });
+    }
+    req.user = user;
+    console.log('✅ AUTH OK:', user.userId);
+    next();
+  });
+};
+
+const authOrRedirect = (req, res, next) => {
+  const token = getTokenFromRequest(req);
+  
+  if (!token) {
+    return res.redirect('/admin-login');
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET || 'MiClaveSuperSecretaParaJWT_32charsMin', (err, user) => {
+    if (err) {
+      return res.redirect('/admin-login');
+    }
+    req.user = user;
+    next();
+  });
+};
+
 app.get('/admin', authOrRedirect, (req, res) => {
   res.sendFile(path.join(__dirname, 'admin.html'));
 });
