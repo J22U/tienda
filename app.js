@@ -347,61 +347,6 @@ const storage = new CloudinaryStorage({
 });
 const upload = multer({ storage: storage });
 
-// 🔐 JWT MIDDLEWARE DEFINITION - FIXED
-const getTokenFromRequest = (req) => {
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    return authHeader.split(' ')[1];
-  }
-
-  const cookieHeader = req.headers.cookie;
-  if (!cookieHeader) return null;
-
-  const cookies = cookieHeader.split(';').map(cookie => cookie.trim());
-  for (const cookie of cookies) {
-    const [name, ...val] = cookie.split('=');
-    if (name === 'admin_token') {
-      return decodeURIComponent(val.join('='));
-    }
-  }
-  return null;
-};
-
-const authJWT = (req, res, next) => {
-  const token = getTokenFromRequest(req);
-  
-  if (!token) {
-    console.log('🚫 NO TOKEN - 401');
-    return res.status(401).json({ error: 'Token requerido' });
-  }
-  
-  jwt.verify(token, process.env.JWT_SECRET || 'MiClaveSuperSecretaParaJWT_32charsMin', (err, user) => {
-    if (err) {
-      console.log('🚫 INVALID TOKEN - 403:', err.message);
-      return res.status(403).json({ error: 'Token inválido' });
-    }
-    req.user = user;
-    console.log('✅ AUTH OK:', user.userId);
-    next();
-  });
-};
-
-const authOrRedirect = (req, res, next) => {
-  const token = getTokenFromRequest(req);
-  
-  if (!token) {
-    return res.redirect('/admin-login');
-  }
-
-  jwt.verify(token, process.env.JWT_SECRET || 'MiClaveSuperSecretaParaJWT_32charsMin', (err, user) => {
-    if (err) {
-      return res.redirect('/admin-login');
-    }
-    req.user = user;
-    next();
-  });
-};
-
 app.use('/productos', (req, res, next) => {
   if (req.method === 'GET') return next();
   authJWT(req, res, next);
@@ -856,20 +801,6 @@ app.post('/pedidos', async (req, res) => {
         if (transaction) await transaction.rollback();
         res.status(500).json({ success: false, error: err.message });
     }
-});
-
-app.get('/pedidos', async (req, res) => {
-    try {
-        const pool = await poolPromise;
-        const result = await pool.request().query(`
-            SELECT *, 
-            -- Queremos numero histórico: pedido más antiguo = 1, más reciente = N
-            (SELECT COUNT(*) FROM Pedidos p2 WHERE p2.Fecha <= p1.Fecha) as NumeroDisplay
-            FROM Pedidos p1 
-            ORDER BY Fecha DESC
-        `);
-        res.json(result.recordset);
-    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.get('/pedidos/:id', async (req, res) => {
