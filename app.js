@@ -188,8 +188,6 @@ cloudinary.config({
 });
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/admin.html', authOrRedirect);
-app.use(['/js/admin.js', '/css/admin.css'], authJWT);
 
 app.get('/admin', authOrRedirect, (req, res) => {
   res.sendFile(path.join(__dirname, 'admin.html'));
