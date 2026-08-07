@@ -2,77 +2,330 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Acceso Admin | Trébol</title>
     <link rel="icon" type="image/jpeg" href="https://res.cloudinary.com/donc8a6tc/image/upload/v1770737717/LOGO_TR%C3%89BOL_o6dvfx.jpg">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
     <style>
+        :root {
+            --bg: #0a140e;
+            --surface: #10201705;
+            --card: #0f1e16;
+            --card-line: rgba(232, 151, 30, 0.16);
+            --grid-line: rgba(90, 140, 110, 0.09);
+            --green: #2f9e63;
+            --green-dim: #1f5c3f;
+            --amber: #e8971e;
+            --amber-soft: rgba(232, 151, 30, 0.14);
+            --text: #eef2ea;
+            --muted: #8ea391;
+            --hairline: rgba(238, 242, 234, 0.10);
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+
         body {
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #0f172a 0%, #0b1c34 100%);
-            color: #f8fafc;
-            font-family: 'Poppins', sans-serif;
+            padding: max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+            background:
+                radial-gradient(circle at 50% 18%, rgba(47, 158, 99, 0.16), transparent 55%),
+                var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            position: relative;
+            overflow-x: hidden;
         }
-        .login-card {
+
+        /* Blueprint grid backdrop */
+        body::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 42px 42px;
+            mask-image: radial-gradient(circle at 50% 40%, black 5%, transparent 72%);
+            pointer-events: none;
+        }
+
+        /* Faint diagonal hatch, like a technical elevation shading */
+        body::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: repeating-linear-gradient(
+                115deg,
+                rgba(232, 151, 30, 0.03) 0px,
+                rgba(232, 151, 30, 0.03) 1px,
+                transparent 1px,
+                transparent 14px
+            );
+            pointer-events: none;
+        }
+
+        .wrap {
+            position: relative;
             width: 100%;
             max-width: 420px;
-            padding: 2rem;
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 24px;
-            box-shadow: 0 24px 80px rgba(0,0,0,0.25);
+            z-index: 1;
+            margin: auto;
         }
-        .login-card h1 {
-            font-size: 1.75rem;
-            margin-bottom: 1rem;
+
+        .tag-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.68rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding: 0 4px 10px;
         }
-        .form-control {
-            border-radius: 14px;
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.14);
-            color: #f8fafc;
+
+        .tag-label .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            display: inline-block;
+            margin-right: 8px;
+            box-shadow: 0 0 8px rgba(47, 158, 99, 0.9);
         }
-        .form-control:focus {
-            box-shadow: none;
-            border-color: #38bdf8;
-            background: rgba(255,255,255,0.12);
+
+        /* Card with technical-drawing corner brackets instead of a plain rounded box */
+        .plate {
+            position: relative;
+            background: linear-gradient(180deg, #101f18 0%, #0c1811 100%);
+            border: 1px solid var(--hairline);
+            padding: 44px 38px 36px;
         }
-        .btn-primary {
-            border-radius: 999px;
+
+        .plate::before,
+        .plate::after,
+        .corner-tl, .corner-br {
+            content: "";
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--amber);
+            opacity: 0.85;
         }
-        a.footer-link {
-            color: #38bdf8;
+        .plate::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+        .plate::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+        .corner-tl { top: -1px; right: -1px; border-left: none; border-bottom: none; }
+        .corner-br { bottom: -1px; left: -1px; border-right: none; border-top: none; }
+
+        .brand {
+            text-align: center;
+            margin-bottom: 30px;
         }
-        .small-text {
-            color: rgba(248,250,252,0.72);
+
+        .brand img {
+            width: 56px;
+            height: 56px;
+            object-fit: contain;
+            margin-bottom: 14px;
+            filter: drop-shadow(0 0 14px rgba(47, 158, 99, 0.35));
+        }
+
+        .brand h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1.55rem;
+            margin: 0 0 6px;
+            letter-spacing: -0.01em;
+        }
+
+        .brand p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.88rem;
+        }
+
+        .field {
+            margin-bottom: 24px;
+        }
+
+        .field label {
+            display: block;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.68rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--green);
+            margin-bottom: 10px;
+        }
+
+        .field input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--hairline);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 16px; /* evita zoom automático al enfocar en iOS */
+            padding: 10px 2px 10px;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            border-radius: 0;
+            transition: border-color 0.2s ease;
+        }
+
+        .field input::placeholder {
+            color: rgba(142, 163, 145, 0.55);
+        }
+
+        .field input:focus {
+            border-bottom-color: var(--amber);
+        }
+
+        .btn-ingresar {
+            width: 100%;
+            margin-top: 8px;
+            background: var(--amber);
+            color: #1a1206;
+            border: none;
+            font-family: 'IBM Plex Mono', monospace;
+            font-weight: 600;
+            font-size: 0.82rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 15px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.15s ease;
+        }
+
+        .btn-ingresar:hover {
+            background: #f5a935;
+        }
+
+        .btn-ingresar:active {
+            transform: scale(0.99);
+        }
+
+        .btn-ingresar svg {
+            width: 15px;
+            height: 15px;
+            transition: transform 0.2s ease;
+        }
+
+        .btn-ingresar:hover svg {
+            transform: translateX(3px);
+        }
+
+        .foot {
+            margin-top: 26px;
+            padding-top: 20px;
+            border-top: 1px dashed var(--hairline);
+            text-align: center;
+        }
+
+        .foot p {
+            margin: 0 0 6px;
+            color: var(--muted);
+            font-size: 0.82rem;
+        }
+
+        .foot a {
+            color: var(--amber);
+            font-size: 0.85rem;
+            text-decoration: none;
+            font-weight: 500;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s ease;
+        }
+
+        .foot a:hover {
+            border-bottom-color: var(--amber);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .btn-ingresar, .btn-ingresar svg, .field input, .foot a {
+                transition: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body::before { background-size: 32px 32px; }
+            .plate { padding: 32px 22px 26px; }
+            .brand h1 { font-size: 1.32rem; }
+            .brand img { width: 48px; height: 48px; }
+            .tag-label { font-size: 0.6rem; padding: 0 2px 8px; }
+            .field { margin-bottom: 20px; }
+            .btn-ingresar { padding: 16px 18px; }
+        }
+
+        @media (max-width: 340px) {
+            .tag-label span:last-child { display: none; }
+        }
+
+        @media (min-width: 992px) {
+            .wrap { max-width: 440px; }
+            .plate { padding: 52px 44px 40px; }
         }
     </style>
 </head>
 <body>
-    <div class="login-card">
-        <div class="text-center mb-4">
-            <img src="https://res.cloudinary.com/donc8a6tc/image/upload/v1770738241/LOGO_TR%C3%89BOL-removebg-preview_uyamlw.png" alt="Trébol" width="72" class="mb-3">
-            <h1 class="fw-bold">Acceso Admin</h1>
-            <p class="small-text mb-0">Panel privado de administración de Trébol.</p>
+
+    <div class="wrap">
+        <div class="tag-label">
+            <span><span class="dot"></span>TRÉBOL // PANEL-ADMIN</span>
+            <span>REV. 01</span>
         </div>
-        <form id="form-login-admin">
-            <div class="mb-3">
-                <label class="form-label">Usuario</label>
-                <input type="text" id="admin-email" class="form-control" placeholder="admin" required>
+
+        <div class="plate">
+            <div class="corner-tl"></div>
+            <div class="corner-br"></div>
+
+            <div class="brand">
+                <img src="https://res.cloudinary.com/donc8a6tc/image/upload/v1770738241/LOGO_TR%C3%89BOL-removebg-preview_uyamlw.png" alt="Trébol">
+                <h1>Acceso Admin</h1>
+                <p>Panel privado de administración de Trébol</p>
             </div>
-            <div class="mb-4">
-                <label class="form-label">Contraseña</label>
-                <input type="password" id="admin-password" class="form-control" placeholder="••••••••" required>
+
+            <form id="form-login-admin">
+                <div class="field">
+                    <label for="admin-email">Usuario</label>
+                    <input type="text" id="admin-email" placeholder="admin" required autocomplete="username">
+                </div>
+                <div class="field">
+                    <label for="admin-password">Contraseña</label>
+                    <input type="password" id="admin-password" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+
+                <button type="submit" class="btn-ingresar">
+                    Ingresar
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </button>
+            </form>
+
+            <div class="foot">
+                <p>Si necesitas volver a la tienda:</p>
+                <a href="/tienda.html">Regresar a la tienda</a>
             </div>
-            <button type="submit" class="btn btn-primary w-100 py-3 fw-bold">Ingresar</button>
-        </form>
-        <div class="mt-4 text-center small-text">
-            <p class="mb-1">Si necesitas volver a la tienda:</p>
-            <a href="/tienda.html" class="footer-link">Regresar a la tienda</a>
         </div>
     </div>
 
