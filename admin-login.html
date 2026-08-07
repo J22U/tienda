@@ -135,12 +135,22 @@
             margin-bottom: 30px;
         }
 
+        .brand .logo-glow {
+            width: 92px;
+            height: 92px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 50% 42%, #ffffff 0%, #f4faf6 55%, rgba(244, 250, 246, 0) 78%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            box-shadow: 0 0 30px 6px rgba(255, 255, 255, 0.18);
+        }
+
         .brand img {
-            width: 56px;
-            height: 56px;
+            width: 62px;
+            height: 62px;
             object-fit: contain;
-            margin-bottom: 14px;
-            filter: drop-shadow(0 0 14px rgba(47, 158, 99, 0.35));
         }
 
         .brand h1 {
@@ -269,7 +279,8 @@
             body::before { background-size: 32px 32px; }
             .plate { padding: 32px 22px 26px; }
             .brand h1 { font-size: 1.32rem; }
-            .brand img { width: 48px; height: 48px; }
+            .brand .logo-glow { width: 76px; height: 76px; }
+            .brand img { width: 50px; height: 50px; }
             .tag-label { font-size: 0.6rem; padding: 0 2px 8px; }
             .field { margin-bottom: 20px; }
             .btn-ingresar { padding: 16px 18px; }
@@ -298,7 +309,9 @@
             <div class="corner-br"></div>
 
             <div class="brand">
-                <img src="https://res.cloudinary.com/donc8a6tc/image/upload/v1770738241/LOGO_TR%C3%89BOL-removebg-preview_uyamlw.png" alt="Trébol">
+                <div class="logo-glow">
+                    <img src="https://res.cloudinary.com/donc8a6tc/image/upload/v1770738241/LOGO_TR%C3%89BOL-removebg-preview_uyamlw.png" alt="Trébol">
+                </div>
                 <h1>Acceso Admin</h1>
                 <p>Panel privado de administración de Trébol</p>
             </div>
