@@ -6,10 +6,8 @@ const CACHE_NAME = 'trebol-pwa-v2';
 const PRECACHE_URLS = [
   '/',
   '/tienda.html', 
-  '/admin.html',
   '/manifest.json',
-  '/css/tienda.css',
-  '/css/admin.css'
+  '/css/tienda.css'
 ];
 
 /* Install: Basic precache + OneSignal setup */

@@ -343,7 +343,7 @@ function autoLoginIfValid() {
         const isPWA_mode = isPWA();
         console.log(`[Session] Auto-login successful (${isPWA_mode ? 'PWA' : 'browser'})`);
         // Redirect to admin panel
-        window.location.href = 'admin.html';
+        window.location.href = '/admin';
     }
 }
 
@@ -399,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     timer: 1500,
                     showConfirmButton: false,
                     willClose: () => {
-                        window.location.href = 'admin.html';
+                        window.location.href = '/admin';
                     }
                 });
             } else {

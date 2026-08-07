@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Admin | Trébol</title>
+    <link rel="icon" type="image/jpeg" href="https://res.cloudinary.com/donc8a6tc/image/upload/v1770737717/LOGO_TR%C3%89BOL_o6dvfx.jpg">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0f172a 0%, #0b1c34 100%);
+            color: #f8fafc;
+            font-family: 'Poppins', sans-serif;
+        }
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            padding: 2rem;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 24px;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.25);
+        }
+        .login-card h1 {
+            font-size: 1.75rem;
+            margin-bottom: 1rem;
+        }
+        .form-control {
+            border-radius: 14px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.14);
+            color: #f8fafc;
+        }
+        .form-control:focus {
+            box-shadow: none;
+            border-color: #38bdf8;
+            background: rgba(255,255,255,0.12);
+        }
+        .btn-primary {
+            border-radius: 999px;
+        }
+        a.footer-link {
+            color: #38bdf8;
+        }
+        .small-text {
+            color: rgba(248,250,252,0.72);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="text-center mb-4">
+            <img src="https://res.cloudinary.com/donc8a6tc/image/upload/v1770738241/LOGO_TR%C3%89BOL-removebg-preview_uyamlw.png" alt="Trébol" width="72" class="mb-3">
+            <h1 class="fw-bold">Acceso Admin</h1>
+            <p class="small-text mb-0">Panel privado de administración de Trébol.</p>
+        </div>
+        <form id="form-login-admin">
+            <div class="mb-3">
+                <label class="form-label">Usuario</label>
+                <input type="text" id="admin-email" class="form-control" placeholder="admin" required>
+            </div>
+            <div class="mb-4">
+                <label class="form-label">Contraseña</label>
+                <input type="password" id="admin-password" class="form-control" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 py-3 fw-bold">Ingresar</button>
+        </form>
+        <div class="mt-4 text-center small-text">
+            <p class="mb-1">Si necesitas volver a la tienda:</p>
+            <a href="/tienda.html" class="footer-link">Regresar a la tienda</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        const BASE_URL = window.location.origin;
+
+        document.getElementById('form-login-admin').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const user = document.getElementById('admin-email').value;
+            const pass = document.getElementById('admin-password').value;
+
+            try {
+                const res = await fetch(`${BASE_URL}/api/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user, pass })
+                });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.error || 'Credenciales inválidas');
+                }
+
+                localStorage.setItem('admin_token', data.token);
+                localStorage.setItem('admin_logged', 'true');
+
+                Swal.fire({
+                    title: '¡Login Exitoso!',
+                    text: 'Redirigiendo al panel admin...',
+                    icon: 'success',
+                    timer: 1400,
+                    didClose: () => {
+                        window.location.replace('/admin');
+                    }
+                });
+            } catch (err) {
+                Swal.fire('Error', err.message, 'error');
+            }
+        });
+    </script>
+</body>
+</html>

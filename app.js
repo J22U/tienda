@@ -49,7 +49,7 @@ function sendPushNotification(pedidoData) {
             en: `Pedido #${numeroPedido} de ${nombreCliente}\nTotal: $${Number(total).toLocaleString()}\n${productos} producto(s)`,
             es: `Pedido #${numeroPedido} de ${nombreCliente}\nTotal: $${Number(total).toLocaleString()}\n${productos} producto(s)` 
         },
-        url: 'https://tienda-1vps.onrender.com/admin.html',
+        url: 'https://tienda-1vps.onrender.com/admin',
         priority: 10,
         ttl: 259200
     };
@@ -108,17 +108,29 @@ io.use((socket, next) => {
         return next();
     }
     
-    // Fallback to session/JWT
-    const session = adminSessions.get(token);
-    if (session && session.logged) {
-        socket.userId = session.userId;
+    if (!token) {
+        console.log(`❌ Socket rechazado - no token`);
+        return next(new Error('Sesión inválida'));
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET || 'MiClaveSuperSecretaParaJWT_32charsMin', (err, user) => {
+        if (err) {
+            const session = adminSessions.get(token);
+            if (session && session.logged) {
+                socket.userId = session.userId;
+                socket.sessionToken = token;
+                console.log(`🔌 Admin conectado (legacy session): ${socket.userId}`);
+                return next();
+            }
+            console.log(`❌ Socket rechazado - JWT inválido (${err.message})`);
+            return next(new Error('Sesión inválida'));
+        }
+
+        socket.userId = user.userId;
         socket.sessionToken = token;
         console.log(`🔌 Admin conectado: ${socket.userId}`);
         next();
-    } else {
-        console.log(`❌ Socket rechazado - Auth failed (simpleAuth:${simpleAuth}, token:${!!token})`);
-        next(new Error('Sesión inválida'));
-    }
+    });
 });
 
 io.on('connection', (socket) => {
@@ -176,6 +188,21 @@ cloudinary.config({
 });
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/admin.html', authOrRedirect);
+app.use(['/js/admin.js', '/css/admin.css'], authJWT);
+
+app.get('/admin', authOrRedirect, (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
+app.get('/admin.html', authOrRedirect, (req, res) => {
+  res.redirect('/admin');
+});
+
+app.get('/admin-login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin-login.html'));
+});
+
 app.use(express.static(__dirname));
 
 const config = {
@@ -268,9 +295,27 @@ const storage = new CloudinaryStorage({
 const upload = multer({ storage: storage });
 
 // 🔐 JWT MIDDLEWARE DEFINITION - FIXED
-const authJWT = (req, res, next) => {
+const getTokenFromRequest = (req) => {
   const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.split(' ')[1];
+  }
+
+  const cookieHeader = req.headers.cookie;
+  if (!cookieHeader) return null;
+
+  const cookies = cookieHeader.split(';').map(cookie => cookie.trim());
+  for (const cookie of cookies) {
+    const [name, ...val] = cookie.split('=');
+    if (name === 'admin_token') {
+      return decodeURIComponent(val.join('='));
+    }
+  }
+  return null;
+};
+
+const authJWT = (req, res, next) => {
+  const token = getTokenFromRequest(req);
   
   if (!token) {
     console.log('🚫 NO TOKEN - 401');
@@ -287,6 +332,40 @@ const authJWT = (req, res, next) => {
     next();
   });
 };
+
+const authOrRedirect = (req, res, next) => {
+  const token = getTokenFromRequest(req);
+  
+  if (!token) {
+    return res.redirect('/admin-login');
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET || 'MiClaveSuperSecretaParaJWT_32charsMin', (err, user) => {
+    if (err) {
+      return res.redirect('/admin-login');
+    }
+    req.user = user;
+    next();
+  });
+};
+
+app.use('/productos', (req, res, next) => {
+  if (req.method === 'GET') return next();
+  authJWT(req, res, next);
+});
+
+app.use('/promociones', (req, res, next) => {
+  if (req.method === 'GET') return next();
+  authJWT(req, res, next);
+});
+
+app.use('/pedidos', (req, res, next) => {
+  if (req.method === 'POST') return next();
+  authJWT(req, res, next);
+});
+
+app.use('/backup', authJWT);
+app.use('/restore', authJWT);
 
 console.log('✅ authJWT middleware loaded early');
 
@@ -1215,14 +1294,17 @@ app.post('/api/login', async (req, res) => {
   );
   
   console.log(`🔐 Admin login exitoso: ${ADMIN_USER}`);
+  res.cookie('admin_token', token, {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 24 * 60 * 60 * 1000
+  });
   res.json({ success: true, token, userId: ADMIN_USER });
 });
 
 // 🛡️ PROTECT PRODUCT ROUTES with JWT auth
-app.use('/productos', authJWT);
-app.use('/backup', authJWT);
-app.use('/restore', authJWT);
-
 // 🔍 DEBUG LOGGING for product operations
 console.log('🔒 Product routes now PROTECTED with authJWT middleware');
 

@@ -248,33 +248,6 @@
     </div>
 </div>
 
-<!-- Admin Login Modal -->
-<div class="modal fade" id="modalLogin" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 25px;">
-            <div class="modal-header border-0 p-4 pb-0">
-                <h3 class="fw-bold">Acceso Admin</h3>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body p-4">
-                <form id="form-login-admin">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold small">CORREO ELECTRÓNICO</label>
-                        <input type="text" id="admin-email" class="form-control login-input" placeholder="admin" required>
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label fw-bold small">CONTRASEÑA</label>
-                        <input type="password" id="admin-password" class="form-control login-input" placeholder="••••••••" required>
-                    </div>
-                    <button type="submit" class="btn btn-dark w-100 py-3 fw-bold rounded-pill">
-                        INGRESAR AL SISTEMA
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
 <footer>
     <div class="container">
         <div class="text-center mb-4 pb-3 border-bottom">
@@ -305,7 +278,7 @@
                 <a href="#" class="footer-link d-block mb-2">Inicio</a>
                 <a href="#productos" class="footer-link d-block mb-2">Catálogo</a>
                 <a href="#" class="footer-link d-block mb-2">Mantenimiento</a>
-                <a href="#" class="footer-link d-block mb-0" data-bs-toggle="modal" data-bs-target="#modalLogin">
+                <a href="/admin-login" class="footer-link d-block mb-0">
                     <i class="bi bi-person-lock me-2 text-warning"></i> Admin
                 </a>
             </div>

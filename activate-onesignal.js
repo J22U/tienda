@@ -1,5 +1,5 @@
 // 🔔 OneSignal Admin Subscription - One-Click Activator v16
-// Copia y pega TODO en consola de admin.html (F12)
+// Copia y pega TODO en consola de /admin (F12)
 
 (async () => {
   console.log('🚀 OneSignal Activator starting...');

@@ -1,5 +1,5 @@
 // OneSignal SDK v16 Unified Init - Trébol Repuestos - FIXED SYNTAX
-// Clean, shared init for admin.html & tienda.html
+// Clean, shared init for /admin & tienda.html
 
 const ONESIGNAL_APP_ID = 'a6a0e0fc-4caf-4ce6-adff-5856c98bfffe';
 
@@ -118,7 +118,7 @@ async function unsubscribeNotifications() {
 }
 
 function isAdminPage() {
-  return window.location.pathname.includes('admin.html') || document.title.toLowerCase().includes('admin');
+  return window.location.pathname.includes('/admin') || document.title.toLowerCase().includes('admin');
 }
 
 async function getSubscriptionStatus() {

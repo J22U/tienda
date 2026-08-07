@@ -7,6 +7,26 @@ let promociones = [];
 // Global filter state for pedidos (fixes ReferenceError)
 window.filtroEstado = 'Todos';
 
+function getAdminToken() {
+    const localToken = localStorage.getItem('admin_token');
+    if (localToken) return localToken;
+    const match = document.cookie.match(/(?:^|; )admin_token=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : null;
+}
+
+function getAuthHeaders() {
+    const token = getAdminToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function fetchWithAuth(url, options = {}) {
+    options.headers = {
+        ...(options.headers || {}),
+        ...getAuthHeaders()
+    };
+    return fetch(url, options);
+}
+
 function mostrarAlertaSuscripcion() {
     Swal.fire({
         title: '⚠️ Aviso importante',
@@ -37,8 +57,8 @@ function mostrarAlertaSuscripcion() {
 
 document.addEventListener('DOMContentLoaded', function() {
     // 🔒 Session check
-    if (!localStorage.getItem('admin_logged')) {
-        window.location.replace('tienda.html');
+    if (!getAdminToken()) {
+        window.location.replace('/admin-login');
         return;
     }
 
@@ -46,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (window.location.protocol === 'file:') {
         Swal.fire({
             title: '⚠️ Servidor requerido',
-            text: 'La aplicación debe ejecutarse desde el servidor. Ve a http://localhost:3000/admin.html',
+            text: 'La aplicación debe ejecutarse desde el servidor. Ve a http://localhost:3000/admin',
             icon: 'warning',
             confirmButtonText: 'Entendido'
         });
@@ -58,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 🌐 Socket.io real-time (CSP/SIMPLE AUTH FIX) - FIXED GLOBAL SCOPE
     window.socket = io({
         auth: {
-            simpleAuth: localStorage.getItem('admin_logged') === 'true'
+            token: getAdminToken()
         }
     });
     
@@ -363,7 +383,7 @@ async function cargarProductos() {
     const lista = document.getElementById('lista-productos');
     mostrarLoader(lista, true);
     try {
-        const res = await fetch('/productos');
+        const res = await fetchWithAuth('/productos');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         productos = await res.json();
         productos.sort((a, b) => a.Nombre.localeCompare(b.Nombre));
@@ -434,7 +454,7 @@ async function cargarPromociones() {
     lista.innerHTML = '<div class="text-center py-3 text-muted">Cargando promociones...</div>';
 
     try {
-        const res = await fetch('/promociones');
+        const res = await fetchWithAuth('/promociones');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         promociones = await res.json();
         renderPromociones(promociones);
@@ -517,7 +537,7 @@ async function guardarPromocion(e) {
     const url = id ? `/promociones/${id}` : '/promociones';
 
     try {
-        const res = await fetch(url, { method, body: formData });
+        const res = await fetchWithAuth(url, { method, body: formData });
         if (!res.ok) {
             const err = await res.json().catch(() => ({ error: 'Error desconocido' }));
             throw new Error(err.error || 'Error servidor');
@@ -545,7 +565,7 @@ document.addEventListener('click', async function(e) {
     if (action === 'toggle-promo') {
         try {
             const activa = e.target.dataset.activa;
-            const res = await fetch(`/promociones/${id}/activar`, {
+            const res = await fetchWithAuth(`/promociones/${id}/activar`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ activa })
@@ -562,7 +582,7 @@ document.addEventListener('click', async function(e) {
     if (action === 'eliminar-promo') {
         if (!confirm('¿Seguro que quieres eliminar esta promoción?')) return;
         try {
-            const res = await fetch(`/promociones/${id}`, { method: 'DELETE' });
+            const res = await fetchWithAuth(`/promociones/${id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error('Error eliminando promoción');
             await cargarPromociones();
             Swal.fire('✓', 'Promoción eliminada', 'success');
@@ -614,7 +634,7 @@ async function cargarPedidos(preserveCollapsed = true) {
     const lista = document.getElementById('lista-pedidos');
     mostrarLoader(lista, true);
     try {
-        const res = await fetch('/pedidos');
+        const res = await fetchWithAuth('/pedidos');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         let allPedidos = await res.json();
         // 🔄 Sort by NumeroDisplay DESC (highest number first)
@@ -765,7 +785,7 @@ window.cancelarPedido = async function(id, btn) {
             btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
         }
 
-        const response = await fetch(`/pedidos/${id}/cancelar`, { method: 'PUT' });
+        const response = await fetchWithAuth(`/pedidos/${id}/cancelar`, { method: 'PUT' });
 
         if (!response.ok) {
             const error = await response.json().catch(() => ({error: 'Error desconocido'}));
@@ -797,7 +817,7 @@ async function populatePedidoDetails(pedidoId, numeroVisual = null, cardElement 
     const detailsBody = detailsContainer ? detailsContainer.querySelector('.pedido-details-body') : null;
     try {
         console.log('Fetching /pedidos/' + pedidoId, 'NumeroVisual:', numeroVisual);
-        const res = await fetch(`/pedidos/${pedidoId}`);
+        const res = await fetchWithAuth(`/pedidos/${pedidoId}`);
         console.log('Fetch response:', res.status, res.statusText);
         
         if (res.status !== 200) {
@@ -1027,11 +1047,8 @@ async function guardarProducto(e) {
         console.log('DEBUG - Headers enviados:', {
             'Authorization': `Bearer ${token}`
         });
-        const response = await fetch(url, {
+        const response = await fetchWithAuth(url, {
             method: id ? 'PUT' : 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
             body: formData
         });
         console.log('DEBUG - Response status:', response.status, response.statusText);
@@ -1074,7 +1091,7 @@ async function guardarProducto(e) {
 async function eliminarProducto(id) {
     if (!confirm('Eliminar producto?')) return;
     try {
-        await fetch(`/productos/${id}`, { method: 'DELETE' });
+        await fetchWithAuth(`/productos/${id}`, { method: 'DELETE' });
         Swal.fire('Eliminado', '', 'success');
         cargarProductos();
     } catch (err) {
@@ -1135,7 +1152,7 @@ async function cambiarEstado(id, nuevoEstado) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
         
-        const response = await fetch(url, { 
+        const response = await fetchWithAuth(url, { 
             method: 'PUT',
             signal: controller.signal
         });
@@ -1213,7 +1230,7 @@ async function eliminarPedido(id) {
     });
     if (result.isConfirmed) {
         try {
-            await fetch(`/pedidos/${id}`, { method: 'DELETE' });
+            await fetchWithAuth(`/pedidos/${id}`, { method: 'DELETE' });
             Swal.fire('Eliminado', 'Pedido eliminado correctamente', 'success');
             cargarPedidos();
         } catch (err) {
@@ -1225,7 +1242,7 @@ async function eliminarPedido(id) {
 // 🚀 FACTURA GENERATOR (User-provided)
 async function generarFacturaPDFParaPedido(pedidoId) {
     try {
-        const res = await fetch(`/pedidos/${pedidoId}`);
+        const res = await fetchWithAuth(`/pedidos/${pedidoId}`);
         if (!res.ok) throw new Error('Pedido no encontrado');
         const p = await res.json();
         const numeroPedido = obtenerNumeroVisualActual(pedidoId);
@@ -1447,7 +1464,7 @@ window.pedidoModalData = null; // Global pedido data (con DescuentoPorcentaje)
 async function mostrarDetallesPedido(pedidoId, pedidoNumeroVisual) {
     try {
         console.log('🔍 Intentando cargar pedido ID:', pedidoId, 'desde BD', 'numero visual:', pedidoNumeroVisual);
-        const res = await fetch(`/pedidos/${pedidoId}`);
+        const res = await fetchWithAuth(`/pedidos/${pedidoId}`);
         console.log('Respuesta servidor:', res.status, res.statusText);
         if (!res.ok) {
             throw new Error(`HTTP ${res.status}: ${res.statusText} para ID ${pedidoId}`);
@@ -1661,7 +1678,7 @@ function renderModalItems(descuentoPedidoOverride = null) {
             const pedidoId = window.pedidoModalData?.PedidoID;
             if (pedidoId) {
                 try {
-                    const resp = await fetch(`/pedidos/${pedidoId}/producto-descuento`, {
+                    const resp = await fetchWithAuth(`/pedidos/${pedidoId}/producto-descuento`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ productoIndex: index, descuentoPorcentaje: item.DescuentoPorcentajePedido })
@@ -1735,7 +1752,7 @@ window.aplicarDescuentoModal = async function() {
     }
 
     try {
-        const res = await fetch(`/pedidos/${pedidoId}/descuento`, {
+        const res = await fetchWithAuth(`/pedidos/${pedidoId}/descuento`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ descuentoPorcentaje: descuento })
@@ -1991,7 +2008,7 @@ window.abrirAgregarStock = async function(productoId) {
     const nuevoStock = Number(producto.Stock || 0) + cantidadNum;
 
     try {
-        const res = await fetch(`/productos/${productoId}`, {
+        const res = await fetchWithAuth(`/productos/${productoId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...producto, Stock: nuevoStock })
@@ -2043,7 +2060,7 @@ document.addEventListener('click', function(e) {
         // Descuento a PRODUCTO (globalmente)
         if (tipoDescuento === 'producto') {
             const id = btn.dataset.productId;
-            fetch(`/productos/${id}/descuento`, {
+            fetchWithAuth(`/productos/${id}/descuento`, {
                 method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({descuento: descuento})
@@ -2075,7 +2092,7 @@ document.addEventListener('click', function(e) {
                 return;
             }
             
-            fetch(`/pedidos/${pedidoId}/producto-descuento`, {
+            fetchWithAuth(`/pedidos/${pedidoId}/producto-descuento`, {
                 method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
@@ -2141,11 +2158,7 @@ window.exportarInventario = async function() {
         }
         
         console.log('DEBUG - Making fetch to /backup');
-        const response = await fetch('/backup', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        const response = await fetchWithAuth('/backup');
         console.log('DEBUG - Response status:', response.status, response.statusText);
         
         if (!response.ok) {
@@ -2281,11 +2294,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 // Restore products
-                const productosResponse = await fetch('/restore', {
+                const productosResponse = await fetchWithAuth('/restore', {
                     method: 'POST',
                     headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ productos: backupData.productos, opciones })
                 });
@@ -2315,11 +2327,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Restore orders if present
                 let pedidosResult = null;
                 if (backupData.pedidos && backupData.pedidos.length > 0) {
-                    const pedidosResponse = await fetch('/restore-pedidos', {
+                    const pedidosResponse = await fetchWithAuth('/restore-pedidos', {
                         method: 'POST',
                         headers: { 
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
+                            'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({ pedidos: backupData.pedidos, opciones })
                     });

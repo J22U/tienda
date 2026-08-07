@@ -6,7 +6,7 @@ const productosPorPagina = 16;
 const BASE_URL = 'https://tienda-1vps.onrender.com';
 
 /* ============================================================================
-   PWA DETECTION - Must match admin.html logic
+   PWA DETECTION - Must match /admin logic
    ============================================================================ */
 
 function isPWA() {
@@ -103,7 +103,7 @@ function autoLoginIfValid() {
         const isPWA_mode = isPWA();
         console.log(`[Session] Auto-login successful (${isPWA_mode ? 'PWA' : 'browser'})`);
         // Redirect to admin panel
-        window.location.href = 'admin.html';
+        window.location.href = '/admin';
     }
 }
 
@@ -1075,8 +1075,8 @@ function setupClientAutofill() {
     // Skip auto-login if: ?view=store OR ?producto=ID OR no valid admin session
     if (viewStore !== 'store' && !productoParam && localStorage.getItem('admin_logged') === 'true') {
         if (isSessionValid()) {
-            console.log('[Session] Valid admin session - redirecting to admin.html');
-            window.location.replace('admin.html');
+            console.log('[Session] Valid admin session - redirecting to admin');
+            window.location.replace('/admin');
         } else {
             console.log('[Session] admin_logged=true but invalid session - clearing');
             localStorage.removeItem('admin_logged');
@@ -1129,7 +1129,7 @@ formLogin.addEventListener('submit', async (e) => {
                         icon: 'success',
                         timer: 1500,
                         willClose: () => {
-                            window.location.replace('admin.html');
+                            window.location.replace('/admin');
                         }
                     });
                 } else {
