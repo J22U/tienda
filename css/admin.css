@@ -6,7 +6,9 @@
     --glass-bg: rgba(255, 255, 255, 0.95);
     --surface: #ffffff;
     --surface-strong: rgba(255, 255, 255, 0.95);
-    --accent: #6c5ce7; 
+    --accent: #e8971e;
+    --trebol-green: #1f5c3f;
+    --trebol-green-deep: #0d1810;
     --bg: #f0f2f5;
     --text: #2d3436;
     --muted: #4b4b4b;
@@ -20,7 +22,7 @@
 
 body {
     font-family: 'Outfit', sans-serif;
-    background: radial-gradient(circle at top right, #e0e0ff, var(--bg));
+    background: radial-gradient(circle at top right, #e3f3ea, var(--bg));
     color: var(--text);
     min-height: 100vh;
     padding-bottom: 50px;
@@ -38,7 +40,7 @@ body.dark-mode {
     --input-bg: #161f2f;
     --input-border: #2b3549;
     --shadow: 0 18px 40px rgba(0,0,0,0.55);
-    background: radial-gradient(circle at top right, #2b3251, #0b101c);
+    background: radial-gradient(circle at top right, #16261d, #0b1710);
 }
 
 body.dark-mode .bento-card,
@@ -123,7 +125,7 @@ body.dark-mode .btn-outline-primary {
 
 body.dark-mode .nav-pills .nav-link.active,
 body.dark-mode .nav-pills .nav-link.show {
-    background-color: rgba(108, 92, 231, 0.9) !important;
+    background-color: rgba(47, 158, 99, 0.85) !important;
     color: #fff !important;
 }
 
@@ -315,9 +317,9 @@ body.dark-mode .subscription-alert-message {
 
 body.dark-mode .nav-pills .nav-link.active,
 body.dark-mode .nav-pills .nav-link.show {
-    background-color: rgba(108,92,231,0.92) !important;
+    background-color: rgba(47,158,99,0.88) !important;
     color: #fff !important;
-    border-color: rgba(108,92,231,0.9) !important;
+    border-color: rgba(47,158,99,0.85) !important;
 }
 
 body.dark-mode #lista-productos,
@@ -338,7 +340,7 @@ body.dark-mode .pedido-card:hover,
 body.dark-mode .pedido-row:hover,
 body.dark-mode .table-row-main:hover {
     background: rgba(23, 32, 52, 0.95) !important;
-    border-color: rgba(108,92,231,0.24) !important;
+    border-color: rgba(47,158,99,0.28) !important;
     box-shadow: 0 18px 40px rgba(0,0,0,0.55) !important;
 }
 
@@ -365,6 +367,13 @@ body.dark-mode .pedido-card-actions button {
     color: var(--text) !important;
 }
 
+body.dark-mode .header-section {
+    background:
+        radial-gradient(circle at 15% 20%, rgba(47, 158, 99, 0.20), transparent 55%),
+        linear-gradient(135deg, var(--trebol-green-deep) 0%, #163025 100%) !important;
+    border-color: rgba(255,255,255,0.06) !important;
+}
+
 body.dark-mode .header-section h1 {
     -webkit-text-fill-color: unset !important;
     color: #f5f7ff !important;
@@ -385,39 +394,71 @@ body.dark-mode .logo-admin-container img {
    HEADER Y LOGO - unchanged
    ============================================================================ */
 
-.header-section { 
-    padding: 30px 0; 
+.header-section {
+    padding: 22px 26px;
+    background:
+        radial-gradient(circle at 15% 20%, rgba(47, 158, 99, 0.20), transparent 55%),
+        linear-gradient(135deg, var(--trebol-green-deep) 0%, #163025 100%);
+    border-radius: 20px;
+    margin-bottom: 6px;
+    position: relative;
+    overflow: hidden;
+}
+
+.header-section::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size: 28px 28px;
+    mask-image: radial-gradient(circle at 20% 30%, black 0%, transparent 65%);
+    pointer-events: none;
+}
+
+.header-section > * {
+    position: relative;
 }
 
 .logo-admin-container {
-    background-color: white !important;
-    width: 35px !important; 
-    height: 35px !important;
+    background: radial-gradient(circle at 50% 40%, #ffffff 0%, #f4faf6 55%, rgba(244,250,246,0) 78%) !important;
+    width: 54px !important;
+    height: 54px !important;
     display: flex !important;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    padding: 4px;
-    margin-right: 12px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    border: 1px solid #ddd;
+    padding: 0;
+    margin-right: 14px;
+    box-shadow: 0 0 22px 4px rgba(255,255,255,0.14);
+    border: none;
     flex-shrink: 0;
 }
 
 .logo-admin-container img {
-    width: 100% !important;
-    height: 100% !important;
+    width: 62% !important;
+    height: 62% !important;
     object-fit: contain;
 }
 
 .header-section h1 {
     font-weight: 800;
-    font-size: 1.6rem !important;
-    letter-spacing: -1px;
-    background: linear-gradient(90deg, #2d3436, var(--accent));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    font-size: 1.5rem !important;
+    letter-spacing: -0.01em;
+    color: #f2f6f0;
+    background: none;
+    -webkit-background-clip: unset;
+    -webkit-text-fill-color: unset;
     margin: 0 !important;
+}
+
+.header-section h1 span {
+    color: var(--accent) !important;
+}
+
+.header-section p.text-muted {
+    color: #93a396 !important;
 }
 
 /* ============================================================================
@@ -526,10 +567,13 @@ body.dark-mode .logo-admin-container img {
    ============================================================================ */
 
 .form-label { 
-    font-weight: 700; 
-    font-size: 0.95rem; 
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     margin-bottom: 8px; 
-    color: #4b4b4b; 
+    color: var(--trebol-green);
 }
 
 /* Ajustes de tabla modal pedido para filas con precio/subtotal alineado */
@@ -591,7 +635,7 @@ body.dark-mode .logo-admin-container img {
 .form-control:focus {
     background: #fff;
     border-color: var(--accent);
-    box-shadow: 0 0 0 5px rgba(108, 92, 231, 0.1);
+    box-shadow: 0 0 0 5px rgba(232, 151, 30, 0.14);
 }
 
 /* ============================================================================
@@ -653,7 +697,7 @@ body.dark-mode #lista-promociones .card .btn {
 }
 
 #lista-promociones::-webkit-scrollbar-thumb {
-    background-color: rgba(108, 92, 231, 0.5);
+    background-color: rgba(31, 92, 63, 0.5);
     border-radius: 999px;
 }
 
@@ -672,7 +716,7 @@ body.dark-mode #lista-promociones .card .btn {
 }
 
 #lista-promociones::-webkit-scrollbar-thumb {
-    background: rgba(0, 123, 255, 0.45);
+    background: rgba(31, 92, 63, 0.45);
     border-radius: 8px;
 }
 
@@ -746,14 +790,14 @@ body.dark-mode #lista-promociones .card .btn {
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, var(--accent), #fd79a8);
+    background: linear-gradient(90deg, var(--accent), var(--trebol-green));
     opacity: 0;
     transition: opacity 0.3s;
 }
 
 .product-card:hover {
     transform: translateY(-8px);
-    box-shadow: 0 20px 40px rgba(108,92,231,0.15);
+    box-shadow: 0 20px 40px rgba(31,92,63,0.18);
 }
 
 .product-card:hover::before {
@@ -1043,11 +1087,11 @@ body.dark-mode #lista-promociones .card .btn {
 .nav-pills .nav-link {
     border-radius: 12px;
     font-weight: 700;
-    color: #636e72;
+    color: var(--trebol-green);
 }
 
 .nav-pills .nav-link.active { 
-    background-color: var(--accent); 
+    background-color: var(--trebol-green-deep); 
 }
 
 #tab-promociones h5,
@@ -1106,7 +1150,7 @@ body.dark-mode #lista-promociones .card .btn {
     overflow-y: auto;
     overflow-x: hidden;
     padding: 8px;
-    border: 1px solid rgba(108,92,231,0.15);
+    border: 1px solid rgba(31,92,63,0.15);
     border-radius: 14px;
     background: rgba(255,255,255,0.95);
 }
@@ -1122,7 +1166,7 @@ body.dark-mode #lista-promociones .card .btn {
 #lista-agotados::-webkit-scrollbar-thumb,
 #lista-pedidos::-webkit-scrollbar-thumb,
 #lista-promociones::-webkit-scrollbar-thumb {
-    background: rgba(108,92,231,0.35);
+    background: rgba(31,92,63,0.35);
     border-radius: 999px;
 }
 
@@ -1145,7 +1189,7 @@ body.dark-mode #lista-promociones .card .btn {
     display: grid;
     grid-template-columns: 1fr;
     gap: 8px;
-    border: 1px solid rgba(108,92,231,0.15);
+    border: 1px solid rgba(31,92,63,0.15);
     border-radius: 12px;
     padding: 10px;
     min-width: 0;
@@ -1218,7 +1262,7 @@ body.dark-mode #lista-promociones .card .btn {
 }
 
 .admin-table thead th {
-    background: linear-gradient(135deg, var(--accent), #a29bfe);
+    background: linear-gradient(135deg, var(--trebol-green-deep), var(--accent));
     color: white;
     padding: 16px 12px;
     font-weight: 700;
@@ -1264,7 +1308,7 @@ body.dark-mode #lista-promociones .card .btn {
 
 .table-row-details td {
     padding: 20px 12px !important;
-    border-top: 2px solid rgba(108,92,231,0.1);
+    border-top: 2px solid rgba(31,92,63,0.15);
 }
 
 .table-actions {
@@ -1464,25 +1508,25 @@ body:not(.modal-open) {
    ============================================================================ */
 
 .dropdown .dropdown-toggle {
-    background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+    background: linear-gradient(135deg, var(--accent), #f5a935);
     border: none;
-    color: white;
+    color: #1a1206;
     font-weight: 600;
-    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
+    box-shadow: 0 2px 8px rgba(232, 151, 30, 0.35);
     transition: all 0.2s ease;
 }
 
 .dropdown .dropdown-toggle:hover {
     transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(108, 92, 231, 0.5);
+    box-shadow: 0 4px 12px rgba(232, 151, 30, 0.5);
 }
 
 .dropdown .dropdown-toggle::after {
-    border-top-color: white;
+    border-top-color: #1a1206;
 }
 
 .dropdown-menu {
-    border: 1px solid rgba(108, 92, 231, 0.2);
+    border: 1px solid rgba(31, 92, 63, 0.2);
     border-radius: 12px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     background: white;
@@ -1497,7 +1541,7 @@ body:not(.modal-open) {
 }
 
 .dropdown-item:hover {
-    background: linear-gradient(135deg, rgba(108, 92, 231, 0.05), rgba(108, 92, 231, 0.1));
+    background: linear-gradient(135deg, rgba(232, 151, 30, 0.06), rgba(232, 151, 30, 0.12));
     color: var(--accent);
     transform: translateX(4px);
 }
@@ -1509,5 +1553,5 @@ body:not(.modal-open) {
 
 .dropdown-divider {
     margin: 8px 0;
-    border-top: 1px solid rgba(108, 92, 231, 0.15);
+    border-top: 1px solid rgba(31, 92, 63, 0.15);
 }

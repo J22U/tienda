@@ -12,9 +12,100 @@
     
     <!-- Tipografía -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     
     <!-- Estilos personalizados -->
     <link rel="stylesheet" href="css/admin.css">
+
+    <!-- 🎨 Retema Trébol: ajustes que admin.css no cubre (variantes Bootstrap por defecto) -->
+    <style>
+        :root {
+            --trebol-green: #1f5c3f;
+            --trebol-green-deep: #0d1810;
+            --trebol-amber: #e8971e;
+        }
+
+        .header-section h1 span { color: var(--trebol-amber) !important; }
+
+        /* Botones del header (Ver Tienda / Oscuro / Cerrar Sesión) - variantes Bootstrap sin cubrir en admin.css */
+        .header-section .btn-dark {
+            background: var(--trebol-amber);
+            border: none;
+            color: #1a1206;
+            font-family: 'IBM Plex Mono', monospace;
+            letter-spacing: 0.06em;
+        }
+        .header-section .btn-dark:hover { background: #f5a935; color: #1a1206; }
+
+        .header-section .btn-outline-secondary {
+            border-color: rgba(255,255,255,0.25);
+            color: #eef2ea;
+            font-family: 'IBM Plex Mono', monospace;
+            letter-spacing: 0.06em;
+            background: rgba(255,255,255,0.04);
+        }
+        .header-section .btn-outline-secondary:hover {
+            background: rgba(255,255,255,0.10);
+            color: #fff;
+            border-color: rgba(255,255,255,0.4);
+        }
+
+        .header-section .btn-danger {
+            font-family: 'IBM Plex Mono', monospace;
+            letter-spacing: 0.06em;
+        }
+
+        /* Toggle Registrar Producto / Registrar Promoción */
+        .active-form-btn,
+        .btn-outline-primary.active-form-btn {
+            background: var(--trebol-green-deep) !important;
+            border-color: var(--trebol-green-deep) !important;
+            color: #f2f6f0 !important;
+            font-family: 'IBM Plex Mono', monospace;
+            letter-spacing: 0.04em;
+        }
+        .btn-outline-primary:not(.active-form-btn) {
+            color: var(--trebol-green) !important;
+            border-color: var(--trebol-green) !important;
+        }
+        .btn-outline-primary:not(.active-form-btn):hover {
+            background: rgba(31, 92, 63, 0.08) !important;
+        }
+        .btn-outline-secondary.flex-fill {
+            color: #8ea391 !important;
+            border-color: #d7ded5 !important;
+        }
+
+        /* Firma de marca sutil en las tarjetas principales */
+        .bento-card { border-top: 3px solid var(--trebol-amber); }
+
+        /* Badges por ID, sin cobertura en admin.css */
+        #total-count.badge.bg-dark {
+            background: var(--trebol-green-deep) !important;
+            font-family: 'IBM Plex Mono', monospace;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+        }
+        #order-count.badge.bg-primary {
+            background: var(--trebol-green) !important;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+        #agotados-count.badge.bg-danger {
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        /* Botones Backup / Recuperar: alinear tono exacto con la paleta Trébol */
+        #btn-backup, #btn-importar {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.72rem;
+            letter-spacing: 0.04em;
+        }
+        #btn-backup { color: var(--trebol-green) !important; border-color: var(--trebol-green) !important; }
+        #btn-backup:hover { background: var(--trebol-green) !important; color: #fff !important; }
+        #btn-importar { color: var(--trebol-amber) !important; border-color: var(--trebol-amber) !important; }
+        #btn-importar:hover { background: var(--trebol-amber) !important; color: #1a1206 !important; }
+    </style>
     
     <!-- Socket.io LOCAL (CSP-safe) -->
     <script src="/socket.io/socket.io.js"></script>
@@ -385,4 +476,3 @@ document.addEventListener('click', function(e) {
 
 </body>
 </html>
-
