@@ -47,14 +47,13 @@ body.dark-mode .bento-card,
 body.dark-mode .header-section,
 body.dark-mode .modal-content {
     background: var(--surface-strong) !important;
-    border-color: var(--border) !important;
+    border-left-color: var(--border) !important;
+    border-right-color: var(--border) !important;
+    border-bottom-color: var(--border) !important;
     box-shadow: var(--shadow) !important;
 }
 
-body.dark-mode .logo-admin-container {
-    background-color: rgba(255,255,255,0.06) !important;
-    border-color: rgba(255,255,255,0.12) !important;
-}
+/* El fondo del logo se define más abajo (círculo blanco con brillo, igual en ambos modos) */
 
 body.dark-mode .form-label {
     color: var(--muted) !important;
@@ -381,13 +380,12 @@ body.dark-mode .header-section h1 {
 }
 
 body.dark-mode .logo-admin-container {
-    background-color: rgba(255,255,255,0.18) !important;
-    border-color: rgba(255,255,255,0.18) !important;
-    box-shadow: 0 10px 28px rgba(0,0,0,0.2) !important;
+    background: radial-gradient(circle at 50% 40%, #ffffff 0%, #f4faf6 55%, rgba(244,250,246,0) 78%) !important;
+    border-color: transparent !important;
 }
 
 body.dark-mode .logo-admin-container img {
-    filter: invert(1) brightness(1.55) contrast(1.25) !important;
+    filter: none !important;
 }
 
 /* ============================================================================
