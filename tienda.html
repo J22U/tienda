@@ -316,5 +316,45 @@
 <script src="js/tienda.js" defer></script>
 <script src="js/onesignal-v16-fixed.js" defer></script>
 
+<!-- Fuerza el scroll a la sección del ancla (#Legal, etc.) una vez que el catálogo de
+     productos termina de cargar (que es asíncrono), en vez de usar un tiempo fijo que
+     podría fallar si la conexión va lenta. -->
+<script>
+    (function () {
+        if (!window.location.hash) return;
+
+        let yaHizoScroll = false;
+        function irAlAncla() {
+            if (yaHizoScroll) return;
+            const el = document.getElementById(window.location.hash.substring(1));
+            if (el) {
+                yaHizoScroll = true;
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        // Opción principal: esperar a que el contenedor de productos termine de llenarse
+        // (cargarProductos() en tienda.js no se espera con await, así que la altura de la
+        // página sigue cambiando después de DOMContentLoaded).
+        const contenedor = document.getElementById('contenedor-productos');
+        if (contenedor) {
+            const observer = new MutationObserver(() => {
+                if (contenedor.children.length > 0) {
+                    observer.disconnect();
+                    // Pequeño respiro para que el navegador termine de pintar el layout
+                    setTimeout(irAlAncla, 150);
+                }
+            });
+            observer.observe(contenedor, { childList: true });
+
+            // Por si el observer nunca detecta el cambio (productos vacíos, error de red, etc.)
+            setTimeout(() => { observer.disconnect(); irAlAncla(); }, 4000);
+        } else {
+            // Red de seguridad si el contenedor no existe por algún motivo
+            window.addEventListener('load', () => setTimeout(irAlAncla, 500));
+        }
+    })();
+</script>
+
 </body>
 </html>
