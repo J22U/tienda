@@ -304,6 +304,11 @@ function cambiarPagina(nuevaPagina) {
     paginaActual = nuevaPagina;
     renderizarProductos();
     renderizarPaginacion();
+
+    const seccionProductos = document.getElementById('productos');
+    if (seccionProductos) {
+        seccionProductos.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 
 function abrirProductoPorQuery() {
