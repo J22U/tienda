@@ -36,7 +36,7 @@ async function cargarProductos() {
             const stockTexto = estaAgotado ? '¡SIN EXISTENCIAS!' : `${p.Stock} disponibles`;
 
             return `
-                <div class="col-md-4 col-lg-3">
+                <div class="col-6 col-md-4 col-lg-3">
                     <div class="card product-card ${claseAgotado} h-100">
                         <div class="img-container" onclick="${estaAgotado ? '' : `verDetalle(${p.ProductoID})`}">
                             <img src="${srcFinal}" onerror="this.src='https://placehold.co/250x250/e74c3c/white?text=Error+al+cargar'"
