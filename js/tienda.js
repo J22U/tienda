@@ -2,7 +2,7 @@ let carrito = [];
 let productosData = [];
 let productosFiltrados = [];
 let paginaActual = 1;
-const productosPorPagina = 16;
+const productosPorPagina = 10;
 const BASE_URL = 'https://tienda-1vps.onrender.com';
 
 /* ============================================================================
