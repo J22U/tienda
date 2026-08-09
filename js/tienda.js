@@ -908,6 +908,11 @@ function setupClientAutofill() {
 
     
     document.addEventListener('click', function(e) {
+        if (e.target.matches('.page-link') && e.target.dataset.page) {
+            e.preventDefault();
+            cambiarPagina(parseInt(e.target.dataset.page, 10));
+            return;
+        }
         if (e.target.matches('.img-producto')) {
             const id = e.target.dataset.id;
             if (id) verDetalle(id);
