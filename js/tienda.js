@@ -228,7 +228,7 @@ function armarHtmlProducto(p) {
     const tieneOferta = descuento > 0;
 
     return `
-        <div class="col-md-4 col-lg-3">
+        <div class="col-6 col-md-4 col-lg-3">
             <div class="card product-card ${claseAgotado} h-100">
                 <div class="img-container position-relative">
                     ${tieneOferta ? `<div class="position-absolute top-0 end-0 bg-danger text-white px-2 py-1 rounded-start fw-bold" style="font-size: 0.8rem; z-index: 10;">-${descuento}%</div>` : ''}
